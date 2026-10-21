@@ -352,10 +352,10 @@ export const SHIRT_OPTIONS = [
   { id: "orange", name: "Fazenda laranja", shirt: "#e89a5c", shirtDark: "#c07740", design: "western", desc: "Laranja bolsos" },
   { id: "pink", name: "Corações rosa", shirt: "#ff9a9e", shirtDark: "#c97a7e", design: "hearts", desc: "Rosa corações" },
   { id: "cream", name: "Jardineira trigo", shirt: "#ffecd2", shirtDark: "#c9a86a", design: "jumpsuit", desc: "Creme trigo" },
-  { id: "denim", name: "Jeans azul", shirt: "#6b8fb0", shirtDark: "#4a6b8a", design: "solid", desc: "Jeans clássico" },
-  { id: "striped", name: "Listrado navy", shirt: "#4a6fa5", shirtDark: "#34495e", design: "solid", desc: "Listras navy" },
-  { id: "overalls", name: "Macacão marrom", shirt: "#a67c52", shirtDark: "#8a6540", design: "solid", desc: "Macacão fazenda" },
-  { id: "hoodie", name: "Moletom verde", shirt: "#6aa84f", shirtDark: "#4a7c2e", design: "solid", desc: "Moletom floresta" },
+  { id: "denim", name: "Jeans azul", shirt: "#6b8fb0", shirtDark: "#4a6b8a", design: "denim", desc: "Jeans clássico" },
+  { id: "striped", name: "Listrado navy", shirt: "#4a6fa5", shirtDark: "#34495e", design: "striped", desc: "Listras navy" },
+  { id: "overalls", name: "Macacão marrom", shirt: "#a67c52", shirtDark: "#8a6540", design: "overalls", desc: "Macacão fazenda" },
+  { id: "hoodie", name: "Moletom verde", shirt: "#6aa84f", shirtDark: "#4a7c2e", design: "hoodie", desc: "Moletom floresta" },
 ];
 export const NECKLACE_OPTIONS = [
   { id: "none", name: "Sem colar", necklace: null },
@@ -423,6 +423,11 @@ export const HAIR_STYLE_OPTIONS = [
   { id: "twin", name: "Maria-chiquinha", gender: "fem" },
   { id: "messy", name: "Desgrenhado", gender: "masc" },
   { id: "long_masc", name: "Longo solto", gender: "masc" },
+  { id: "side_sweep", name: "Franja lateral", gender: "fem" },
+  { id: "afro_puff", name: "Afro puff", gender: "uni" },
+  { id: "undercut", name: "Undercut", gender: "masc" },
+  { id: "long_wavy_masc", name: "Longo ondulado", gender: "masc" },
+  { id: "braid_long", name: "Trança longa", gender: "fem" },
 ];
 export const GENDER_OPTIONS = [
   { id: "fem", name: "Feminino" },

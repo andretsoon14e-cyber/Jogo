@@ -126,6 +126,11 @@ function drawHair(g, spec, dir) {
     }
   }
   // brilho genérico para outros estilos longos/ponytail/bun já tem shade
+  if (style === "side_sweep") { rect(g, 4.6, 1.4, 6.8, 3.2, h0); rect(g, 7.0, 1.6, 3.2, 1.8, shade(h0,-0.12)); }
+  if (style === "afro_puff") { rect(g, 3.6, 1.0, 8.8, 4.8, h0); rect(g, 4.2, 1.2, 7.6, 1.0, shade(h0,0.18)); }
+  if (style === "undercut") { rect(g, 5.6, 1.2, 4.8, 1.6, h0); rect(g, 4.8, 2.8, 6.4, 0.4, h1); }
+  if (style === "long_wavy_masc") { rect(g, 3.8, 1.6, 8.4, 5.0, h0); rect(g, 4.2, 3.2, 1.0, 4.0, h1); }
+  if (style === "braid_long") { rect(g, 4.6, 1.4, 6.8, 3.6, h0); rect(g, 7.0, 5.0, 2.0, 4.2, h1); rect(g, 7.2, 9.0, 1.6, 1.0, h0); }
   if (style === "long") rect(g, 6.4, 1.4, 3.2, 0.5, shade(h0, 0.20));
   if (style === "bun") rect(g, 7.0, 0.8, 2.0, 0.4, "rgba(255,255,255,.18)");
   if (spec.beard) {
@@ -349,6 +354,16 @@ function drawBody(g, spec, dir, frame, act, toolPhase = 0) {
     // jardineira trigo — faixas
     rect(g, 6.0, 11.0, 0.4, 4.6, "#c9a86a"); rect(g, 9.6, 11.0, 0.4, 4.6, "#c9a86a");
     rect(g, 7.8, 11.0, 0.4, 4.6, "#c9a86a");
+  } else if (design === "striped") {
+    rect(g, 5.6, 11.4, 4.8, 0.4, "#ffffff"); rect(g, 5.6, 13.0, 4.8, 0.4, "#ffffff");
+  } else if (design === "denim") {
+    rect(g, 5.8, 11.0, 4.4, 0.6, shade(shirt,0.14)); rect(g, 5.8, 12.8, 4.4, 0.3, shade(shirtDark,0.10));
+  } else if (design === "overalls") {
+    rect(g, 5.4, 10.2, 0.6, 5.8, "#6b4a2f"); rect(g, 10.0, 10.2, 0.6, 5.8, "#6b4a2f");
+    rect(g, 7.4, 14.0, 1.2, 0.6, "#e8b44a");
+  } else if (design === "hoodie") {
+    rect(g, 5.0, 10.6, 6.0, 1.0, shade(shirt,0.10)); rect(g, 6.8, 9.2, 2.4, 1.2, shade(shirt,-0.12));
+    rect(g, 7.8, 9.4, 0.6, 1.4, "#ffffff");
   }
   // gola/cachecol por estação
   if (spec.scarf) {
