@@ -64,7 +64,7 @@ function initLogin() {
     btn.style.borderColor = btn.dataset.pet===game.skinParts.pet ? "#b8882a" : "#d5bd94";
     btn.style.background = btn.dataset.pet===game.skinParts.pet ? "#ffe9a8" : "#fffdf4";
     btn.onclick=()=>{ game.skinParts.pet = btn.dataset.pet; localStorage.setItem("vale_pet", btn.dataset.pet); if(inpPetHidden) inpPetHidden.value = btn.dataset.pet; localStorage.setItem("vale_skin_parts", JSON.stringify(game.skinParts)); document.querySelectorAll(".petOpt").forEach(b=>{ const sel=b.dataset.pet===btn.dataset.pet; b.classList.toggle("selected", sel); b.style.borderColor=sel?"#b8882a":"#d5bd94"; b.style.background=sel?"#ffe9a8":"#fffdf4"; }); sfx("open"); };
-  }
+  });
   // gender choice — filtra presets por gênero
   function filteredByGender(opts, gender){
     if(!opts || !opts[0]?.gender) return opts;
@@ -88,7 +88,7 @@ function initLogin() {
       try{ rebuildModularPick(); }catch{}
       refreshPreview(); sfx("open");
     };
-  }););
+  });
   function refreshPreview(){
     const spec = buildCustomSpec(game.skinParts.base, game.skinParts.hat, game.skinParts.shirt, game.skinParts.necklace, game.skinParts.bracelet, game.skinParts.skinTone, game.skinParts.hairStyle, game.skinParts.hairColor, game.skinParts.pants, game.skinParts.eyeColor);
     game.customSpec = spec;
