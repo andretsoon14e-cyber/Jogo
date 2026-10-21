@@ -1,0 +1,13 @@
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
+const exe = await chromium.executablePath();
+const browser = await puppeteer.launch({ args: [...chromium.args, '--no-sandbox','--disable-gpu','--use-gl=swiftshader','--enable-unsafe-swiftshader'], executablePath: exe, headless: true, defaultViewport: { width: 1000, height: 800, deviceScaleFactor: 3 } });
+const page = await browser.newPage();
+await page.goto('http://localhost:3000', { waitUntil: 'networkidle2' });
+await page.evaluate(() => { document.querySelector('.loginTab[data-mode="guest"]').click(); document.querySelector('#inpName').value='c'; document.querySelector('#inpRoom').value='CHU1'; });
+await page.click('#btnPlay');
+await new Promise(r => setTimeout(r, 4000));
+await page.evaluate(() => { const t=document.querySelector('#tutorialPanel'); if(t?.classList?.contains('open')) document.querySelector('#btnTutorialStart').click(); window.__timeOverride = 10*60; window.game.camera.x = 33; window.game.camera.y = 24; window.game.x=33; window.game.y=24; });
+await new Promise(r => setTimeout(r, 900));
+await page.screenshot({ path: '/tmp/church.png', clip: { x: 230, y: 200, width: 540, height: 420 } });
+await browser.close(); console.log('ok');

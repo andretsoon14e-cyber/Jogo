@@ -1,0 +1,27 @@
+# Dependências
+node_modules/
+.npm/
+
+# Builds do Electron
+dist/
+out/
+build/
+*.exe
+*.msi
+*.dmg
+*.AppImage
+*.blockmap
+
+# Dados de jogo em tempo de execução (contas, mundos, segredo de sessão)
+server/data/users.json
+server/data/secret.key
+server/data/worlds/
+!server/data/.gitkeep
+
+# Logs e temporários
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.env
+.env.*

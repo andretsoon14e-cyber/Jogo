@@ -1,0 +1,67 @@
+{
+  "name": "vale-aconchegante",
+  "version": "1.16.0",
+  "description": "Jogo 2D Simulacao de Vida, Fazenda e RPG Multiplayer - inspirado na atmosfera acolhedora de Stardew Valley",
+  "main": "electron.cjs",
+  "type": "module",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "node server/server.js",
+    "electron": "electron .",
+    "build:exe": "electron-builder --win --x64",
+    "build:exe:portable": "electron-builder --win portable --x64",
+    "test": "node test/multiplayer.test.js",
+    "test:client": "node test/client.smoke.test.js",
+    "test:all": "node test/client.smoke.test.js && node test/multiplayer.test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1",
+    "jsdom": "^30.1.3",
+    "socket.io-client": "^4.7.5"
+  },
+  "keywords": [
+    "jogo",
+    "fazenda",
+    "rpg",
+    "multiplayer",
+    "pixel-art"
+  ],
+  "author": "Vale Aconchegante",
+  "license": "MIT",
+  "build": {
+    "appId": "com.valeaconchegante.jogo",
+    "productName": "Vale Aconchegante",
+    "asar": true,
+    "files": [
+      "client/**/*",
+      "client/js/art/**/*",
+      "server/**/*",
+      "shared/**/*",
+      "shared/bank.js",
+      "shared/social.js",
+      "electron.cjs",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "client/assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    }
+  }
+}
