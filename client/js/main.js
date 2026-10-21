@@ -65,12 +65,29 @@ function initLogin() {
     btn.style.background = btn.dataset.pet===game.skinParts.pet ? "#ffe9a8" : "#fffdf4";
     btn.onclick=()=>{ game.skinParts.pet = btn.dataset.pet; localStorage.setItem("vale_pet", btn.dataset.pet); if(inpPetHidden) inpPetHidden.value = btn.dataset.pet; localStorage.setItem("vale_skin_parts", JSON.stringify(game.skinParts)); document.querySelectorAll(".petOpt").forEach(b=>{ const sel=b.dataset.pet===btn.dataset.pet; b.classList.toggle("selected", sel); b.style.borderColor=sel?"#b8882a":"#d5bd94"; b.style.background=sel?"#ffe9a8":"#fffdf4"; }); sfx("open"); };
   }
-  // gender choice
+  // gender choice — filtra presets por gênero
+  function filteredByGender(opts, gender){
+    if(!opts || !opts[0]?.gender) return opts;
+    return opts.filter(o=> o.gender===gender || o.gender==="uni");
+  }
   document.querySelectorAll(".genderOpt").forEach(btn=>{
     btn.classList.toggle("selected", btn.dataset.gender===game.skinParts.gender);
     btn.style.borderColor = btn.dataset.gender===game.skinParts.gender ? "#b8882a" : "#d5bd94";
     btn.style.background = btn.dataset.gender===game.skinParts.gender ? "#ffe9a8" : "#fffdf4";
-    btn.onclick=()=>{ game.skinParts.gender = btn.dataset.gender; localStorage.setItem("vale_gender", btn.dataset.gender); localStorage.setItem("vale_skin_parts", JSON.stringify(game.skinParts)); document.querySelectorAll(".genderOpt").forEach(b=>{ const sel=b.dataset.gender===btn.dataset.gender; b.classList.toggle("selected", sel); b.style.borderColor=sel?"#b8882a":"#d5bd94"; b.style.background=sel?"#ffe9a8":"#fffdf4"; }); refreshPreview(); sfx("open"); };
+    btn.onclick=()=>{
+      game.skinParts.gender = btn.dataset.gender;
+      localStorage.setItem("vale_gender", btn.dataset.gender);
+      localStorage.setItem("vale_skin_parts", JSON.stringify(game.skinParts));
+      document.querySelectorAll(".genderOpt").forEach(b=>{
+        const sel=b.dataset.gender===btn.dataset.gender;
+        b.classList.toggle("selected", sel);
+        b.style.borderColor=sel?"#b8882a":"#d5bd94";
+        b.style.background=sel?"#ffe9a8":"#fffdf4";
+      });
+      // rebuild rows filtrando por gênero
+      try{ rebuildModularPick(); }catch{}
+      refreshPreview(); sfx("open");
+    };
   }););
   function refreshPreview(){
     const spec = buildCustomSpec(game.skinParts.base, game.skinParts.hat, game.skinParts.shirt, game.skinParts.necklace, game.skinParts.bracelet, game.skinParts.skinTone, game.skinParts.hairStyle, game.skinParts.hairColor, game.skinParts.pants, game.skinParts.eyeColor);
@@ -188,15 +205,44 @@ function initLogin() {
     row.appendChild(lab); row.appendChild(left); row.appendChild(center); row.appendChild(right);
     container.appendChild(row);
   }
-  createArrowRow("Pele", SKIN_TONE_OPTIONS, "skinTone");
-  createArrowRow("Cabelo", HAIR_STYLE_OPTIONS, "hairStyle");
-  createArrowRow("Cor cabelo", HAIR_COLOR_OPTIONS, "hairColor");
-  createArrowRow("Camisa", SHIRT_OPTIONS, "shirt");
-  createArrowRow("Calça", PANTS_OPTIONS, "pants");
-  createArrowRow("Olhos", EYE_COLOR_OPTIONS, "eyeColor");
-  createArrowRow("Chapéu", HAT_OPTIONS, "hat");
-  createArrowRow("Colar", NECKLACE_OPTIONS, "necklace");
-  createArrowRow("Pulseira", BRACELET_OPTIONS, "bracelet");
+  // helper para criar rows já filtradas
+  window.rebuildModularPick = function(){
+    container.innerHTML = "";
+    // Pele — quadradinhos mini só cor (pedido: só quadradinhos)
+    (function(){
+      const row=document.createElement("div");
+      row.className="arrowRow skinGridRow";
+      row.dataset.key="skinTone";
+      row.style.cssText="display:flex;align-items:center;gap:6px;background:#fff7d6;border:1.5px solid #d5bd94;border-radius:8px;padding:6px 8px;";
+      const lab=document.createElement("div");
+      lab.style.cssText="font-weight:800;font-size:10px;color:#4a3520;min-width:72px;max-width:72px;";
+      lab.textContent="Pele";
+      row.appendChild(lab);
+      const grid=document.createElement("div");
+      grid.style.cssText="display:flex;flex-wrap:wrap;gap:4px;flex:1;";
+      for(const opt of SKIN_TONE_OPTIONS){
+        const sq=document.createElement("button");
+        sq.type="button";
+        sq.title=opt.name;
+        sq.dataset.id=opt.id;
+        const sel = game.skinParts.skinTone===opt.id;
+        sq.style.cssText=`width:22px;height:22px;border-radius:4px;border:${sel?"2.5px solid #b8882a":"1.5px solid #8a6a4a"};background:${opt.skin};cursor:pointer;box-shadow:${sel?"0 0 0 2px #ffe9a8":"none"};`;
+        sq.onclick=()=>{ game.skinParts.skinTone=opt.id; localStorage.setItem("vale_skin_parts", JSON.stringify(game.skinParts)); rebuildModularPick(); refreshPreview(); };
+        grid.appendChild(sq);
+      }
+      row.appendChild(grid);
+      container.appendChild(row);
+    })();
+    createArrowRow("Cabelo", filteredByGender(HAIR_STYLE_OPTIONS, game.skinParts.gender), "hairStyle");
+    createArrowRow("Cor cabelo", HAIR_COLOR_OPTIONS, "hairColor");
+    createArrowRow("Camisa", filteredByGender(SHIRT_OPTIONS, game.skinParts.gender), "shirt");
+    createArrowRow("Calça", filteredByGender(PANTS_OPTIONS, game.skinParts.gender), "pants");
+    createArrowRow("Olhos", EYE_COLOR_OPTIONS, "eyeColor");
+    createArrowRow("Chapéu", filteredByGender(HAT_OPTIONS, game.skinParts.gender), "hat");
+    createArrowRow("Colar", NECKLACE_OPTIONS, "necklace");
+    createArrowRow("Pulseira", BRACELET_OPTIONS, "bracelet");
+  };
+  rebuildModularPick();
   refreshPreview();
 
   // tabs
