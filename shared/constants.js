@@ -340,9 +340,9 @@ export const HAT_OPTIONS = [
   { id: "tiara_fem", name: "Tiara pérola", hat: { type: "flower", color: "#fff8dc", color2: "#e8d5a8" }, gender: "fem" },
   { id: "sailor", name: "Marinheiro", hat: { type: "sailor", color: "#3b6f9e" }, gender: "masc" },
   { id: "sailor_white", name: "Marinheiro branco", hat: { type: "sailor", color: "#ffffff" }, gender: "masc" },
-  { id: "wizard", name: "Bruxo roxo", hat: { type: "cap", color: "#6c3483" }, gender: "uni" },
+  { id: "wizard", name: "Bruxo roxo", hat: { type: "cap", color: "#6c3483" }, gender: "uni", asset: "layer_hat_wizard.png" },
   { id: "goggles", name: "Óculos", hat: { type: "goggles", color: "#6b4a2f" }, gender: "masc" },
-  { id: "cowboy", name: "Cowboy marrom", hat: { type: "straw", color: "#8d6e63" }, gender: "masc" },
+  { id: "cowboy", name: "Cowboy marrom", hat: { type: "straw", color: "#8d6e63" }, gender: "masc", asset: "layer_hat_cowboy.png" },
   { id: "chapeu_sol_fem", name: "Chapéu sol", hat: { type: "straw", color: "#f5e6b8" }, gender: "fem" },
 ];
 export const SHIRT_OPTIONS = [
@@ -389,9 +389,9 @@ export const PANTS_OPTIONS = [
   { id: "cargo_masc", name: "Cargo verde", pants: "#4a5a3a", desc: "Cargo militar", gender: "masc" },
   { id: "preto", name: "Preto", pants: "#2b2b2b", desc: "Preto urbano", gender: "uni" },
   { id: "cinza", name: "Cinza", pants: "#7a7a7a", desc: "Cinza pedra", gender: "uni", asset: "layer_skirt_denim.png" },
-  { id: "saia_azul", name: "Saia azul", pants: "#4a6fa5", desc: "Saia plissada azul", gender: "fem" },
+  { id: "saia_azul", name: "Saia azul", pants: "#4a6fa5", desc: "Saia plissada azul", gender: "fem", asset: "layer_skirt_floral.png" },
   { id: "saia_rosa", name: "Saia rosa", pants: "#e89a9e", desc: "Saia rodada rosa", gender: "fem" },
-  { id: "saia_verde", name: "Saia verde", pants: "#5a8f5a", desc: "Saia longa verde", gender: "fem" },
+  { id: "saia_verde", name: "Saia verde", pants: "#5a8f5a", desc: "Saia longa verde", gender: "fem", asset: "layer_skirt_beige.png" },
   { id: "saia_longa_fem", name: "Saia longa preta", pants: "#2b2b2b", desc: "Saia midi", gender: "fem" },
   { id: "legging_fem", name: "Legging vinho", pants: "#6b2630", desc: "Legging justa", gender: "fem" },
   { id: "calca_flare_fem", name: "Calça flare", pants: "#6b5a4a", desc: "Calça flare", gender: "fem" },
