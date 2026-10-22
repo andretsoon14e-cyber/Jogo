@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<title>Calibragem Personagens - Vale Aconchegante</title>
+<style>
+body{font-family:system-ui;background:#f6f3eb;color:#2b1e12;margin:0;padding:20px}
+h1{margin:0 0 8px}
+.card{background:#fff;border:2px solid #d9c9a8;border-radius:16px;padding:16px;margin:14px 0}
+.row{display:flex;gap:18px;flex-wrap:wrap;align-items:center}
+.tile{width:180px;height:180px;border:2px solid #e8dcc0;border-radius:12px;object-fit:contain;background:#fff8e7}
+.btn{padding:10px 14px;border:none;border-radius:10px;background:#7a3a2a;color:#fff;cursor:pointer;font-weight:700;margin-right:8px}
+.btn2{background:#2a6b4a}
+.btn3{background:#4a5a8a}
+small{color:#6b5430}
+</style>
+</head>
+<body>
+<h1>🎨 Calibragem do Modelo — Vale Aconchegante</h1>
+<p>Este painel é o script que você pediu: a cada geração eu te mando <b>2 opções de bonequinho de MAPA</b> (estilo Stardew no mapa, com detalhes) + <b>1 retrato realista</b> (estilo conversa). Você escolhe:</p>
+<ul>
+<li><b>Selecionar A / Selecionar B</b> → vira o boneco oficial</li>
+<li><b>Sugerir ajuste</b> → você escreve o que mudar (ex: cabelo maior, roupa azul)</li>
+<li><b>Gerar de novo</b> → gero outras 2 variações na mesma idade</li>
+</ul>
+<div class="card">
+<h3>Idade atual: <span id="idade">Adulto Homem</span> (teste só no seu boneco)</h3>
+<div class="row">
+<img id="optA" class="tile" src="../client/assets/body_adult_masc_A.png"/>
+<img id="optB" class="tile" src="../client/assets/body_adult_masc_B.png"/>
+<img id="retrato" class="tile" src="../client/assets/portrait_maria.png" onerror="this.src='../client/assets/body_adult_masc_A.png'"/>
+</div>
+<div style="margin-top:12px">
+<button class="btn" onclick="alert('Diga no chat: Selecionar A')">Selecionar A</button>
+<button class="btn" onclick="alert('Diga no chat: Selecionar B')">Selecionar B</button>
+<button class="btn btn2" onclick="let s=prompt('O que ajustar? ex: cabelo mais volumoso, camisa com gola'); if(s) alert('Envie no chat: Sugestão: '+s)">Sugerir ajuste</button>
+<button class="btn btn3" onclick="alert('Diga no chat: Gerar de novo')">Gerar de novo</button>
+</div>
+<small>Dica: Skip no gerador anterior só <b>pula</b>, não gera de novo. É normal. Diga “Gerar de novo” no chat que eu gero outras 2 na hora no estilo certo.</small>
+</div>
+<p>🔁 Fluxo que você pediu: <b>bonequinho de MAPA</b> (chibi Stardew, pé no chão, 4 direções) + <b>imagem “real” de CONVERSA</b> (rosto/pescoço detalhado, mais realista, tipo primeira referência). Vamos calibrar idade por idade: bebê → criança → teen → adulto → velho. Começando pelo <b>seu boneco adulto</b>.</p>
+</body>
+</html>
