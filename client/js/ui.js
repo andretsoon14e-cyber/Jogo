@@ -189,11 +189,11 @@ export function updateHotbar() {
       const meta = itemMeta(slot.id);
       // ícone grande preenchido Stardew-like: usa iconImg se disponível (ferramentas/crops) senão emoji fallback
       let iconHtml = meta.icon;
-      try { const url = iconImg(slot.id); if(url && url.includes("<img")) iconHtml = url.replace('width="24"','width="68"').replace('height="24"','height="68"').replace('size:24px','size:68px').replace('width="60"','width="68"').replace('height="60"','height="68"'); } catch {}
+      try { const url = iconImg(slot.id); if(url && url.includes("<img")) iconHtml = url.replace('width="24"','width="78"').replace('height="24"','height="78"').replace('size:24px','size:78px').replace('width="60"','width="78"').replace('height="60"','height="78"'); } catch {}
       // fallback: se ainda emoji, mantém mas centraliza grande
       d.innerHTML = `
         <div class="key">${i + 1}</div>
-        <div class="icon" style="width:70px;height:70px;display:flex;align-items:center;justify-content:center;font-size:32px;">${iconHtml}</div>
+        <div class="icon" style="width:78px;height:78px;display:flex;align-items:center;justify-content:center;font-size:32px;">${iconHtml}</div>
         ${slot.qty > 1 ? `<div class="count">x${slot.qty}</div>` : ""}`;
       d.title = meta.name;
       d.onclick = () => selectSlot(i);
