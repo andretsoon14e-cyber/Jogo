@@ -439,8 +439,8 @@ img.pxIcon, .emj { image-rendering: pixelated; image-rendering: crisp-edges; }
   transform: translateY(-3px);
 }
 .slot .key { position: absolute; top: 1px; left: 3px; font-size: 8.5px; font-weight: 700; color: #8a7258; }
-.slot .icon { display: flex; align-items: center; justify-content: center; }
-.slot .icon img { width: 70px; height: 70px; image-rendering: pixelated; filter: drop-shadow(0 1px 0 rgba(0,0,0,.2)); }
+.slot .icon { display: flex; align-items: center; justify-content: center; width: 70px; height: 70px; }
+.slot .icon img { width: 68px; height: 68px; image-rendering: pixelated; image-rendering: crisp-edges; object-fit: contain; filter: drop-shadow(0 1px 0 rgba(0,0,0,.2)); }
 .slot .slotName {
   font-size: 7px; font-weight: 700; max-width: 56px; overflow: hidden;
   white-space: nowrap; text-overflow: ellipsis; margin-top: 1px; color: #6b5334; opacity:.85;
@@ -871,7 +871,7 @@ kbd {
   #chatBox { width: 230px; bottom: 74px; }
   #hotbarSlots { padding: 6px; gap: 4px; }
   .slot { width: 62px; height: 62px; }
-  .slot .icon img { width: 52px; height: 52px; }
+  .slot .icon img { width: 50px; height: 50px; object-fit: contain; image-rendering: pixelated; image-rendering: crisp-edges; }
   .slot .slotName { font-size: 6.5px; max-width: 50px; }
   .hotbarHint { display: none; }
   .statusCard { min-width: 0; padding: 4px 8px; }
