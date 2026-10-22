@@ -10,17 +10,23 @@ Pixel art acolhedora e original, inspirada em atmosfera de fazenda, sem cópia 1
 
 ## Retratos de Diálogo
 **Decisão 2026-10-22:** Pixel art detalhada, maior que sprite de mapa. Não realista fora do estilo.
-- Referência: 64x64 px aquivo-fonte, exibição ~112px (ver `client/js/ui.js:560 portraitSize=112`, `client/js/art/ui-binding.js:258`).
-- Preservar bordas nítidas, `image-rendering: pixelated`, sem borrão ao ampliar.
-- Enquadramento: rosto + torso, sem cortar topo/cabeça, corresponde a identidade do sprite mapa.
+**Auditoria 2026-10-22:**
+- Sprite mapa: 16x24 base (W=16 H=24, PIX=1), exibição em mapa ~16*PIX*scale (0.7-1.08 tier), 4 direções, 4 quadros walk.
+- Retrato atual: `client/js/art/ui-binding.js:177 npcPortrait(npc,size=96)` → `size=112` em `client/js/ui.js:560 portraitSize=112`, canvas 112x112, recorte `cropH = sh*0.68` (busto rosto+torso), escala `scale = size/sw` → dw=112, dh≈76, sombra elíptica, moldura dupla madeira #6b4a2e(3px)+#d9c79a(2px)+#6b4a2e25%(1px), placa nome 16% altura.
+- Renderização: `image-rendering: pixelated; crisp-edges`, `drawImage` com `imageSmoothingEnabled=false`, sem `filter: blur`, preserva pixels nítidos.
+**Especificação visual retrato:**
+- Enquadramento: busto centralizado (face + ombros + parte tronco), não corta topo cabeça, olhos 1/3 superior, queixo 60% altura, margem 8px borda interna.
+- Expressão: neutra acolhedora (base), variação sazonal via `seasonSpec` (cachecol/paleta), sem animação facial além de piscar sutil se cols>=7.
+- Detalhes: 1.75x mais pixels que mapa (112 vs 64 ref), permite íris, brilho olho, sobrancelha, textura cabelo/chapéu visível, colar/brinco.
+- Paleta: mesma `shared/constants.js` NPC_SPECS (pele #ffe0bd→#5a3a28, cabelo, camisa), consistência garantida via `characterFrames(baseSpec)` → mesmo `spec` do sprite mapa.
+- Resolução: 64x64 arquivo-fonte como referência inicial é **adequada** mas **112 canvas é superior** — justifica manter 112: comporta moldura dupla (6px) + placa nome (17px) + margem, sem precisar upscale 64→112 (=1.75x) que introduziria pixel duplicado 1.75 (fração). Render direto em 112 com `scale=size/sw` mantém pixels inteiros quando sw=16 → 112/16=7x inteiro, sem borrão. Se migrar para arquivo PNG 64x64, exibição 112 exigiria 1.75x fracionado → borrão ou padding; portanto manter geração procedural em 112 é técnica correta para pixel art nítida.
+- Correspondência: `baseSpec = NPC_SPECS[npc.id] || fallback` + `seasonSpec` → mesmo `shirt/pants/skin/hair/hat` do sprite mapa, garantido por `characterFrames` compartilhado.
 
 ## HUD / Hotbar
 **Decisão 2026-10-22:** Problema é na HUD/hotbar do jogo, não ícone do .exe Windows.
-- Container `.slot` 80x80 (62x62 mobile), gap 6px, padding 8px.
-- Ícone asset 16x16 base (`client/js/art/icons.js` S=16), exibido como `<img>` 70x70 dentro de `.icon` 60x60.
-- Dimensão útil do desenho < tamanho do arquivo: desenho centralizado com padding interno (ex: 3-13px usados), causa ícone pequeno visual mesmo com quadrado 70px.
-- Correção: investigar `client/js/art/icons.js` desenho útil vs `client/js/ui.js:192 iconHtml` scale 60x60 vs `client/css/style.css:443 .slot .icon img 70x70` + `client/css/style.css:418 #hotbarSlots` container.
-- Manter proporções, alinhamento, nitidez; verificar em resoluções.
+- Container `.slot` 80x80 (62x62 mobile), `#hotbarSlots` gap6 pad8, fundo pergaminho.
+- Ícone asset 16x16 (`client/js/art/icons.js` S=16), desenho útil ~10px (3-13px), exibido como `<img>` 78x78 + `transform scale1.55` dentro `.icon 78x78 overflow:hidden` → visível ~66px toca 2 extremidades (foice diagonais, pequeno cima/baixo).
+- Correção aplicada 22/10: CSS `.slot .icon 78x78` + `img 78x78 scale1.55` + JS `iconImg 78x78/div 78x78` (era 60), validado visual, sem esticar/borrar, madeira/pergaminho mantido.
 
 ## Bases Corporais
 - Auditoria 2026-10-22: 15 bodies existentes (`body_baby_generic.png` + child_masc_A/B, child_fem_A/B, teen_masc_A/B, teen_fem_A/B, adult_masc_A/B, adult_fem_A/B, elder_masc_A, elder_fem_A) — faltam elder_fem_B, elder_masc_B para completar hipótese 9 bases (1 bebê + 2x4 estágios).
