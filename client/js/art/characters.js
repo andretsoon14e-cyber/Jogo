@@ -23,8 +23,8 @@ export function isPremiumNpc(id){ return !!PREMIUM_NPC_CONFIG[id]; }
 export function premiumReady(id){ const img = premiumImages[id]; return !!(img && img.complete && img.naturalWidth > 0); }
 // Body base hand-drawn layers
 const bodyImages={}; const layerImages={};
-function loadBodyAsset(asset){ if(!asset) return null; if(bodyImages[asset]) return bodyImages[asset]; if(typeof window==='undefined' || typeof Image==='undefined') return null; const img=new Image(); img.src='assets/'+asset; bodyImages[asset]=img; return img; }
-function loadLayerAsset(asset){ if(!asset) return null; if(layerImages[asset]) return layerImages[asset]; if(typeof window==='undefined' || typeof Image==='undefined') return null; const img=new Image(); img.src='assets/'+asset; layerImages[asset]=img; return img; }
+function loadBodyAsset(asset){ if(!asset) return null; if(bodyImages[asset]) return bodyImages[asset]; if(typeof window==='undefined' || typeof Image==='undefined') return null; const img=new Image(); img.src='assets/'+asset; img.onload=()=>{ try{ delete window.__charCache; }catch{} try{ if(typeof window!=='undefined' && window.refreshPreview) window.refreshPreview(); }catch{} }; bodyImages[asset]=img; return img; }
+function loadLayerAsset(asset){ if(!asset) return null; if(layerImages[asset]) return layerImages[asset]; if(typeof window==='undefined' || typeof Image==='undefined') return null; const img=new Image(); img.src='assets/'+asset; img.onload=()=>{ try{ delete window.__charCache; }catch{} try{ if(typeof window!=='undefined' && window.refreshPreview) window.refreshPreview(); }catch{} }; layerImages[asset]=img; return img; }
 export function bodyReady(asset){ const img=bodyImages[asset]||loadBodyAsset(asset); return !!(img && img.complete && img.naturalWidth>0); }
 export function drawPremiumNpc(ctx, npcId, { x, y, dir="down", moving=false, time=0 }){
   const cfg = PREMIUM_NPC_CONFIG[npcId];
@@ -330,18 +330,26 @@ function drawBody(g, spec, dir, frame, act, toolPhase = 0) {
   if(spec.bodyAsset){
     const bImg = loadBodyAsset(spec.bodyAsset);
     if(bImg && bImg.complete && bImg.naturalWidth>0){
-      // limpa o que foi desenhado procedural de corpo? desenha por cima como base
-      // body ocupa 16x24 base, desenha centralizado
-      g.drawImage(bImg, 0, 0, W, H);
+      // body PNG é 1024, escala para W x H (16x24) cobrindo todo o canvas base
+      g.clearRect(0,0,W,H);
+      g.drawImage(bImg, 0, 0, bImg.naturalWidth, bImg.naturalHeight, 0, 0, W, H);
     }
   }
   if(spec.shirtAsset){
     const lImg = loadLayerAsset(spec.shirtAsset);
-    if(lImg && lImg.complete && lImg.naturalWidth>0){ g.drawImage(lImg, 0, 6, W, H*0.6); }
+    if(lImg && lImg.complete && lImg.naturalWidth>0){ g.drawImage(lImg, 0, 0, lImg.naturalWidth, lImg.naturalHeight, 0, 6, W, H*0.6); }
   }
   if(spec.pantsAsset){
     const pImg = loadLayerAsset(spec.pantsAsset);
-    if(pImg && pImg.complete && pImg.naturalWidth>0){ g.drawImage(pImg, 0, 13, W, H*0.45); }
+    if(pImg && pImg.complete && pImg.naturalWidth>0){ g.drawImage(pImg, 0, 0, pImg.naturalWidth, pImg.naturalHeight, 0, 13, W, H*0.45); }
+  }
+  if(spec.hairAsset){
+    const hImg = loadLayerAsset(spec.hairAsset);
+    if(hImg && hImg.complete && hImg.naturalWidth>0){ g.drawImage(hImg, 0, 0, hImg.naturalWidth, hImg.naturalHeight, 0, 0, W, H*0.5); }
+  }
+  if(spec.hatAsset){
+    const haImg = loadLayerAsset(spec.hatAsset);
+    if(haImg && haImg.complete && haImg.naturalWidth>0){ g.drawImage(haImg, 0, 0, haImg.naturalWidth, haImg.naturalHeight, 0, 0, W, H*0.5); }
   }
   // padrão da camisa — agora realmente aparece o design escolhido
   const design = spec.shirtDesign || "solid";

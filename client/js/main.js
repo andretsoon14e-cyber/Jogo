@@ -194,7 +194,7 @@ function initLogin() {
     txt.textContent="—";
     center.appendChild(swatch); center.appendChild(emoji); center.appendChild(txt);
     const right = document.createElement("button");
-    right.type="button"; right.textContent="▶"; right.className="arrowBtnRight";
+    right.type="button"; right.textContent=""; right.className="arrowBtnRight";
     right.style.cssText="width:28px;height:28px;border-radius:6px;border:1.5px solid #b8882a;background:#ffe9a8;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;";
     function cycle(dir){
       const cur = game.skinParts[key];
@@ -292,10 +292,10 @@ function setMode(newMode, silent = false) {
     hint.textContent = game.token
       ? "Sessão salva encontrada. Deixe a senha vazia para entrar rapidinho."
       : "Entre com sua conta para salvar seu progresso em todos os mundos.";
-    playBtn.textContent = "Entrar no Vale";
+    playBtn.textContent = "Jogar";
   } else {
     hint.textContent = "Modo visitante: dá para jogar tudo, mas o progresso não é salvo ao sair.";
-    playBtn.innerHTML = `<img src="${iconURL("play")}" width="18" height="18" style="image-rendering:pixelated;vertical-align:-3px;margin-right:6px" alt=""> Jogar como visitante`;
+    playBtn.textContent = "Jogar como visitante";
   }
   if (!silent) document.getElementById("loginError").textContent = "";
   localStorage.setItem("vale_mode", mode);

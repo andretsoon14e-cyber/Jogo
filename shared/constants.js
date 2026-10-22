@@ -524,7 +524,9 @@ export function buildCustomSpec(baseId, hatId, shirtId, necklaceId, braceletId, 
   const bodyAsset = bodyOpt ? bodyOpt.asset : null;
   const bodyScale = bodyOpt ? bodyOpt.scale : 1;
   const bodyAge = bodyOpt ? bodyOpt.age : "adult";
-  return { id: baseId, ...base, ...fb, skin, skinShade, hairStyle, hair, hairDark, shirt: shirtOpt.shirt, shirtDark: shirtOpt.shirtDark, shirtDesign: shirtOpt.design || "solid", shirtAsset: shirtOpt.asset || null, pantsAsset: pantsOpt ? pantsOpt.asset : null, pants, eyeColor, eyeLight, hat: hatOpt.hat, necklace: neckOpt.necklace, bracelet: braceOpt.bracelet, bodyAsset, bodyScale, bodyAge, bodyId: bodyOpt ? bodyOpt.id : "adult_masc_A", _customKey: `${baseId}|${hatId}|${shirtId}|${necklaceId}|${braceletId}|${skinToneId||""}|${hairStyleId||""}|${hairColorId||""}|${pantsId||""}|${eyeColorId||""}|${bodyId||""}` };
+  const hairAsset = hairStyleOpt ? hairStyleOpt.asset : null;
+  const hatAsset = hatOpt ? hatOpt.asset : null;
+  return { id: baseId, ...base, ...fb, skin, skinShade, hairStyle, hair, hairDark, shirt: shirtOpt.shirt, shirtDark: shirtOpt.shirtDark, shirtDesign: shirtOpt.design || "solid", shirtAsset: shirtOpt.asset || null, pantsAsset: pantsOpt ? pantsOpt.asset : null, pants, eyeColor, eyeLight, hat: hatOpt.hat, hatAsset, hairAsset, necklace: neckOpt.necklace, bracelet: braceOpt.bracelet, bodyAsset, bodyScale, bodyAge, bodyId: bodyOpt ? bodyOpt.id : "adult_masc_A", _customKey: `${baseId}|${hatId}|${shirtId}|${necklaceId}|${braceletId}|${skinToneId||""}|${hairStyleId||""}|${hairColorId||""}|${pantsId||""}|${eyeColorId||""}|${bodyId||""}` };
 }
 
 
