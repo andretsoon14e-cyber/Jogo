@@ -211,8 +211,8 @@ function initLogin() {
     row.appendChild(lab); row.appendChild(left); row.appendChild(center); row.appendChild(right);
     container.appendChild(row);
   }
-  // helper para criar rows já filtradas
-  window.rebuildModularPick = function(){
+  // helper para criar rows já filtradas — definido como função léxica (ES module) + exposto em window para compat
+  function rebuildModularPick(){
     container.innerHTML = "";
     // Pele — quadradinhos mini só cor (pedido: só quadradinhos)
     (function(){
@@ -248,7 +248,9 @@ function initLogin() {
     createArrowRow("Chapéu", filteredByGender(HAT_OPTIONS, game.skinParts.gender), "hat");
     createArrowRow("Colar", NECKLACE_OPTIONS, "necklace");
     createArrowRow("Pulseira", BRACELET_OPTIONS, "bracelet");
-  };
+  }
+  // expõe para debug/console e mantém compat com window
+  try{ window.rebuildModularPick = rebuildModularPick; }catch{}
   rebuildModularPick();
   refreshPreview();
 

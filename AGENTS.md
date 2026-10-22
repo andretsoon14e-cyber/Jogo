@@ -19,8 +19,8 @@ Verificar atualizações: `npx skills check`
 Atualizar: `npx skills update -y`
 Remover: `npx skills remove <nome>`
 
-Instaladas agora (9 via `vercel-labs/agent-skills` + 1 local):
-- `deploy-to-vercel`, `vercel-cli-with-tokens`, `vercel-composition-patterns`, `vercel-optimize`, `vercel-react-best-practices`, `vercel-react-native-skills`, `vercel-react-view-transitions`, `web-design-guidelines`, `writing-guidelines`
+Instaladas agora (10 via `vercel-labs/agent-skills`+`obra/superpowers` + 1 local):
+- `deploy-to-vercel`, `vercel-cli-with-tokens`, `vercel-composition-patterns`, `vercel-optimize`, `vercel-react-best-practices`, `vercel-react-native-skills`, `vercel-react-view-transitions`, `web-design-guidelines`, `writing-guidelines`, `systematic-debugging` (obra/superpowers)
 - `vale-dev-docs` (local em `skills/vale-dev-docs/SKILL.md` — padrão explícito, não depende do instalador)
 
 ### Como um agente deve usar
