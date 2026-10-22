@@ -1228,7 +1228,8 @@ function initCover() {
     document.getElementById("coverScreen")?.classList.add("active");
     try { initCoverCanvas(); } catch {}
   };
-  document.getElementById("btnCoverPlay")?.addEventListener("click", () => { toLogin(); sfx("open"); });
+  document.getElementById("btnCoverPlay")?.addEventListener("click", () => { const loginActive = document.getElementById("loginScreen")?.classList.contains("active"); if (loginActive) { play(); return; } // se já está no criador, Jogar inicia direto
+    toLogin(); sfx("open"); });
   document.getElementById("btnCoverContinue")?.addEventListener("click", () => {
     const name = localStorage.getItem("vale_name");
     if (name) document.getElementById("inpName").value = name;
