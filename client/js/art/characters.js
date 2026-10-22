@@ -49,9 +49,12 @@ export function drawPremiumNpc(ctx, npcId, { x, y, dir="down", moving=false, tim
   const fh = img.naturalHeight / cfg.rows;
   const sx = col * fw, sy = row * fh;
   const dw = W * PIX * 1.35, dh = H * PIX * 1.35;
-  // sem sombra - removido holograma, pés pisam no chão
   const yFix = y + (dh - H*PIX*1.18);
-  const bob = moving ? Math.sin(time*8)*1.2 : 0;
+  const bob = moving ? Math.sin(time*8)*0.8 : 0;
+  // sombra firme no chão
+  const cx = x + dw/2, cy = yFix + dh - 4;
+  ctx.fillStyle = "rgba(20,18,12,0.30)";
+  ctx.beginPath(); ctx.ellipse(cx, cy, dw*0.28, 3.5, 0, 0, Math.PI*2); ctx.fill();
   y = yFix;
   ctx.save();
   ctx.imageSmoothingEnabled = false;
@@ -324,8 +327,10 @@ function drawBody(g, spec, dir, frame, act, toolPhase = 0) {
     if(bImg && bImg.complete && bImg.naturalWidth>0){
       const s = spec.bodyScale || 1;
       const sw = W*PIX*s, sh = H*PIX*s;
-      const sx0 = (W*PIX - sw)/2, sy0 = (H*PIX - sh);
-      // clear e desenha cobrindo canvas com escala e ancorado nos pés
+      // pernas com fluidez: leve balanço lateral por frame (mãos estáticas, só pernas mexem)
+      const swing = side ? 0 : ([0, 0.35, 0, -0.35][frame] || 0);
+      const sx0 = (W*PIX - sw)/2 + swing*PIX;
+      const sy0 = (H*PIX - sh);
       g.clearRect(0,0,W*PIX,H*PIX);
       g.drawImage(bImg, 0, 0, bImg.naturalWidth, bImg.naturalHeight, sx0, sy0, sw, sh);
     }
@@ -865,11 +870,17 @@ export const NPC_SPECS = {
 export function drawCharacter(ctx, atlas, dir, { x, y, moving, action, time = 0, alpha = 1 }) {
   const d = atlas ? (atlas[dir] ? dir : "down") : "down";
   const frames = atlas[d] || atlas.down;
-  const f = moving ? (Math.floor(time * 8) % 4) : 0;
+  // pernas com fluidez: 8fps, mãos estáticas (sem balanço de braço)
+  const f = moving ? (Math.floor(time * 9) % 4) : 0;
   const img = frames[f] || frames[0];
-  const bob = moving ? Math.sin(time * 10) * 0.7 : 0;
+  const bob = moving ? Math.sin(time * 10) * 0.5 : 0;
   ctx.save();
   ctx.globalAlpha = alpha;
+  // sombra no chão - dá impressão que tá pisando, não flutuando
+  const cx = x + W*PIX/2, cy = y + H*PIX - 3;
+  const rx = W*PIX*0.28, ry = 3.2;
+  ctx.fillStyle = "rgba(20,18,12,0.28)";
+  ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI*2); ctx.fill();
   ctx.drawImage(img, Math.round(x), Math.round(y + bob));
   ctx.restore();
 }
