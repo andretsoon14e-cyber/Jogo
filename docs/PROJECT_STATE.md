@@ -14,7 +14,7 @@ Atualizado: 2026-10-22 — PR aberto, HEAD 1d1c55e
 
 | # | Tarefa | Status | Evidência / Pendência |
 |---|--------|--------|------------------------|
-| 1 | HUD e hotbar — ícones proporcionais | **PARCIAL — FIX APLICADO** | Fix aplicado: CSS `.slot .icon img 68x68` + CSS `.slot .icon 70x70` + JS `icon div 70x70 / img 68x68` (era 60). Causa confirmada padding interno asset 16x16. Pendente validar em execução com `npm start` (hotbar 80x80, ícone 68 preenchendo, sem esticar/borrar, madeira/pergaminho mantido). |
+| 1 | HUD e hotbar — ícones proporcionais | **CONCLUÍDA** | Fix validado pelo usuário 22/10: slot 80 → icon 78 → img 78 + scale 1.55 (~66px visível) toca 2 extremidades (foice diagonais, item pequeno cima/baixo), sem esticar/borrar, mobile 62→60+scale, madeira/pergaminho mantido. Arquivos: client/css/style.css:442-443 + client/js/ui.js:192/196. |
 | 2 | Retratos diálogo pixel art | **PARCIAL — AUDITORIA FEITA** | Dimensões nativas 64x64 ref, exibição 112px (`ui.js:560`), render via `npcPortrait` canvas com `image-rendering pixelated`. Falta spec enquadramento/paleta e validar sem borrão na interface real. |
 | 3 | Bases corporais — matriz 9 bases | **PARCIAL — INVENTÁRIO FEITO** | 15 bodies: baby_generic 1, child M2/F2, teen M2/F2, adult M2/F2, elder M1/F1. Faltam elder_masc_B/fem_B para 9 hipótese. Proposta visual pendente, folha contato/prévia pendente. |
 | 4 | Roupas — proposta antes produção | **PARCIAL — PROPOSTA ENVIADA** | Inventário auditado: HAT 17(3 PNG), SHIRT 16(2), PANTS 16(5), HAIR 20(6), BODY 15, assets 21. Lacunas: sem PNG = procedural cor. Proposta 20 nomes/cores/estilos enviada em `docs/PROPOSTA_ROUPAS.md` aguardando sua revisão antes de produzir PNG finais — sem duplicação, filtros mantidos. |
@@ -32,7 +32,7 @@ Atualizado: 2026-10-22 — PR aberto, HEAD 1d1c55e
 - Listagem completa em `shared/constants.js:329-429` e `client/assets/layer_*.png`.
 
 **HUD/Hotbar Auditoria:**
-- `client/css/style.css:413 #hotbar`, `418 #hotbarSlots` (flex gap6 pad8), `443 .slot .icon img 70x70` vs `client/js/ui.js:192 icon div 60x60` — mismatch 10px + padding interno ícone 16x16.
+- `client/css/style.css:442 .slot .icon 78x78` + `443 img 78x78 scale1.55` vs `client/js/ui.js:192/196 78x78` — validado visual 22/10 toca 2 extremidades.
 
 **Retrato Auditoria:**
 - `client/js/art/ui-binding.js:258` escala ampliada para retrato grande, `client/js/ui.js:560 portraitSize=112` canvas, `image-rendering pixelated` ok, recorte rosto preservado.
