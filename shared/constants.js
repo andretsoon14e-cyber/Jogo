@@ -328,7 +328,7 @@ export const PLAYER_SKINS = [
 
 export const HAT_OPTIONS = [
   { id: "none", name: "Sem chapéu", hat: { type: "none" }, gender: "uni" },
-  { id: "straw", name: "Chapéu palha", hat: { type: "straw", color: "#e6c979" }, gender: "uni" },
+  { id: "straw", name: "Chapéu palha", hat: { type: "straw", color: "#e6c979" }, gender: "uni", asset: "layer_hat_straw.png" },
   { id: "straw_red", name: "Palha vermelha", hat: { type: "straw", color: "#d9a86a" }, gender: "uni" },
   { id: "straw_flower", name: "Palha com flor", hat: { type: "flower", color: "#e6c979", color2: "#ff6b8a" }, gender: "fem" },
   { id: "cap_blue", name: "Boné azul", hat: { type: "cap", color: "#3f6f9e" }, gender: "masc" },
@@ -349,8 +349,8 @@ export const SHIRT_OPTIONS = [
   { id: "red", name: "Xadrez morango", shirt: "#e2695e", shirtDark: "#b74d46", design: "plaid", desc: "Xadrez vermelho", gender: "fem" },
   { id: "blue", name: "Laço azul", shirt: "#5b9bd5", shirtDark: "#3f79ad", design: "bow", desc: "Azul com laço", gender: "fem" },
   { id: "yellow", name: "Floral amarela", shirt: "#e8c15c", shirtDark: "#c19a3d", design: "floral", desc: "Amarela floral", gender: "fem" },
-  { id: "green", name: "Suéter cogumelo", shirt: "#7cb98a", shirtDark: "#5a9470", design: "sweater", desc: "Verde tricô", gender: "fem" },
-  { id: "purple", name: "Babados lilás", shirt: "#b58fd1", shirtDark: "#8f6bab", design: "ruffled", desc: "Lilás babados", gender: "fem" },
+  { id: "green", name: "Suéter cogumelo", shirt: "#7cb98a", shirtDark: "#5a9470", design: "sweater", desc: "Verde tricô", gender: "fem", asset: "layer_shirt_yellow.png" },
+  { id: "purple", name: "Babados lilás", shirt: "#b58fd1", shirtDark: "#8f6bab", design: "ruffled", desc: "Lilás babados", gender: "fem", asset: "layer_shirt_white.png" },
   { id: "pink", name: "Corações rosa", shirt: "#ff9a9e", shirtDark: "#c97a7e", design: "hearts", desc: "Rosa corações", gender: "fem" },
   { id: "cream", name: "Jardineira trigo", shirt: "#ffecd2", shirtDark: "#c9a86a", design: "jumpsuit", desc: "Creme trigo", gender: "fem" },
   { id: "blusa_fem", name: "Blusa amarela", shirt: "#f1c40f", shirtDark: "#b7950b", design: "solid", desc: "Amarela solta", gender: "fem" },
@@ -384,7 +384,7 @@ export const PANTS_OPTIONS = [
   { id: "bege", name: "Bege", pants: "#d9c9a4", desc: "Sarja clara", gender: "masc" },
   { id: "marrom", name: "Marrom", pants: "#6b4a2f", desc: "Marrom terra", gender: "masc" },
   { id: "jeans_claro", name: "Jeans claro", pants: "#6b7d9c", desc: "Jeans lavado", gender: "masc" },
-  { id: "caqui", name: "Cáqui", pants: "#c2a46a", desc: "Cáqui campo", gender: "masc" },
+  { id: "caqui", name: "Cáqui", pants: "#c2a46a", desc: "Cáqui campo", gender: "masc", asset: "layer_pants_cargo.png" },
   { id: "bermuda", name: "Bermuda cáqui", pants: "#c2b280", desc: "Bermuda verão", gender: "masc" },
   { id: "cargo_masc", name: "Cargo verde", pants: "#4a5a3a", desc: "Cargo militar", gender: "masc" },
   { id: "preto", name: "Preto", pants: "#2b2b2b", desc: "Preto urbano", gender: "uni" },
