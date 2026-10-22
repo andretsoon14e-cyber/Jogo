@@ -453,7 +453,9 @@ export const BODY_OPTIONS = [
   { id: "adult_fem_A", name: "Adulto mulher A", age: "adult", gender: "fem", asset: "body_adult_fem_A.png", scale: 0.98 },
   { id: "adult_fem_B", name: "Adulto mulher B", age: "adult", gender: "fem", asset: "body_adult_fem_B.png", scale: 0.98 },
   { id: "elder_masc_A", name: "Velhinho", age: "elder", gender: "masc", asset: "body_elder_masc_A.png", scale: 0.97 },
+  { id: "elder_masc_B", name: "Velhinho B", age: "elder", gender: "masc", asset: "body_elder_masc_B.png", scale: 0.97 },
   { id: "elder_fem_A", name: "Velhinha", age: "elder", gender: "fem", asset: "body_elder_fem_A.png", scale: 0.95 },
+  { id: "elder_fem_B", name: "Velhinha B", age: "elder", gender: "fem", asset: "body_elder_fem_B.png", scale: 0.95 },
 ];
 export const GENDER_OPTIONS = [
   { id: "fem", name: "Feminino" },
