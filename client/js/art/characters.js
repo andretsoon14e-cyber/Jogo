@@ -21,6 +21,11 @@ if (typeof window !== "undefined" && typeof Image !== "undefined") {
 }
 export function isPremiumNpc(id){ return !!PREMIUM_NPC_CONFIG[id]; }
 export function premiumReady(id){ const img = premiumImages[id]; return !!(img && img.complete && img.naturalWidth > 0); }
+// Body base hand-drawn layers
+const bodyImages={}; const layerImages={};
+function loadBodyAsset(asset){ if(!asset) return null; if(bodyImages[asset]) return bodyImages[asset]; if(typeof window==='undefined' || typeof Image==='undefined') return null; const img=new Image(); img.src='assets/'+asset; bodyImages[asset]=img; return img; }
+function loadLayerAsset(asset){ if(!asset) return null; if(layerImages[asset]) return layerImages[asset]; if(typeof window==='undefined' || typeof Image==='undefined') return null; const img=new Image(); img.src='assets/'+asset; layerImages[asset]=img; return img; }
+export function bodyReady(asset){ const img=bodyImages[asset]||loadBodyAsset(asset); return !!(img && img.complete && img.naturalWidth>0); }
 export function drawPremiumNpc(ctx, npcId, { x, y, dir="down", moving=false, time=0 }){
   const cfg = PREMIUM_NPC_CONFIG[npcId];
   const img = premiumImages[npcId];
@@ -320,6 +325,23 @@ function drawBody(g, spec, dir, frame, act, toolPhase = 0) {
     // detalhe da costura lateral para realce
     rect(g, 5.0, 11.2, 0.4, 4.2, shade(shirt, 0.10));
     rect(g, 10.6, 11.2, 0.4, 4.2, shade(shirtDark, 0.08));
+  }
+  // camadas desenhadas à mão se existirem (Stardew level) - desenha por cima do corpo base
+  if(spec.bodyAsset){
+    const bImg = loadBodyAsset(spec.bodyAsset);
+    if(bImg && bImg.complete && bImg.naturalWidth>0){
+      // limpa o que foi desenhado procedural de corpo? desenha por cima como base
+      // body ocupa 16x24 base, desenha centralizado
+      g.drawImage(bImg, 0, 0, W, H);
+    }
+  }
+  if(spec.shirtAsset){
+    const lImg = loadLayerAsset(spec.shirtAsset);
+    if(lImg && lImg.complete && lImg.naturalWidth>0){ g.drawImage(lImg, 0, 6, W, H*0.6); }
+  }
+  if(spec.pantsAsset){
+    const pImg = loadLayerAsset(spec.pantsAsset);
+    if(pImg && pImg.complete && pImg.naturalWidth>0){ g.drawImage(pImg, 0, 13, W, H*0.45); }
   }
   // padrão da camisa — agora realmente aparece o design escolhido
   const design = spec.shirtDesign || "solid";

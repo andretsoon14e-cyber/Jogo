@@ -7,7 +7,7 @@ import {
   BUILDINGS, BUILD_OPTIONS, CROPS, NPCS_DATA, ALL_NPCS, PLAYER_SKINS, TILE, SEASONS,
 } from "../../shared/constants.js";
 import { RECIPES, JOBS, REGION_DEFS } from "../../shared/careers.js";
-import { GENDER_OPTIONS, HAT_OPTIONS, SHIRT_OPTIONS, NECKLACE_OPTIONS, BRACELET_OPTIONS, PANTS_OPTIONS, EYE_COLOR_OPTIONS, SKIN_TONE_OPTIONS, HAIR_STYLE_OPTIONS, HAIR_COLOR_OPTIONS, buildCustomSpec, PET_OPTIONS } from "../../shared/constants.js";
+import { GENDER_OPTIONS, HAT_OPTIONS, SHIRT_OPTIONS, NECKLACE_OPTIONS, BRACELET_OPTIONS, PANTS_OPTIONS, EYE_COLOR_OPTIONS, SKIN_TONE_OPTIONS, HAIR_STYLE_OPTIONS, HAIR_COLOR_OPTIONS, buildCustomSpec, PET_OPTIONS, BODY_OPTIONS } from "../../shared/constants.js";
 import { hasFurniturePick, consumeFurniturePick, cancelFurniture } from "./ui.js";
 import * as ui from "./ui.js";
 import { connect } from "./network.js";
@@ -44,7 +44,7 @@ function initLogin() {
   const savedSkin = localStorage.getItem("vale_skin") || "s1";
   game.skin = PLAYER_SKINS.some((s) => s.id === savedSkin) ? savedSkin : "s1";
   // modular parts
-  const defaultParts = { base: savedSkin, hat: HAT_OPTIONS[1]?.id||"none", shirt: SHIRT_OPTIONS[0]?.id||"red", necklace: "none", bracelet: "none", skinTone: SKIN_TONE_OPTIONS[1]?.id||"tone2", hairStyle: HAIR_STYLE_OPTIONS[0]?.id||"long", hairColor: HAIR_COLOR_OPTIONS[0]?.id||"castanho", pants: PANTS_OPTIONS[0]?.id||"jeans", eyeColor: EYE_COLOR_OPTIONS[2]?.id||"brown", farmName: localStorage.getItem("vale_farmName")||"", favorite: localStorage.getItem("vale_favorite")||"", gender: localStorage.getItem("vale_gender")||"fem", pet: localStorage.getItem("vale_pet")||"cat", petName: localStorage.getItem("vale_petName")||"" };
+  const defaultParts = { base: savedSkin, hat: HAT_OPTIONS[1]?.id||"none", shirt: SHIRT_OPTIONS[0]?.id||"red", necklace: "none", bracelet: "none", skinTone: SKIN_TONE_OPTIONS[1]?.id||"tone2", hairStyle: HAIR_STYLE_OPTIONS[0]?.id||"long", hairColor: HAIR_COLOR_OPTIONS[0]?.id||"castanho", pants: PANTS_OPTIONS[0]?.id||"jeans", eyeColor: EYE_COLOR_OPTIONS[2]?.id||"brown", farmName: localStorage.getItem("vale_farmName")||"", favorite: localStorage.getItem("vale_favorite")||"", gender: localStorage.getItem("vale_gender")||"fem", pet: localStorage.getItem("vale_pet")||"cat", petName: localStorage.getItem("vale_petName")||"", body: localStorage.getItem("vale_body")||"adult_masc_A" };
   try {
     game.skinParts = JSON.parse(localStorage.getItem("vale_skin_parts")||"null") || defaultParts;
     for(const k of Object.keys(defaultParts)) if(!(k in game.skinParts)) game.skinParts[k]=defaultParts[k];
@@ -84,13 +84,19 @@ function initLogin() {
         b.style.borderColor=sel?"#b8882a":"#d5bd94";
         b.style.background=sel?"#ffe9a8":"#fffdf4";
       });
-      // rebuild rows filtrando por gênero
+      // se mudar gênero, troca corpo incompatível por equivalente adulto
+      const bodyOk = BODY_OPTIONS.find(b=>b.id===game.skinParts.body);
+      if(bodyOk && bodyOk.gender!=="uni" && bodyOk.gender!==btn.dataset.gender){
+        const alt = BODY_OPTIONS.find(b=>b.gender===btn.dataset.gender && b.age===bodyOk.age) || BODY_OPTIONS.find(b=>b.gender===btn.dataset.gender);
+        if(alt) { game.skinParts.body = alt.id; localStorage.setItem("vale_body", alt.id); }
+      }
+      localStorage.setItem("vale_body", game.skinParts.body);
       try{ rebuildModularPick(); }catch{}
       refreshPreview(); sfx("open");
     };
   });
   function refreshPreview(){
-    const spec = buildCustomSpec(game.skinParts.base, game.skinParts.hat, game.skinParts.shirt, game.skinParts.necklace, game.skinParts.bracelet, game.skinParts.skinTone, game.skinParts.hairStyle, game.skinParts.hairColor, game.skinParts.pants, game.skinParts.eyeColor);
+    const spec = buildCustomSpec(game.skinParts.base, game.skinParts.hat, game.skinParts.shirt, game.skinParts.necklace, game.skinParts.bracelet, game.skinParts.skinTone, game.skinParts.hairStyle, game.skinParts.hairColor, game.skinParts.pants, game.skinParts.eyeColor, game.skinParts.body);
     game.customSpec = spec;
     game.skin = game.skinParts.base;
     localStorage.setItem("vale_skin_parts", JSON.stringify(game.skinParts));
@@ -133,7 +139,7 @@ function initLogin() {
     const wrap = document.getElementById("modularPreview");
     if(!wrap) return;
     wrap.innerHTML="";
-    const spec = buildCustomSpec(game.skinParts.base, game.skinParts.hat, game.skinParts.shirt, game.skinParts.necklace, game.skinParts.bracelet, game.skinParts.skinTone, game.skinParts.hairStyle, game.skinParts.hairColor, game.skinParts.pants, game.skinParts.eyeColor);
+    const spec = buildCustomSpec(game.skinParts.base, game.skinParts.hat, game.skinParts.shirt, game.skinParts.necklace, game.skinParts.bracelet, game.skinParts.skinTone, game.skinParts.hairStyle, game.skinParts.hairColor, game.skinParts.pants, game.skinParts.eyeColor, game.skinParts.body);
     const atlas = characterFrames(spec);
     const cv = document.createElement("canvas");
     // preview ampliado 3× para ver detalhes (usuário reclamou retângulo minúsculo)
@@ -233,6 +239,7 @@ function initLogin() {
       row.appendChild(grid);
       container.appendChild(row);
     })();
+    createArrowRow("Corpo", filteredByGender(BODY_OPTIONS, game.skinParts.gender), "body");
     createArrowRow("Cabelo", filteredByGender(HAIR_STYLE_OPTIONS, game.skinParts.gender), "hairStyle");
     createArrowRow("Cor cabelo", HAIR_COLOR_OPTIONS, "hairColor");
     createArrowRow("Camisa", filteredByGender(SHIRT_OPTIONS, game.skinParts.gender), "shirt");
