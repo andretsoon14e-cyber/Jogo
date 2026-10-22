@@ -33,9 +33,8 @@ export function drawPremiumNpc(ctx, npcId, { x, y, dir="down", moving=false, tim
   let col = 0, row = 0;
   // animação premium: médico tem 7 cols ×2 rows (14 poses), bombeiro 4×1 walk
   if(moving){
-    col = Math.floor(time * 6) % cfg.cols;
-    // médico quando anda usa linha 0, bombeiro só tem 1 linha
-    row = 0;
+    col = Math.floor(time * 7) % cfg.cols;
+    row = (cfg.rows > 1) ? 1 : 0;
   } else {
     // idle sutil: médico alterna entre frente parado (0) e piscar (3) a cada 2s, bombeiro fica parado
     if(cfg.cols >= 7){
@@ -49,17 +48,10 @@ export function drawPremiumNpc(ctx, npcId, { x, y, dir="down", moving=false, tim
   const fw = img.naturalWidth / cfg.cols;
   const fh = img.naturalHeight / cfg.rows;
   const sx = col * fw, sy = row * fh;
-  const dw = W * PIX * 1.55, dh = H * PIX * 1.55;
-  // sombra bem rente aos pés, sem flutuar (user reclamou holograma)
-  const shadowAlpha = moving ? 0.34 : 0.38;
-  const shadowRx = dw*0.32, shadowRy = 5;
-  // pés alinhados no chão: y é topo do sprite, py é chão, então bottom = y + dh deve = py + 6
-  // como chamamos com y = py - 40, compensamos para bottom ficar no chão
-  const yFix = y + (dh - H*PIX*1.2);
-  // sombra removida a pedido do usuário - fica feia
-  // shadow(ctx, x + dw/2, yFix + dh - 10, shadowRx, shadowRy, shadowAlpha);
-  const bob = 0; // estático, sem levantar mão
-  // override y para alinhar pés
+  const dw = W * PIX * 1.35, dh = H * PIX * 1.35;
+  // sem sombra - removido holograma, pés pisam no chão
+  const yFix = y + (dh - H*PIX*1.18);
+  const bob = moving ? Math.sin(time*8)*1.2 : 0;
   y = yFix;
   ctx.save();
   ctx.imageSmoothingEnabled = false;
@@ -330,26 +322,29 @@ function drawBody(g, spec, dir, frame, act, toolPhase = 0) {
   if(spec.bodyAsset){
     const bImg = loadBodyAsset(spec.bodyAsset);
     if(bImg && bImg.complete && bImg.naturalWidth>0){
-      // body PNG é 1024, escala para W x H (16x24) cobrindo todo o canvas base
-      g.clearRect(0,0,W,H);
-      g.drawImage(bImg, 0, 0, bImg.naturalWidth, bImg.naturalHeight, 0, 0, W, H);
+      const s = spec.bodyScale || 1;
+      const sw = W*PIX*s, sh = H*PIX*s;
+      const sx0 = (W*PIX - sw)/2, sy0 = (H*PIX - sh);
+      // clear e desenha cobrindo canvas com escala e ancorado nos pés
+      g.clearRect(0,0,W*PIX,H*PIX);
+      g.drawImage(bImg, 0, 0, bImg.naturalWidth, bImg.naturalHeight, sx0, sy0, sw, sh);
     }
   }
   if(spec.shirtAsset){
     const lImg = loadLayerAsset(spec.shirtAsset);
-    if(lImg && lImg.complete && lImg.naturalWidth>0){ g.drawImage(lImg, 0, 0, lImg.naturalWidth, lImg.naturalHeight, 0, 6, W, H*0.6); }
+    if(lImg && lImg.complete && lImg.naturalWidth>0){ g.drawImage(lImg, 0, 0, lImg.naturalWidth, lImg.naturalHeight, 0, 6*PIX, W*PIX, H*PIX*0.6); }
   }
   if(spec.pantsAsset){
     const pImg = loadLayerAsset(spec.pantsAsset);
-    if(pImg && pImg.complete && pImg.naturalWidth>0){ g.drawImage(pImg, 0, 0, pImg.naturalWidth, pImg.naturalHeight, 0, 13, W, H*0.45); }
+    if(pImg && pImg.complete && pImg.naturalWidth>0){ g.drawImage(pImg, 0, 0, pImg.naturalWidth, pImg.naturalHeight, 0, 13*PIX, W*PIX, H*PIX*0.45); }
   }
   if(spec.hairAsset){
     const hImg = loadLayerAsset(spec.hairAsset);
-    if(hImg && hImg.complete && hImg.naturalWidth>0){ g.drawImage(hImg, 0, 0, hImg.naturalWidth, hImg.naturalHeight, 0, 0, W, H*0.5); }
+    if(hImg && hImg.complete && hImg.naturalWidth>0){ g.drawImage(hImg, 0, 0, hImg.naturalWidth, hImg.naturalHeight, 0, 0, W*PIX, H*PIX*0.5); }
   }
   if(spec.hatAsset){
     const haImg = loadLayerAsset(spec.hatAsset);
-    if(haImg && haImg.complete && haImg.naturalWidth>0){ g.drawImage(haImg, 0, 0, haImg.naturalWidth, haImg.naturalHeight, 0, 0, W, H*0.5); }
+    if(haImg && haImg.complete && haImg.naturalWidth>0){ g.drawImage(haImg, 0, 0, haImg.naturalWidth, haImg.naturalHeight, 0, 0, W*PIX, H*PIX*0.5); }
   }
   // padrão da camisa — agora realmente aparece o design escolhido
   const design = spec.shirtDesign || "solid";
@@ -870,13 +865,12 @@ export const NPC_SPECS = {
 export function drawCharacter(ctx, atlas, dir, { x, y, moving, action, time = 0, alpha = 1 }) {
   const d = atlas ? (atlas[dir] ? dir : "down") : "down";
   const frames = atlas[d] || atlas.down;
-  // usuário pediu SEM animação levantando mão, imagem parada natural, SEM sombra
-  const f = 0; // sempre frame parado
-  const img = frames[f];
+  const f = moving ? (Math.floor(time * 8) % 4) : 0;
+  const img = frames[f] || frames[0];
+  const bob = moving ? Math.sin(time * 10) * 0.7 : 0;
   ctx.save();
   ctx.globalAlpha = alpha;
-  // sombra removida a pedido: ficava feia
-  ctx.drawImage(img, Math.round(x), Math.round(y));
+  ctx.drawImage(img, Math.round(x), Math.round(y + bob));
   ctx.restore();
 }
 
