@@ -14,8 +14,9 @@ Pixel art acolhedora e original: paleta quente (verde-oliva, madeira, pergaminho
 - **Cabeça grande em todas as fases** (12px de altura; 13px no idoso, para caber barba sem esmagar o rosto) e pescoço de 1px. Altura visível (`legH + torsoH + headH - 2`): bebê 24–25, criança 27–30, adolescente 34–36, adulto 40–42, idoso 39–40.
 - Rosto: olhos **3×3** com 1px de brilho, separados por 3px, sobrancelhas de 3px na cor do cabelo, nariz de 1px e boca de 2px. Nada de olho colado no outro (era o defeito da versão 16×32).
 - Corpo em 2–3 tons: luz no lado esquerdo, sombra no direito, contorno `#2a1c12` por fora.
-- Pernas com `legW = (bodyW - 2) / 2` e **gap mínimo de 1px**; calça com cinto + fivela, swing por quadro (f1 frente, f3 trás), barra e sapato/bota de 2px com bico.
-- Mangas de `m.arm` px com punho; a **mão de pele** é desenhada depois da manga (`drawHands`), senão o braço vira um toco.
+- Pernas com `legW = (bodyW - 1) / 2` e **vinco escuro de 1px** entre elas (nunca pele aparecendo no meio); calça com cinto + fivela, joelho marcado, barra e sapato/bota de 2px com bico.
+- Mangas de `m.arm` px com punho; a **mão de pele** é desenhada depois da manga (`drawHands`), alinhada à barra da manga, senão o braço vira um toco.
+- Olhos **3×3** com folga de 2–3px entre eles (gap derivado de `headW/5`), brilho de 1px no miolo; sobrancelhas de 3px; nariz de 1px; boca de 2px. Cabelo com franja de 1px nos cantos e topo arredondado — se o topo ficar reto, vira capacete.
 - Recém-nascido é desenhado por função própria (`drawNewborn`): cabeça apoiada em **manta clara com pregas**, mãozinhas aparecendo, sem pernas nem braços. Variante B usa touca de tricô.
 - Idoso tem `stoop: 1` (costas curvadas), cabelo/barba grisalhos e **bengala** (`spec.cane`, cor opcional); os NPCs idosos da vila já usam.
 

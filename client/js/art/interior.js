@@ -582,7 +582,7 @@ export function renderInterior(ctx, { W, H, time, season, game, characterFrames,
     drawCharacter(ctx, characterFrames(specForLook(look, p.skin || "s1")), p.dir || "down", {
       ...feetAnchor(px, py + 51), moving: isSelf ? game.moving : !!p.moving, time: time + (p.id ? p.id.length : 0),
     });
-    inkText(ctx, p.username || "", px, py + 51 - 99 - 4, { size: 11, fill: isSelf ? "#ffe9a8" : "#eafff0", stroke: "rgba(28,20,12,.85)", lw: 3.5 });
+    inkText(ctx, p.username || "", px, py + 51 - 98 - 4, { size: 11, fill: isSelf ? "#ffe9a8" : "#eafff0", stroke: "rgba(28,20,12,.85)", lw: 3.5 });
   };
   for (const p of game.players.values()) {
     if (p.id === game.selfId) continue;

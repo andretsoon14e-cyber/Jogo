@@ -4,11 +4,13 @@
 // ===========================================================
 import { SEASON_ART, PIX, C, shade, alpha, mix } from "./palette.js";
 import { mkCanvas, hash, cached, inkText } from "./pixel.js";
-import { rigSprite, RIG_SCALE, rigBodyId } from "./rig.js";
+import { rigSprite, RIG_SCALE, RIG_OUT_W, RIG_OUT_H, rigBodyId } from "./rig.js";
 
 export { CHAR_W, CHAR_H } from "./rig.js";
-/** Distância da linha dos pés abaixo do topo do tile (px de tela). */
-export const CHAR_FEET_OFFSET = 51;
+/** Distância da linha dos pés abaixo do topo do tile (px de tela).
+ *  Ajustado para a arte 24×48: pés na linha 48 do sprite (2px acima da base),
+ *  então o sprite termina exatamente sobre a sombra. */
+export const CHAR_FEET_OFFSET = 50;
 
 const W = 16, H = 24;
 // ---- Premium NPCs (imagem gerada) ----
@@ -880,7 +882,7 @@ export function drawCharacter(ctx, atlas, dir, { x, y, moving, action, time = 0,
   const f = moving ? (Math.floor(time * 8) % 4) : 0;
   const img = frames[f] || frames[0];
   const step = moving && (f === 1 || f === 3);
-  const CW = 18 * RIG_SCALE, CH = 33 * RIG_SCALE;
+  const CW = RIG_OUT_W * RIG_SCALE, CH = RIG_OUT_H * RIG_SCALE;
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.imageSmoothingEnabled = false;
@@ -896,8 +898,8 @@ export function drawCharacter(ctx, atlas, dir, { x, y, moving, action, time = 0,
 
 /** Converte a posição do tile no canto superior esquerdo do sprite. */
 export function feetAnchor(px, py) {
-  const CW = 18 * RIG_SCALE;
-  const CH = 33 * RIG_SCALE;
+  const CW = RIG_OUT_W * RIG_SCALE;
+  const CH = RIG_OUT_H * RIG_SCALE;
   return { x: px - CW / 2, y: py + CHAR_FEET_OFFSET - CH };
 }
 
