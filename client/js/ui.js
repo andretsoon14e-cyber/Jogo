@@ -189,6 +189,8 @@ function currentLocation() {
   if (y > 45) return "Praia do Vale";
   if (y > 32 && x > 6 && x < 30) return "Lago do Vale";
   if (y >= 30 && x >= 12 && x <= 24) return "Sua Fazenda";
+  // lotes das casas dos jogadores (ver HOUSE_LOTS em shared/houses.js)
+  if (x >= 27 && x <= 57 && y >= 26 && y <= 45) return "Bairro Residencial";
   if (x >= 25 && x <= 56 && y >= 6 && y <= 30) return "Centro da Cidade";
   if (x >= 58 && y >= 20 && y <= 32) return "Margem Leste";
   return "Sua Fazenda";
