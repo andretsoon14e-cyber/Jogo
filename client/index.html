@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#3a2a1e">
+<title>Vale Aconchegante — Fazenda, Vida e Multiplayer</title>
+<link rel="icon" href="assets/icon-256.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/icon-256.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta name="vale-version" content="1.54.0">
+<link rel="stylesheet" href="css/style.css?v=1.54.0">
+<script src="vendor/socket.io.min.js"></script>
+</head>
+<body>
+<div id="bg"></div>
+
+<!-- ============================= CAPA ANIMADA (estilo Stardew) ============================= -->
+<div id="coverScreen" class="screen active">
+  <div class="coverHandBg" aria-hidden="true"></div>
+  <canvas id="coverCanvas"></canvas>
+  <div class="coverShade"></div>
+  <div class="coverClouds" aria-hidden="true">
+    <span class="cloud c1"></span><span class="cloud c2"></span><span class="cloud c3"></span><span class="cloud c4"></span>
+  </div>
+  <div class="coverFx" aria-hidden="true">
+    <div class="smoke"><span></span><span></span><span></span><span></span></div>
+    <div class="swayFlowers"><span>🌻</span><span>🌼</span><span>🌸</span><span>🌷</span></div>
+    <div class="coverBird">🐦</div>
+  </div>
+  <div class="coverContent">
+    <div class="coverLogoWrap">
+      <div class="coverLogoArt"><canvas id="coverLogoCanvas" width="480" height="160"></canvas></div>
+      <h1 class="coverTitle">Vale Aconchegante</h1>
+      <p class="coverSubtitle">Fazenda • Vila viva • Histórias para cultivar</p>
+      <div class="coverBadges"><span>Multiplayer</span><span>Coop local</span><span>4 estações</span></div>
+    </div>
+    <div class="coverMenu">
+      <button id="btnCoverPlay" class="btn primary big coverBtn" type="button">Jogar</button>
+      <button id="btnCoverContinue" class="btn secondary coverBtn" type="button" style="display:none">Continuar</button>
+      <div class="coverRow">
+        <button id="btnCoverSettings" class="btn small secondary" type="button">Ajustes</button>
+        <button id="btnCoverCredits" class="btn small secondary" type="button">Créditos</button>
+        <button id="btnCoverQuit" class="btn small secondary" type="button">Sair</button>
+      </div>
+    </div>
+    <div class="coverFooter">
+      <span id="versionTag">v1.54.0 • Pixel art original • Feito com carinho no Brasil</span>
+      <span class="coverHint">Pressione <b>Enter</b> para jogar</span>
+    </div>
+  </div>
+  <div class="coverVignette"></div>
+</div>
+
+<!-- ============================= LOGIN ============================= -->
+<div id="loginScreen" class="screen">
+  <div class="loginWrap">
+    <div class="loginCard">
+      <div class="logo">
+        <div class="logoArt" aria-hidden="true">
+          <canvas id="logoCanvas" width="216" height="104"></canvas>
+        </div>
+        <h1>Vale Aconchegante</h1>
+        <p>Simulação de vida • Fazenda • RPG • Multiplayer</p>
+        <div class="logoBadges"><span>Grátis</span><span>Sem loja real</span><span>Até 4 amigos</span></div>
+        <button id="btnBackToCover" class="btn small secondary" type="button" style="margin-top:10px">← Voltar à capa</button>
+      </div>
+
+      <div class="loginForm">
+        <div class="loginTabs handDrawn" id="loginTabs">
+          <button class="loginTab handTab active" data-mode="login">🔐 Entrar</button>
+          <button class="loginTab handTab" data-mode="register">✨ Criar conta</button>
+          <button class="loginTab handTab" data-mode="guest">🌿 Visitante</button>
+        </div>
+        <p id="modeHint" class="modeHint">Entre com sua conta para salvar seu progresso em todos os mundos.</p>
+
+        <div id="accountFields">
+          <label for="inpName">Nome de jogador</label>
+          <input id="inpName" placeholder="Ex: Ana do Vale" maxlength="20" autocomplete="username">
+
+          <label for="inpPassword">Senha</label>
+          <input id="inpPassword" type="password" placeholder="Pelo menos 4 caracteres" maxlength="100" autocomplete="current-password">
+        </div>
+
+        <div class="worldCard">
+          <div class="worldCardHeader">
+            <img class="worldThumb" src="assets/lobby-handdrawn.jpg" alt="Vale">
+            <div class="worldCardInfo">
+              <h3>Seu Vale, seu código</h3>
+              <p>Crie um mundo novo ou entre no código dos amigos. Todos no mesmo mundo = fazenda compartilhada!</p>
+            </div>
+          </div>
+          <label for="inpRoom" style="margin-top:0">Código do mundo (sala)</label>
+          <div class="worldInputRow">
+            <input id="inpRoom" placeholder="VALE1" maxlength="6" autocapitalize="characters">
+            <button id="btnCreateRoom" class="btn secondary" type="button">🌱 Criar mundo</button>
+          </div>
+          <small class="tiny">Dica: use VALE1, FAZENDA ou invente! Compartilhe o código no chat.</small>
+          <div class="roomListWrap">
+            <span class="roomListLabel">Mundos ativos agora — clique para entrar</span>
+            <div id="roomList" class="roomList"><span class="roomEmpty">Procurando mundos...</span></div>
+          </div>
+        </div>
+
+        <div class="charCreator stardewCreator">
+          <div class="creatorLeft">
+            <div class="charPreviewStage">
+              <div class="previewCanvasWrap">
+                <div id="modularPreview"></div>
+                <div class="charPreviewAura" aria-hidden="true"></div>
+              </div>
+              <div class="previewLabel" style="display:none">PRÉVIA</div>
+            </div>
+            <div id="skinPick" class="skinGrid" style="display:none"></div>
+            <div class="genderChoiceRow" style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+              <label style="font-size:11px; font-weight:700; color:#4a3520;">Gênero</label>
+              <div style="display:flex; gap:6px;">
+                <button type="button" class="genderOpt selected" data-gender="fem" style="flex:1; padding:6px; border-radius:8px; border:2px solid #b8882a; background:#ffe9a8; font-weight:700; cursor:pointer;">👩 Feminino</button>
+                <button type="button" class="genderOpt" data-gender="masc" style="flex:1; padding:6px; border-radius:8px; border:1.5px solid #d5bd94; background:#fffdf4; font-weight:700; cursor:pointer;">👨 Masculino</button>
+              </div>
+            </div>
+            <div class="petChoiceRow" style="margin-top:8px; display:flex; flex-direction:column; gap:6px;">
+              <label style="font-size:11px; font-weight:700; color:#4a3520;">Animal preferido (montaria: 🐴)</label>
+              <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+                <button type="button" class="petOpt selected" data-pet="cat" style="padding:6px; border-radius:8px; border:2px solid #b8882a; background:#ffe9a8; font-weight:700; cursor:pointer;">🐱 Gato</button>
+                <button type="button" class="petOpt" data-pet="dog" style="padding:6px; border-radius:8px; border:1.5px solid #d5bd94; background:#fffdf4; font-weight:700; cursor:pointer;">🐶 Cão</button>
+                <button type="button" class="petOpt" data-pet="turtle" style="padding:6px; border-radius:8px; border:1.5px solid #d5bd94; background:#fffdf4; font-weight:700; cursor:pointer;">🐢 Tartaruga</button>
+                <button type="button" class="petOpt" data-pet="parrot" style="padding:6px; border-radius:8px; border:1.5px solid #d5bd94; background:#fffdf4; font-weight:700; cursor:pointer;">🦜 Papagaio</button>
+                <button type="button" class="petOpt" data-pet="fish" style="padding:6px; border-radius:8px; border:1.5px solid #d5bd94; background:#fffdf4; font-weight:700; cursor:pointer;">🐠 Peixinho</button>
+                <button type="button" class="petOpt" data-pet="horse" style="padding:6px; border-radius:8px; border:1.5px solid #d5bd94; background:#fffdf4; font-weight:700; cursor:pointer;">🐴 Cavalo</button>
+              </div>
+              <input id="inpPetName" type="hidden" value="cat">
+            </div>
+          </div>
+          <div class="charControls stardewPanel">
+            <div class="stardewInputs">
+              <label>Nome <input id="inpCharName" placeholder="Seu nome" maxlength="12"></label>
+              <label>Nome da fazenda <input id="inpFarmName" placeholder="Vale Verde" maxlength="14"></label>
+              <label>Coisa favorita <input id="inpFavorite" placeholder="chocolate" maxlength="14"></label>
+              <small class="tiny">Esses nomes aparecem nos diálogos e na caixa de correio.</small>
+            </div>
+            <div id="modularPick" class="arrowRows"></div>
+            <!-- referenceSheets removidos a pedido do usuário -->
+          </div>
+        </div>
+
+        <div id="loginError" class="loginError"></div>
+                        <button id="btnPlay" class="btn primary big playBtn" type="button" style="background: linear-gradient(#fff3a0, #f5d76e); border: 2.5px solid #7a5a2f; color:#4a3520; text-shadow:0 1px 0 rgba(255,255,255,.6); font-size:18px; font-weight:900; letter-spacing:.6px; box-shadow: 0 4px 0 #6b4a2f, 0 8px 16px rgba(0,0,0,.25); width:100%;">
+          Jogar
+        </button>
+
+        <div class="features">
+          <span>Fazenda</span><span>Pesca</span><span>Mina</span><span>Cidade viva</span><span>Coop</span><span>Animais</span>
+        </div>
+        <p class="hint">Seus dados ficam no servidor do jogo. Não há compras, assinaturas nem moedas pagas.</p>
+      </div>
+    </div>
+    <div class="credits" id="creditsTag">v1.54.0 • Arte original em pixel art • Multiplayer real</div>
+  </div>
+</div>
+
+<!-- ============================= JOGO ============================= -->
+<div id="gameScreen" class="screen">
+  <canvas id="gameCanvas"></canvas>
+  <div id="vignette"></div>
+
+  <div id="connectionBanner"></div>
+
+  <!-- ===================== HUD SUPERIOR ===================== -->
+  <div id="hudTop">
+    <div class="hudLeft">
+      <div class="statusCard">
+        <div class="coinRow">
+          <span class="coinIcon" data-icon="coin" data-size="20"></span>
+          <span id="hudGold" class="coinValue">$500</span>
+        </div>
+        <div class="timeRow">
+          <span class="clock" id="hudTime">06:00</span>
+          <span class="sep"></span>
+          <span id="hudWeekday">Seg</span>
+          <span class="sep"></span>
+          <span id="hudDay">Dia 1</span>
+        </div>
+        <div class="seasonRow">
+          <span id="hudSeason" class="seasonName">Primavera</span>
+          <span class="weatherIcon" id="hudWeather" data-icon="sun" data-size="16"></span>
+        </div>
+      </div>
+      <div class="festivalBadge" id="festivalBadge"></div>
+    </div>
+
+    <div class="hudCenter">
+      <div id="hudLocation">Sua Fazenda</div>
+      <div class="onlineBadge" id="hudOnline">1 online</div>
+    </div>
+
+    <div class="hudRight">
+      <div id="agendaCard" class="agendaCard">
+        <div class="agendaHead" id="agendaHead">—</div>
+        <div class="agendaBody" id="agendaBody">Carregando...</div>
+        <div class="agendaActions" id="agendaActions"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== BARRA LATERAL ===================== -->
+  <nav id="menuRail" aria-label="Menu do jogo">
+    <button class="railBtn railToggle" id="railToggle" data-icon="settings" data-tip="Menu"></button>
+    <button class="railBtn" data-panel="mapPanel" data-icon="map" data-tip="Mapa (M)"></button>
+    <button class="railBtn" data-panel="inventoryPanel" data-icon="bag" data-tip="Mochila (E)"></button>
+    <button class="railBtn" data-panel="bankPanel" data-icon="bank" data-tip="Banco (Y)"></button>
+    <button class="railBtn" data-panel="jobPanel" data-icon="job" data-tip="Empregos (O)"></button>
+    <button class="railBtn" data-panel="kitchenPanel" data-icon="kitchen" data-tip="Cozinha (K)"></button>
+    <button class="railBtn" data-panel="questPanel" data-icon="quest" data-tip="Missões (J)"><span class="railDot" id="questDot"></span></button>
+    <button class="railBtn" data-panel="coopPanel" data-icon="coop" data-tip="Cooperativo (U)"></button>
+    <button class="railBtn" data-panel="communityPanel" data-icon="community" data-tip="Projetos comunitários (C)"></button>
+    <button class="railBtn" data-panel="socialPanel" data-icon="friends" data-tip="Jogadores (P)"></button>
+    <button class="railBtn" data-panel="housePanel" data-icon="casa" data-tip="Casas e família (H)"></button>
+    <button class="railBtn" data-panel="travelPanel" data-icon="travel" data-tip="Viagens (R)"></button>
+    <button class="railBtn" data-panel="settingsPanel" data-icon="settings" data-tip="Ajustes (Esc)"></button>
+    <button class="railBtn" id="btnHelp" data-icon="help" data-tip="Como jogar"></button>
+  </nav>
+
+  <!-- ===================== BARRA DE ITENS ===================== -->
+  <div id="hotbar">
+    <div id="hotbarSlots"></div>
+    <div class="hotbarHint"><b>1–9</b> itens <span class="dotSep">·</span> clique para usar <span class="dotSep">·</span> <b>E</b> mochila <span class="dotSep">·</span> <b>F</b> interagir <span class="dotSep">·</span> <b>T</b> loja <span class="dotSep">·</span> <b>Shift</b> correr</div>
+  </div>
+
+  <!-- ===================== CHAT ===================== -->
+  <div id="chatBox" class="collapsed">
+    <button id="chatToggle" class="chatToggle" title="Abrir/fechar chat">
+      <span data-icon="chat" data-size="18"></span>
+      <span class="chatTitle">Conversa</span>
+      <span class="chatChevron">▲</span>
+    </button>
+    <div class="chatBody">
+      <div id="chatLog"></div>
+      <div id="playerList"></div>
+      <div class="chatInputRow">
+        <input id="chatInput" placeholder="Digite e pressione Enter..." maxlength="200">
+        <button id="btnSendChat" class="sendBtn" title="Enviar"><span data-icon="send" data-size="18"></span></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MÓVEL -->
+  <div id="mobileCtrl">
+    <div id="dpad">
+      <div class="dpadRow"><button data-dir="up" aria-label="Cima">▲</button></div>
+      <div class="dpadRow">
+        <button data-dir="left" aria-label="Esquerda">◀</button>
+        <button data-dir="down" aria-label="Baixo">▼</button>
+        <button data-dir="right" aria-label="Direita">▶</button>
+      </div>
+    </div>
+    <button id="btnAction" class="actionBtn" title="Interagir" data-icon="sparkle" data-size="24"></button>
+  </div>
+
+  <div id="interiorBanner" class="interiorBanner"><span>Dentro de casa</span> — <b>F</b> ou <b>Esc</b> para sair <span class="dotSep">·</span> <b>K</b> cozinhar</div>
+  <div id="interactHint"></div>
+  <div id="notifications"></div>
+
+  <div id="furnitureHud" class="furnitureHud"><span>Modo decoração — clique onde colocar <span class="dotSep">·</span> ESC para sair</span><button class="btn small secondary" id="btnExitFurniture">Sair</button></div>
+
+  <!-- ================= PAINÉIS ================= -->
+  <div class="panelFrame">
+    <div id="inventoryPanel" class="panel">
+      <div class="panelHeader"><span class="phTitle">Mochila &amp; Habilidades</span><button class="close" data-close>X</button></div>
+      <div class="panelBody">
+        <div id="invGrid" class="invGrid"></div>
+        <div class="statsLine" id="statsLine"></div>
+        <div class="skills">
+          <h3>Habilidades</h3>
+          <div id="skillsList"></div>
+        </div>
+        <div class="panelActions">
+          <button class="btn secondary" id="btnOpenShopFromInv">Ir ao Mercado</button>
+          <button class="btn secondary" id="btnOpenBuildFromInv">Construir</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="shopPanel" class="panel large">
+      <div class="panelHeader"><span class="phTitle">Mercado Central</span><span class="panelSub">Compre e venda com ouro do jogo</span><button class="close" data-close>X</button></div>
+      <div class="panelBody">
+        <div class="shopTabs" id="shopTabs"></div>
+        <div id="shopContent" class="shopContent"></div>
+      </div>
+    </div>
+
+    <div id="buildPanel" class="panel">
+      <div class="panelHeader"><span class="phTitle">Construções</span><button class="close" data-close>X</button></div>
+      <div class="panelBody" id="buildContent"></div>
+    </div>
+
+    <div id="jobPanel" class="panel">
+      <div class="panelHeader"><span class="phTitle">Empregos e Escala</span><button class="close" data-close>X</button></div>
+      <div class="panelBody" id="jobContent"></div>
+    </div>
+
+    <div id="kitchenPanel" class="panel large">
+      <div class="panelHeader"><span class="phTitle">Cozinha — Receitas</span><span class="panelSub">Cozinhe em casa ou na taverna</span><button class="close" data-close>X</button></div>
+      <div class="panelBody" id="kitchenContent"></div>
+    </div>
+
+    <div id="travelPanel" class="panel">
+      <div class="panelHeader"><span class="phTitle">Viagens</span><button class="close" data-close>X</button></div>
+      <div class="panelBody" id="travelContent"></div>
+    </div>
+
+    <div id="coopPanel" class="panel">
+      <div class="panelHeader"><span class="phTitle">Missões Cooperativas — Semana</span><button class="close" data-close>X</button></div>
+      <div class="panelBody" id="coopContent"></div>
+    </div>
+
+    <div id="bankPanel" class="panel large">
+      <div class="panelHeader"><span class="phTitle">Banco do Vale</span><span class="panelSub">Saldo seguro • Transferências • Empréstimo</span><button class="close" data-close>X</button></div>
+      <div class="panelBody" id="bankContent"></div>
+    </div>
+
+    <div id="housePanel" class="panel">
+      <div class="panelHeader"><span class="phTitle">Casas &amp; Decoração</span><button class="close" data-close>X</button></div>
+      <div class="panelBody" id="houseContent"></div>
+    </div>
+
+    <div id="shiftPanel" class="panel">
+      <div class="panelHeader"><span class="phTitle">Turno em andamento</span><button class="close" data-close>X</button></div>
+      <div class="panelBody" id="shiftContent"></div>
+    </div>
+
+    <div id="questPanel" class="panel">
+      <div class="panelHeader"><span class="phTitle">Diário de Missões</span><button class="close" data-close>X</button></div>
+      <div class="panelBody" id="questContent"></div>
+    </div>
+
+    <div id="communityPanel" class="panel">
+      <div class="panelHeader"><span class="phTitle">Projetos Comunitários</span><button class="close" data-close>X</button></div>
+      <div class="panelBody" id="communityContent"></div>
+    </div>
+
+    <div id="socialPanel" class="panel">
+      <div class="panelHeader"><span class="phTitle">Jogadores &amp; Amizades</span><button class="close" data-close>X</button></div>
+      <div class="panelBody" id="socialContent"></div>
+    </div>
+
+    <div id="npcPanel" class="panel">
+      <div class="panelHeader"><span id="npcName" class="phTitle">Morador</span><button class="close" data-close>X</button></div>
+      <div class="panelBody">
+        <div class="npcTop">
+          <div id="npcAvatar" class="npcAvatar"></div>
+          <div class="npcText">
+            <div id="npcMeta" class="npcMeta"></div>
+            <div id="npcLikes" class="npcLikes"></div>
+          </div>
+        </div>
+        <div id="npcDialog" class="npcDialog"></div>
+        <div class="npcButtons">
+          <button class="btn small secondary" id="btnTalk">Conversar</button>
+          <button class="btn small secondary" id="btnNpcShop">Loja</button>
+        </div>
+        <div class="giftRow">
+          <select id="giftSelect" aria-label="Presente"></select>
+          <button class="btn small" id="btnGift">Presentear</button>
+        </div>
+        <div id="npcFriend" class="friendBar"></div>
+      </div>
+    </div>
+
+    <div id="mapPanel" class="panel large">
+      <div class="panelHeader"><span class="phTitle">Mapa do Vale</span><button class="close" data-close>X</button></div>
+      <div class="panelBody">
+        <canvas id="miniMap" width="672" height="480"></canvas>
+        <div class="mapLegend">
+          <span>Casa</span><span>Mercado</span><span>Carpintaria</span><span>Ferraria</span><span>Clínica</span><span>Prefeitura</span><span>Lago</span><span>Mina</span><span>Floresta</span><span>Praia</span>
+        </div>
+        <div id="mapPlayers" class="mapPlayers"></div>
+      </div>
+    </div>
+
+    <div id="settingsPanel" class="panel">
+      <div class="panelHeader"><span class="phTitle">Ajustes</span><button class="close settingsClose" data-close style="background:#d94a3a;color:#fff;border:1.5px solid #8a2319;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;font-weight:900;font-size:14px;line-height:1;">✕</button></div>
+      <div class="panelBody">
+        <div class="settingRow"><label for="chkMusic">Música ambiente</label><input type="checkbox" id="chkMusic" checked></div>
+        <div class="settingRow"><label for="chkSfx">Efeitos sonoros</label><input type="checkbox" id="chkSfx" checked></div>
+        <div class="settingRow"><label for="rngVolume">Volume</label><input type="range" id="rngVolume" min="0" max="100" value="60"></div>
+        <div class="sleepHintBox" style="background:#fff7d6;border:1.5px solid #d5bd94;border-radius:8px;padding:8px 10px;margin:8px 0;font-size:11px;color:#4a3520;line-height:1.4;">
+          💤 <b>Para dormir:</b> vá até sua casa e deite na cama. O dia só avança quando você dorme — igual Stardew Valley!
+        </div>
+        <button id="btnSave" style="display:none"></button><button id="btnSleep" style="display:none"></button>
+        <button class="btn danger wide" id="btnLeave">Sair do mundo</button>
+        <div class="help">
+          <h4>Como jogar</h4>
+          <p><b>WASD</b> mover • <b>Shift</b> correr • <b>Clique</b> usa o item • <b>1–9</b> troca item<br>
+          <b>E</b> mochila • <b>F</b> interagir • <b>T</b> mercado • <b>B</b> construir • <b>M</b> mapa • <b>J</b> missões • <b>Enter</b> chat</p>
+          <h4>Primeiros passos</h4>
+          <p>1. Selecione a <b>enxada</b> e clique na grama da sua fazenda.<br>
+          2. Selecione uma <b>semente</b> e clique na terra arada.<br>
+          3. Selecione o <b>regador</b> e regue todos os dias.<br>
+          4. Colha quando a planta brilhar e venda no Mercado.<br>
+          5. Converse com os moradores e contribua com a cidade!</p>
+          <h4>Multiplayer</h4>
+          <p>Compartilham: mundo, plantações, construções, projetos e chat. Cada jogador tem seu inventário, ouro, amizades e missões. O mundo é salvo no servidor.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="tutorialPanel" class="panel">
+      <div class="panelHeader"><span class="phTitle">Bem-vindo ao Vale!</span><button class="close" data-close>X</button></div>
+      <div class="panelBody">
+        <p class="tutorialLead">Em 4 passos você já está produzindo. Depois explore a cidade, faça amigos e construa sua fazenda.</p>
+        <ol class="tutorialSteps">
+          <li><b>Are a terra</b><span>Selecione a enxada (<kbd>1</kbd>) e clique na grama da sua fazenda.</span></li>
+          <li><b>Plante</b><span>Selecione uma semente na barra e clique na terra arada.</span></li>
+          <li><b>Regue todo dia</b><span>Use o regador (<kbd>2</kbd>). A planta só cresce se estiver regada ao amanhecer.</span></li>
+          <li><b>Colha e venda</b><span>Quando brilhar, clique na planta. Venda no Mercado (<kbd>T</kbd>).</span></li>
+        </ol>
+        <div class="tutorialTip"><b>Com amigos:</b> todos usam o mesmo código de sala. O mundo e as obras são compartilhados; ouro e mochila são seus.</div>
+        <h4 style="margin:10px 0 6px;font-size:12px;color:#4a3520">📊 Entenda as barras da interface</h4>
+        <ul style="font-size:11px;line-height:1.5;color:#5a3a1e; padding-left:16px; margin:0 0 8px">
+          <li><b>Topo esquerdo:</b> ouro, hora, dia e estação — fique de olho no relógio, o dia termina às 2h!</li>
+          <li><b>Topo centro:</b> onde você está (Fazenda, Vila, Ilha...) + quantos online.</li>
+          <li><b>Barra lateral esquerda:</b> atalhos — <b>M</b> Mapa, <b>E</b> Mochila, <b>T</b> Mercado, <b>J</b> Missões, <b>P</b> Amigos, <b>H</b> Casas.</li>
+          <li><b>Barra inferior (hotbar):</b> 1–9 troca item, clique no mundo usa o item, <b>arras te</b> movendo-a (segure no fundo), duplo-clique volta ao centro.</li>
+          <li><b>Chat (canto inferior):</b> Enter para falar com amigos.</li>
+          <li><b>Sua casa isolada:</b> ao sudoeste (8,38), rodeada de árvores para limpar. Está velha e quebrada — trabalhe para reformá-la! É sua história: saiu da casa dos pais e precisa conquistar seu lar.</li>
+        </ul>
+        <div class="panelActions">
+          <button class="btn primary" id="btnTutorialStart">Começar a jogar</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="sleepOverlay" class="sleepOverlay" style="display:none">
+  <div class="sleepOverlayBg"></div>
+  <div class="sleepCard">
+    <h2>🌙 Avançando para o próximo dia...</h2>
+    <div id="sleepEarnings" class="sleepEarnings">Calculando ganhos...</div>
+    <div id="sleepAchievements" class="sleepAchievements"></div>
+    <button id="btnSleepConfirm" class="btn primary big" style="background:#4caf50;border-color:#2e7d32;color:#fff;margin-top:14px;">✅ Progresso salvo — Continuar</button>
+  </div>
+</div>
+<div id="shiftOverlay" class="shiftOverlay">
+  <div class="shiftOverlayCard">
+    <div class="shiftOverlayHead"><span id="shiftTitle">Turno</span><span id="shiftTimer" class="shiftTimer">00:00</span></div>
+    <div id="shiftTask" class="shiftTask"></div>
+    <div id="shiftOptions" class="shiftOptions"></div>
+    <div class="shiftBar"><div id="shiftProgress" class="shiftProgress"></div></div>
+    <div class="shiftStats"><span id="shiftScore">0/0 corretos</span><span id="shiftSpeed">Bônus por rapidez</span></div>
+    <div class="shiftActions"><button class="btn primary" id="btnEndShift">Encerrar turno</button><button class="btn secondary" id="btnCancelShift">Sair</button></div>
+  </div>
+</div>
+<script type="module" src="js/main.js?v=1.54.0"></script>
+</body>
+</html>
