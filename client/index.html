@@ -97,7 +97,18 @@
             <input id="inpRoom" placeholder="VALE1" maxlength="6" autocapitalize="characters">
             <button id="btnCreateRoom" class="btn secondary" type="button"><span data-icon="sprout" data-size="15"></span> Criar mundo</button>
           </div>
-          <small class="tiny">Dica: use VALE1, FAZENDA ou invente! Compartilhe o código no chat.</small>
+          <div class="worldInputRow" style="margin-top:8px">
+            <label for="inpSlots" style="flex:1;font-size:11.5px;font-weight:700;color:#4a3520;align-self:center">Casas neste mundo (jogadores)</label>
+            <select id="inpSlots" style="width:88px;padding:7px;border-radius:8px;border:2px solid #d5bd94;background:#fffdf4;font-weight:700;color:#3a2416">
+              <option value="1">1</option>
+              <option value="2" selected>2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+            </select>
+          </div>
+          <small class="tiny">Dica: use VALE1, FAZENDA ou invente! Cada jogador nasce dentro da própria casa. Quem entra depois ganha uma casa nova automaticamente.</small>
           <div class="roomListWrap">
             <span class="roomListLabel">Mundos ativos agora — clique para entrar</span>
             <div id="roomList" class="roomList"><span class="roomEmpty">Procurando mundos...</span></div>
@@ -321,9 +332,14 @@
       <div class="panelBody" id="bankContent"></div>
     </div>
 
-    <div id="housePanel" class="panel">
-      <div class="panelHeader"><span class="phTitle">Casas &amp; Decoração</span><button class="close" data-close>X</button></div>
+    <div id="housePanel" class="panel large">
+      <div class="panelHeader"><span class="phTitle">Moradia &amp; Família</span><button class="close" data-close>X</button></div>
       <div class="panelBody" id="houseContent"></div>
+    </div>
+
+    <div id="chestPanel" class="panel">
+      <div class="panelHeader"><span class="phTitle">Baú da casa</span><button class="close" data-close>X</button></div>
+      <div class="panelBody" id="chestContent"></div>
     </div>
 
     <div id="shiftPanel" class="panel">
@@ -455,5 +471,16 @@
   </div>
 </div>
 <script type="module" src="js/main.js?v=__APP_VERSION__"></script>
+  <!-- pedido de permissão de casa/baú -->
+  <div id="houseRequestModal" aria-hidden="true">
+    <div class="pmCard">
+      <div class="pmKind" id="pmKind">Pedido de visita</div>
+      <p id="pmText">Alguém quer entrar na sua casa.</p>
+      <div class="pmBtns">
+        <button id="pmDeny" class="btn secondary" type="button">Negar</button>
+        <button id="pmAllow" class="btn primary" type="button">Permitir</button>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

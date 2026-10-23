@@ -49,10 +49,10 @@ Números e diferenças entre variantes em `docs/BASES_MATRIZ.md`.
 
 ## Caverna
 
-- **Piso** `#463c34` / `#433930` / `#41372f` com pedriscos e musgo em alpha baixo; **parede** em blocos de rocha mais escuros, sem grama, flores, vento ou mar.
+- **Piso** `#463c34` / `#433930` / `#41372f` com pedriscos e musgo em alpha baixo; **parede** em rocha bem mais escura (`#241d18` / `#1f1915`) com manchas irregulares de 3 tons, lascas claras ocasionais e fissuras — nada de grade de tijolo. A base da parede leva sombra de 3px para separar do piso. Sem grama, flores, vento ou mar.
 - Fora do mapa: rocha maciça `#1d1815` com gradiente de sombra de 26px nas bordas (`drawCaveBorder`).
 - Escuridão com halo de lanterna: `dark = min(0.86, 0.66 + 0.06·andar)`, raio interno `max(90, 190 − 30·andar)`, flicker suave de 3,1 Hz.
-- **Escadas** (12/13): boca chanfrada escura, 5 degraus com topo iluminado e sombra embaixo; descer escurece para o fundo, subir clareia. Pedras soltas nos cantos em vez de moldura. Seta no piso: amarela ↑ para subir, azul ↓ para descer.
+- **Escadas** (12/13): moldura de pedra irregular com topo claro, boca escura ocupando quase todo o tile, 4 degraus de madeira com topo iluminado e sombra embaixo; corrimão curto nas laterais. Descer escurece para o fundo, subir clareia. Seta em chip escuro: amarela ↑ para subir, azul ↓ para descer.
 - **Veios de cristal** (14): aglomerado de 3 lascas em pirâmide (ponta em cima, base larga), faceta iluminada à esquerda, sombra à direita, ponta branca e brilho difuso. Nada de retângulo/janela.
 - Props: estalagmite (pedra + musgo escuro `#31402a`), pedrinhas, ossadas — só sobre piso, nunca sobre parede.
 - Sem retratos novos: a caverna não tem NPCs (os três andares são de exploração/mineração).
@@ -64,3 +64,9 @@ Números e diferenças entre variantes em `docs/BASES_MATRIZ.md`.
 3. Sem emoji em HUD, hotbar, inventário e criador. (Painéis internos de missão/loja ainda têm — pendência registrada em `PROJECT_STATE.md`.)
 4. Antes de produzir arte em massa: prancha de conferência + aprovação.
 5. Toda mudança visual se comprova com screenshot em `.work/shots/`.
+
+## Interiores de casa
+
+- O cômodo ocupa `availableH = max(260, H − 170)`; `k` limitado a 2.4 e o chão termina acima da hotbar.
+- O **chip com o nome do cômodo** fica em `y = 96`, abaixo do banner do HUD (que ocupa ~14–90). Nome amigável: "Casa de Ana", "Apartamento de Ana", "Taverna" etc. — nunca `casa:casa_1`.
+- A porta sul é sempre visível: "▼ SAIR (F)" centralizado abaixo do tapete.

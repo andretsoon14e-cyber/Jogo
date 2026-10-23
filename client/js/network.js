@@ -31,6 +31,7 @@ export function connect(profile) {
       token: profile.token || null,
       skin: profile.skin,
       look: profile.look || null,
+      houseSlots: profile.houseSlots || 2,
       x: 22,
       y: 21,
     });
@@ -50,6 +51,9 @@ export function connect(profile) {
     game.social = data.self.social || game.social;
     game.furniture = data.self.furniture || [];
     game.indoors = data.self.indoors || null;
+    game.houseId = data.self.houseId || null;
+    game.entryPos = data.self.entryPos || null;
+    game.house = (data.world.houses || []).find((h) => h.id === data.self.houseId) || null;
     game.x = data.self.x;
     game.y = data.self.y;
     game.camera.x = game.x;
@@ -68,6 +72,50 @@ export function connect(profile) {
     if (!localStorage.getItem("vale_tutorial")) setTimeout(() => ui.togglePanel("tutorialPanel"), 350);
     if (!game.isAccount) ui.notify("Você está como visitante: crie uma conta para salvar o progresso.", "info");
     sfx("levelup");
+  });
+
+  // ---------------- casas dos jogadores ----------------
+  socket.on("houseEntered", (d) => {
+    game.indoors = `casa:${d.houseId}`;
+    game.houseId = d.houseId;
+    game.houseOwner = d.owner;
+    game.houseLabel = d.label;
+    game.x = 8; game.y = 9;
+    game.camera.x = game.x; game.camera.y = game.y;
+    ui.notify(d.isOwner ? (d.apartment ? "Você entrou no seu apartamento." : "Você entrou na sua casa.") : `Você entrou na ${d.label}.`, "success");
+    ui.updateHUD();
+  });
+  socket.on("houseLeft", ({ x, y }) => {
+    game.indoors = null;
+    game.x = x; game.y = y;
+    game.camera.x = x; game.camera.y = y;
+    ui.updateHUD(); ui.updatePlayerList();
+  });
+  socket.on("houseRequest", (r) => ui.openHouseRequest(r));
+  socket.on("houseAccess", (d) => {
+    if (d.allowed) ui.notify(`${d.by} permitiu seu acesso${d.kind === "chest" ? " ao baú" : " à casa"}.`, "success");
+  });
+  socket.on("chestOpen", (d) => ui.openChest(d));
+  socket.on("housesUpdate", (list) => {
+    game.world.houses = list || [];
+    const mine = game.world.houses.find((h) => h.id === game.houseId);
+    if (mine) game.house = mine;
+    if (ui.panelIs("housePanel")) ui.renderHouses();
+    if (ui.panelIs("mapPanel")) ui.renderMap();
+  });
+  socket.on("houseUpdate", (d) => {
+    if (d.action === "assigned") {
+      ui.notify("Você ganhou uma casa no vale!", "success");
+    } else if (d.action === "rented") {
+      ui.notify(`Aluguel ativo: $${d.rent}/dia.`, "info");
+    }
+    ui.requestHouseInfo?.();
+  });
+  socket.on("houseInfo", (d) => {
+    game.houseInfo = d;
+    if (d?.apartment) { game.houseId = d.apartment.id; game.house = d.apartment; }
+    else if (d?.house) { game.houseId = d.house.id; game.house = d.house; }
+    if (ui.panelIs("housePanel")) ui.renderHouses();
   });
 
   socket.on("playerJoined", (p) => {

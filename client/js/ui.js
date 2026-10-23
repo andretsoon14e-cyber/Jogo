@@ -47,6 +47,7 @@ export function initUI() {
   renderAgenda();
   updateInteractHint();
   $("giftSelect").innerHTML = "";
+  initHouseUI();
   game.uiReady = true;
 }
 
@@ -163,7 +164,11 @@ function updateInteriorBanner(){
   if(!el) return;
   if(game.indoors){
     el.classList.add("show");
-    const def = {casa_player:"Sua Casa", taverna:"Taverna", mercado:"Mercado", carpintaria:"Carpintaria", ferraria:"Ferraria", clinica:"Clínica", prefeitura:"Prefeitura"}[game.indoors] || game.indoors;
+    let def = {casa_player:"Sua Casa", taverna:"Taverna", mercado:"Mercado", carpintaria:"Carpintaria", ferraria:"Ferraria", clinica:"Clínica", prefeitura:"Prefeitura"}[game.indoors] || game.indoors;
+    if (String(game.indoors).startsWith("casa:")) {
+      const h = (game.world?.houses || []).find((x) => `casa:${x.id}` === game.indoors);
+      if (h) def = h.apartment ? `Apartamento de ${h.owner || "?"}` : `Casa de ${h.owner || "?"}`;
+    }
     el.innerHTML=`🏠 Dentro: <b>${def}</b> — pressione <b>F</b> ou <b>Esc</b> para sair${["casa_player","taverna"].includes(game.indoors)?" • <b>K</b> cozinhar":""}`;
   } else el.classList.remove("show");
 }
@@ -175,9 +180,10 @@ function currentLocation() {
     return names[game.indoors] || "Interior";
   }
   const region = game.region || "vale";
-  if (region === "vila") return "Vila Costeira";
-  if (region === "ilha") return "Ilha Tropical";
-  if (region === "cidade") return "Cidade Grande";
+  if (region !== "vale") {
+    // regiões nomeadas (vila, ilha, cidade e os andares da caverna)
+    return REGION_DEFS[region]?.name || "Interior";
+  }
   if (x > 50 && y < 13) return "Mina do Vale";
   if (x < 15 && y < 15) return "Floresta Sussurrante";
   if (y > 45) return "Praia do Vale";
@@ -739,7 +745,7 @@ export function togglePanel(id) {
   if (id === "travelPanel") renderTravel();
   if (id === "shiftPanel") renderShiftPanel();
   if (id === "bankPanel") renderBank();
-  if (id === "housePanel") renderHouses();
+  if (id === "housePanel") { requestHouseInfo(); renderHouses(); }
   sfx("open");
 }
 
@@ -971,10 +977,123 @@ export function consumeFurniturePick(x,y){
   return true;
 }
 
+// ---------------- MORADIA / CASAS DOS JOGADORES ----------------
+function initHouseUI() {
+  const allow = $("pmAllow"), deny = $("pmDeny");
+  if (allow) allow.onclick = () => answerHouseRequest(true);
+  if (deny) deny.onclick = () => answerHouseRequest(false);
+}
+
+export function requestHouseInfo() {
+  commands.interact("houseInfo", {});
+}
+
+export function openHouseRequest(req) {
+  game.pendingHouseRequest = req;
+  const modal = $("houseRequestModal");
+  if (!modal) return;
+  const kind = $("pmKind"), text = $("pmText");
+  if (kind) kind.textContent = req.kind === "chest" ? "Pedido de baú" : "Pedido de visita";
+  if (text) {
+    text.textContent = req.kind === "chest"
+      ? `${req.from} quer abrir o baú da sua casa. Permitir?`
+      : `${req.from} quer entrar na sua casa. Permitir?`;
+  }
+  modal.classList.add("open");
+  modal.setAttribute("aria-hidden", "false");
+  sfx("open");
+}
+
+export function answerHouseRequest(allow) {
+  const modal = $("houseRequestModal");
+  if (modal) { modal.classList.remove("open"); modal.setAttribute("aria-hidden", "true"); }
+  const req = game.pendingHouseRequest;
+  game.pendingHouseRequest = null;
+  if (req) commands.interact("answerHouse", { requestId: req.id, allow: !!allow });
+  sfx(allow ? "levelup" : "close");
+}
+
+export function openChest(data) {
+  game.openChest = data;
+  renderChest();
+  togglePanel("chestPanel");
+}
+
+function chestRows(items, dir) {
+  const rows = Object.entries(items || {}).filter(([, qty]) => qty > 0);
+  if (!rows.length) return `<div class="sub" style="opacity:.6;font-size:11px">vazio</div>`;
+  return rows.map(([id, qty]) => {
+    const meta = itemMeta(id);
+    return `<div class="chestItem"><span>${meta.icon}</span><span>${meta.name}</span><span class="qty">${qty}</span>
+      <button class="btn small ${dir === "deposit" ? "primary" : "secondary"}" data-chest="${id}" data-dir="${dir}" data-qty="1">${dir === "deposit" ? "Guardar" : "Pegar"}</button></div>`;
+  }).join("");
+}
+
+export function renderChest() {
+  const c = $("chestContent");
+  if (!c) return;
+  const d = game.openChest;
+  if (!d) { c.innerHTML = `<p class="hintLine">Baú indisponível.</p>`; return; }
+  const inv = {};
+  for (const [id, qty] of Object.entries(game.self.inventory || {})) {
+    if (TOOLS[id] || qty <= 0) continue;
+    inv[id] = qty;
+  }
+  c.innerHTML = `<p class="hintLine">${d.label} · o baú é privado: só o dono e quem ele liberar mexe aqui.</p>
+    <div class="chestCols">
+      <div class="chestCol"><h4>No baú</h4><div id="chestInside">${chestRows(d.items, "withdraw")}</div></div>
+      <div class="chestCol"><h4>Sua mochila</h4><div id="chestBag">${chestRows(inv, "deposit")}</div></div>
+    </div>`;
+  c.querySelectorAll("[data-chest]").forEach((b) => {
+    b.onclick = () => commands.interact("chestMove", {
+      houseId: d.houseId, dir: b.dataset.dir, item: b.dataset.chest, qty: 1,
+    });
+  });
+}
+
 export function renderHouses(){
   const c=$("houseContent"); if(!c) return;
   const soc=game.social;
-  c.innerHTML=`<p class="hintLine">Compre uma casa para ter mais espaço para a família. Móveis são colocados dentro de casa (entrar e clicar).</p>`;
+  c.innerHTML="";
+  // ---- moradia do jogador ----
+  const hi = game.houseInfo;
+  const owns = (game.world.houses || []).find((h) => h.owner === game.username && !h.apartment);
+  const apt = (game.world.houses || []).find((h) => h.owner === game.username && h.apartment);
+  const card = document.createElement("div");
+  card.className = "moradiaCard";
+  const acesso = hi?.access ? Object.keys(hi.access) : [];
+  card.innerHTML = `<h4>Minha moradia</h4>
+    <div class="sub">${owns ? `Casa própria: ${owns.label || "sua casa"}` : "Você ainda não tem casa própria."}${
+      apt ? ` · Apartamento alugado ($${hi?.rent ?? 30}/dia${hi?.debt ? ` · dívida $${hi.debt}` : ""})` : ""}</div>
+    ${acesso.length ? `<div class="sub" style="margin-top:6px"><b>Quem pode entrar:</b> ${acesso.map((u) => `<span class="houseAccessRow"><span>${u}</span><button class="btn small secondary" data-revoke="${u}">remover</button></span>`).join(" ")}</div>` : ""}
+    <div class="moradiaBtns">
+      ${owns ? `<button class="btn small secondary" data-give="1">Dar minha casa a…</button>` : ""}
+      ${owns ? `<button class="btn small primary" data-give-apartment="1">Construir casa para…</button>` : `<button class="btn small primary" data-build="1">Construir casa ($${hi?.buildCost?.gold ?? 1800})</button>`}
+      ${apt ? `<button class="btn small primary" data-enter-apt="${apt.id}">Entrar no apartamento</button><button class="btn small secondary" data-leave-apt="1">Deixar o apartamento</button>` : `<button class="btn small secondary" data-rent="1">Alugar apartamento ($${hi?.rent ?? 30}/dia)</button>`}
+    </div>`;
+  c.appendChild(card);
+  card.querySelectorAll("[data-revoke]").forEach((b) => b.onclick = () => {
+    commands.interact("revokeAccess", { username: b.dataset.revoke });
+    setTimeout(requestHouseInfo, 200);
+  });
+  card.querySelector("[data-rent]")?.addEventListener("click", () => commands.interact("rentApartment", {}));
+  card.querySelector("[data-enter-apt]")?.addEventListener("click", (ev) => {
+    commands.interact("enterHouse", { houseId: ev.currentTarget.dataset.enterApt });
+    closePanels();
+  });
+  card.querySelector("[data-leave-apt]")?.addEventListener("click", () => commands.interact("leaveApartment", {}));
+  card.querySelector("[data-build]")?.addEventListener("click", () => commands.interact("buildHouse", {}));
+  const giveBtn = card.querySelector("[data-give-apartment]");
+  if (giveBtn) giveBtn.onclick = () => {
+    const who = prompt("Construir uma casa para qual jogador online? (nome exato)");
+    if (who) commands.interact("buildHouse", { forUser: who.trim() });
+  };
+  const giveOwn = card.querySelector("[data-give]");
+  if (giveOwn) giveOwn.onclick = () => {
+    const who = prompt("Dar sua casa para qual jogador online? (você fica sem casa)");
+    if (who) commands.interact("giveHouse", { toUser: who.trim() });
+  };
+  c.insertAdjacentHTML("beforeend", `<p class="hintLine">Visitas precisam da sua permissão para entrar e, de novo, para abrir o baú. Móveis são colocados dentro de casa (entrar e clicar).</p>`);
   const owned = new Set(soc.ownedHouses||[]);
   const cat = soc.houseCatalog || [];
   if(cat.length){

@@ -1102,3 +1102,22 @@ kbd {
   color: #6b4a2e; vertical-align: 2px;
 }
 @media (max-width: 640px) { .npcPortraitCanvas { width: 84px; height: 84px; } }
+
+/* ---------------- casas dos jogadores ---------------- */
+#houseRequestModal{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(20,12,6,.55);z-index:420;}
+#houseRequestModal.open{display:flex;}
+.pmCard{width:min(430px,92vw);background:linear-gradient(#fff6dd,#f1dfb6);border:3px solid #8a5a33;border-radius:14px;padding:16px 18px;box-shadow:0 18px 50px rgba(0,0,0,.45);font-family:'Trebuchet MS',sans-serif;color:#3a2416;}
+.pmKind{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#8a5a33;font-weight:800;}
+.pmCard p{font-size:15px;line-height:1.35;margin:8px 0 14px;}
+.pmBtns{display:flex;gap:8px;justify-content:flex-end;}
+.chestCols{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.chestCol{background:#fff8e0;border:2px solid #d5bd94;border-radius:10px;padding:8px;min-height:120px;}
+.chestCol h4{margin:0 0 6px;font-size:12px;color:#6b4a2f;}
+.chestItem{display:flex;align-items:center;gap:7px;padding:5px 2px;border-bottom:1px dashed #e2cfa6;font-size:12px;}
+.chestItem .qty{margin-left:auto;font-weight:800;color:#6b4a2f;}
+.chestItem button{font-size:10px;padding:3px 7px;}
+.houseAccessRow{display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;}
+.moradiaCard{background:#fff8e0;border:2px solid #c9a06a;border-radius:12px;padding:10px 12px;margin-bottom:10px;}
+.moradiaCard h4{margin:0 0 4px;font-size:14px;}
+.moradiaCard .sub{font-size:11.5px;color:#7a5a35;}
+.moradiaBtns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}

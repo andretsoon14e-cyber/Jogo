@@ -1,6 +1,6 @@
 # Estado do Projeto — Vale Aconchegante
 
-Atualizado: **2026-10-23 (3)** • branch `arena/99b3550e-jogo` • servidor em `node server/server.js` (porta 3000)
+Atualizado: **2026-10-23 (4)** • branch `arena/99b3550e-jogo` • servidor em `node server/server.js` (porta 3000)
 
 > Documento anterior (2026-10-22) descrevia bases PNG e hotbar com `transform: scale`. Nada disso existe mais. O que está abaixo foi conferido no código e em execução.
 
@@ -14,7 +14,7 @@ Atualizado: **2026-10-23 (3)** • branch `arena/99b3550e-jogo` • servidor em 
 | 4 | Roupas — variedade por categoria | **CONCLUÍDA (números), PARCIAL (revisão)** | Camisa 16 (8F/7M/1U), Calça-saia 16 (7F/7M/2U), Chapéu 17 (6F/7M/4U), Cabelo 20 (11F/7M/2U). Meta de ~5 por gênero batida. Proposta em `docs/PROPOSTA_ROUPAS.md`. |
 | 5 | Criador em grade, sem auto-pulo | **CONCLUÍDA** | 10 abas, opções em grade (`minmax(74px,1fr)`), prévia ao lado, clique marca a opção e não avança sozinho. Coberto por teste (`test/client.smoke.test.js`). |
 | 6 | Retrato sem emoji e estação fora da arte | **PARCIAL** | `.portraitSeason` desativado; estação virou `.seasonChip` ao lado do nome. Botões de animal agora usam ícone próprio e "Casas & Família" perdeu o 🏠. **Ainda há emoji em painéis internos** (💰 em preços/recompensas, ✅ em missões, 🏠 em textos de interior) — 108 ocorrências em `ui.js`, 20 em `main.js`. HUD, hotbar, inventário e criador estão limpos. |
-| 7 | Versão cliente/servidor coerente | **CONCLUÍDA** | `index.html` usa o token `__APP_VERSION__`; `server.js` injeta a versão do `package.json` (agora 1.55.0) em `/` e no fallback. `fs` estava sem import e a leitura falhava em silêncio (servidor sempre dizia 1.16.0); corrigido. `curl /api/version` → `{"version":"1.55.0"}`; console do navegador sem o aviso "HTML em cache". |
+| 7 | Versão cliente/servidor coerente | **CONCLUÍDA** | `index.html` usa o token `__APP_VERSION__`; `server.js` injeta a versão do `package.json` (agora 1.56.0) em `/` e no fallback. `fs` estava sem import e a leitura falhava em silêncio (servidor sempre dizia 1.16.0); corrigido. `curl /api/version` → `{"version":"1.56.0"}`; console do navegador sem o aviso "HTML em cache". |
 | 8 | Votos de descanso não vazam para o dia seguinte | **CONCLUÍDA (teste de regressão criado)** | `test/sleepvotes.test.js`: 3 jogadores, dois dias, sincronizado por eventos (sem `sleep` arbitrário). Passa 6/6 em 3 execuções seguidas. O bug descrito no handoff **não se reproduz neste HEAD** — `advanceWorld()` limpa `sleepVotes` e `leavePlayer()` remove o voto de quem sai. |
 | 9 | Documentação atualizada | **CONCLUÍDA** | Este arquivo + `docs/ART_STYLE_GUIDE.md` + `docs/BASES_MATRIZ.md` reescritos em 2026-10-23. |
 | 10 | Proporções por idade com alturas distintas | **CONCLUÍDA** | Tabela explícita `VARIANT_SHAPE` no rig: recém-nascido 6px, bebê 12–13, criança 17–19, adolescente 21–23, adulto 26/29, idoso 24/25. Coberto por 7 asserções novas em `test/client.smoke.test.js`. Prancha: `.work/shots/rigsheet.png`. |
@@ -27,19 +27,29 @@ Atualizado: **2026-10-23 (3)** • branch `arena/99b3550e-jogo` • servidor em 
 | 17 | Clique e colisão coerentes com o desenho | **CONCLUÍDA** | `screenToWorld`/`worldToScreen` usavam 32px fixo enquanto o mundo é desenhado com `TS = 75.2`; cliques/hover caíam longe do alvo. O renderer agora publica `game.view` (overworld) e `game.viewInterior` (casa/loja) e a conversão usa a mesma transformação. Hitbox do jogador recentrada (0,40 × 0,40 em volta dos pés) — corredores de 1 tile da caverna e passagens do vale ficaram transitáveis sem atravessar prédios. |
 | 18 | Sincronização de jogadores entre regiões | **CONCLUÍDA** | `playerMoved` leva `region` e o cliente ignora pacote de outra região; `playerRegionChanged` aplica x/y. Antes, quem entrava na caverna continuava aparecendo na posição do vale para os outros. Aviso duplicado "Chegou em..." removido. |
 
+| 19 | Uma casa por jogador, geradas na criação | **CONCLUÍDA** | `#inpSlots` (1–6) no lobby vai em `joinRoom.houseSlots`; `createWorldState(code,{slots})` chama `initHouses` e cria uma casa vazia por vaga nos lotes de `HOUSE_LOTS`. Quem entra assume a casa livre (`ensurePlayerHouse`); se acabarem os lotes, `newHouse` cria outro em lote livre. Coberto por `test/houses.test.js` e pelo fluxo com 2 navegadores (Ana `casa_1` 30,28 / Beto `casa_2` 37,28). |
+| 20 | Spawn dentro da própria casa | **CONCLUÍDA** | `joinPlayer` põe o jogador em `casa:<id>` (8,9) em vez de um ponto fixo — resolve os spawns sobrepostos. Sai pela porta (clique no tapete/SETA ou F), voltando para `entry = (x+3, y+5.9)`. Medido: Ana sai em (33,33.9), Beto em (40,33.9). |
+| 21 | Aluguel de apartamento até juntar dinheiro | **CONCLUÍDA** | Painel Moradia → "Alugar apartamento ($30/dia)" cria `apto_N` com `APARTMENT_DOOR` (33.5,14.9), botão "Entrar no apartamento" e "Deixar o apartamento". `applyDailyRent` cobra $30 ao dormir, vira dívida se faltar ouro. Medido no navegador: gold 500 → 470 no dia 2, notificação "Aluguel de Ana: -$30". |
+| 22 | Permissão de entrada e baú separados | **CONCLUÍDA** | `enterHouse` fora do círculo da porta manda `houseRequest` ao dono (modal `#houseRequestModal`); aceitar grava `access[user].enter`. O baú pede `access[user].chest` em um segundo pedido; `chestMove` valida o dono ou essa permissão. Só o dono dorme (`isNearBedGlobal` + guarda no `sleep`). Medido: modal "Ana quer entrar na sua casa. Permitir?", baú "Ana quer abrir o baú da sua casa. Permitir?", sono de visita recusado. |
+| 23 | Construir casa para o novo jogador / dar a própria casa | **CONCLUÍDA** | `buildHouse{forUser}` cobra `HOUSE_BUILD_COST` (1800 + 20 madeira + 15 pedra) e cria no lote livre; `giveHouse{toUser}` transfere a propriedade e limpa acessos. Ambos testados em `test/houses.test.js` (inclui recusa de quem já tem casa). |
+| 24 | Badge do topo e título do cômodo legíveis | **CONCLUÍDA** | `currentLocation()` agora usa `REGION_DEFS` para qualquer região ≠ vale (caverna mostrava "Sua Fazenda"); o chip do cômodo saiu de y=14 (atrás do HUD) para y=96, e o banner mostra "Casa de Ana"/"Apartamento de Ana" em vez de `casa:casa_1`. Verificado em screenshot. |
+
 ## Testes (executados agora)
 
 ```
 npm run test:client  -> 🎉 CLIENTE OK
 node test/jobs.test.js -> 🎉 TRABALHOS OK (82/82)
 node test/cave.test.js -> 🎉 CAVERNA OK (34/34)
-npm test             -> 🎉 TODOS OS TESTES PASSARAM (44/44)
+npm test             -> 🎉 TODOS OS TESTES PASSARAM (45/45)
 node test/sleepvotes.test.js -> 🎉 VOTOS DE DESCANSO OK (6/6)
 node test/movement.test.js   -> 🎉 MOVIMENTO OK (5/5)
 node test/coop.test.js       -> 🎉 CO-OP OK (9/9)
+node test/houses.test.js     -> 🎉 CASAS OK (19/19)
 ```
 
-Scripts: `npm run test:all` roda todos nessa ordem (cliente, trabalhos, caverna, rede, votos, movimento, co-op); `npm run test:cave` só a caverna; `npm run test:net` só os de rede.
+Scripts: `npm run test:all` roda todos nessa ordem (cliente, trabalhos, caverna, rede, votos, movimento, co-op, casas); `npm run test:cave` só a caverna; `npm run test:net` só os de rede; `npm run test:house` só as regras de moradia.
+
+Nota: os testes de rede (multiplayer, movimento e co-op) agora saem da casa antes de agir — o spawn deixou de ser ao ar livre. Isso é o comportamento novo, não um timeout maior.
 
 ## O que NÃO foi testado
 

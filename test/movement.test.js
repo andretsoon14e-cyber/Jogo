@@ -45,12 +45,41 @@ function connect(name) {
   });
 }
 
+/** Cada jogador nasce dentro da própria casa: sai pela porta antes do teste. */
+async function exitHouse(socket) {
+  const ev = waitFor(socket, "houseLeft", () => true, 5000);
+  socket.emit("interact", { type: "setIndoor", data: { buildingId: null } });
+  return (await ev) || null;
+}
+
+/** Caminhada em passos de 0.6 tile, abaixo do limite do servidor. */
+async function walkTo(socket, tx, ty, from) {
+  let x = from.x, y = from.y;
+  const steps = Math.max(1, Math.ceil(Math.hypot(tx - x, ty - y) / 0.6));
+  for (let i = 1; i <= steps + 4; i++) {
+    const k = Math.min(1, i / steps);
+    x = from.x + (tx - from.x) * k;
+    y = from.y + (ty - from.y) * k;
+    socket.emit("move", { x, y, dir: "down" });
+    if (Math.hypot(tx - x, ty - y) < 0.4) break;
+    await new Promise((r) => setTimeout(r, 110));
+  }
+  return { x, y };
+}
+
 const A = await connect("Corredor");
 const B = await connect("Observador");
 await waitFor(B.socket, "playersUpdate", (l) => l?.length === 2, 3000);
 
+const aOut = await exitHouse(A.socket);
+const bOut = await exitHouse(B.socket);
+await walkTo(A.socket, 22, 21, aOut || { x: 22, y: 21 });
+await walkTo(B.socket, 21, 22, bOut || { x: 21, y: 22 });
+
 // ---- 1) teleporte em um pacote é aparado ----
 const seen = waitFor(B.socket, "playerMoved", (d) => d?.id === A.data.selfId, 3000);
+// cliente real manda posição continuamente: o último pacote é o ponto de partida
+A.socket.emit("move", { x: 22, y: 21, dir: "right" });
 A.socket.emit("move", { x: 90, y: 90, dir: "right" });
 const moved = await seen;
 const dist = moved ? Math.hypot(moved.x - 22, moved.y - 21) : Infinity;

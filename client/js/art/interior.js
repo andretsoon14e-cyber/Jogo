@@ -150,14 +150,22 @@ export function renderInterior(ctx, { W, H, time, season, game, characterFrames,
     clinica: { name: "Clínica" }, prefeitura: { name: "Prefeitura" }, carpintaria: { name: "Carpintaria" },
     casa_simples: { name: "Casa Simples" }, casa_familia: { name: "Casa de Família" }, chacara: { name: "Chácara" },
   }[roomId] || { name: "Interior" };
-  const roomKey = ["casa_player", "casa_simples", "casa_familia", "chacara"].includes(roomId) ? "casa_player" : roomId;
+  const isCasaJogador = String(roomId || "").startsWith("casa:");
+  const roomKey = ["casa_player", "casa_simples", "casa_familia", "chacara"].includes(roomId) || isCasaJogador
+    ? "casa_player" : roomId;
+  if (isCasaJogador) {
+    const house = (game.world.houses || []).find((h) => `casa:${h.id}` === roomId);
+    if (house) def.name = house.apartment ? `Apartamento de ${house.owner}` : `Casa de ${house.owner || "?"}`;
+  }
 
   const IW = 16, IH = 12;
   const roomW = IW * TS, roomH = IH * TS;
   // escala: o cômodo ocupa a maior parte da tela (sem ficar minúsculo no centro)
-  const k = Math.min((W - 120) / roomW, (H - 150) / roomH, 2.4);
+  // reserva a faixa da hotbar embaixo e uma margem no topo
+  const availableH = Math.max(260, H - 170);
+  const k = Math.min((W - 120) / roomW, availableH / roomH, 2.4);
   const ox = (W - roomW * k) / 2;
-  const oy = (H - roomH * k) / 2;
+  const oy = 20 + (availableH - roomH * k) / 2;
   // o clique precisa usar esta mesma escala (translate + scale)
   game.viewInterior = { ox, oy, scale: TS * k };
 
@@ -331,6 +339,29 @@ export function renderInterior(ctx, { W, H, time, season, game, characterFrames,
     drawPotted(ctx, sx(13.6), sy(9.6), time, season);
     // lareira
     drawFireplace(ctx, sx(12.4), sy(1.5), time);
+    // baú do dono: clicável (abre o painel do baú)
+    const chestX = sx(13.3), chestY = sy(6.3);
+    ctx.fillStyle = "rgba(30,22,14,.28)";
+    ctx.fillRect(chestX + 3, chestY + TS * 0.78, TS * 1.35, 8);
+    // corpo
+    ctx.fillStyle = "#7a4f2b";
+    ctx.fillRect(chestX, chestY + TS * 0.26, TS * 1.3, TS * 0.62);
+    ctx.fillStyle = "#9a6a3d";
+    ctx.fillRect(chestX + 2, chestY + TS * 0.3, TS * 1.3 - 4, TS * 0.5);
+    // tampa arredondada
+    ctx.fillStyle = "#6b431f";
+    ctx.fillRect(chestX - 2, chestY + TS * 0.18, TS * 1.34, TS * 0.16);
+    ctx.fillStyle = "#a97a48";
+    ctx.fillRect(chestX - 1, chestY + TS * 0.2, TS * 1.32, TS * 0.08);
+    // cintas de metal
+    ctx.fillStyle = "#4a4038";
+    ctx.fillRect(chestX + TS * 0.28, chestY + TS * 0.18, 4, TS * 0.7);
+    ctx.fillRect(chestX + TS * 0.9, chestY + TS * 0.18, 4, TS * 0.7);
+    // fecho
+    ctx.fillStyle = "#e8c15c";
+    ctx.fillRect(chestX + TS * 0.62, chestY + TS * 0.46, TS * 0.14, TS * 0.16);
+    ctx.fillStyle = "#6b431f";
+    ctx.fillRect(chestX + TS * 0.65, chestY + TS * 0.5, TS * 0.07, TS * 0.07);
   } else if (roomKey === "taverna") {
     for (let i = 0; i < 2; i++) {
       ctx.drawImage(furnitureSprite("mesa"), sx(2.4 + i * 3.2), sy(5.4));
@@ -585,17 +616,22 @@ export function renderInterior(ctx, { W, H, time, season, game, characterFrames,
   }
 
   // ---------------- etiqueta do cômodo e saída ----------------
+  // fica abaixo do HUD central (que ocupa ~14–42 px), dentro da cena
   ctx.save();
   const label = def.name;
+  const labelY = 96;
   ctx.font = "800 12px Trebuchet MS, Segoe UI, sans-serif";
   const tw = ctx.measureText(label).width + 30;
-  ctx.fillStyle = "rgba(40,28,18,.78)";
+  ctx.fillStyle = "rgba(40,28,18,.82)";
   ctx.beginPath();
-  ctx.roundRect ? ctx.roundRect(W / 2 - tw / 2, 14, tw, 26, 8) : ctx.rect(W / 2 - tw / 2, 14, tw, 26);
+  ctx.roundRect ? ctx.roundRect(W / 2 - tw / 2, labelY, tw, 26, 8) : ctx.rect(W / 2 - tw / 2, labelY, tw, 26);
   ctx.fill();
+  ctx.strokeStyle = "rgba(244,227,194,.22)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
   ctx.fillStyle = "#f4e3c2";
   ctx.textAlign = "center";
-  ctx.fillText(label, W / 2, 32);
+  ctx.fillText(label, W / 2, labelY + 18);
   ctx.restore();
 
   const ex = ox + sx(8) * k, ey = oy + sy(IH - 0.9) * k;

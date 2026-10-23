@@ -3,6 +3,7 @@ import {
   NPCS_DATA, COMMUNITY_PROJECTS, QUESTS, FRIENDSHIP, SKILLS, npcPosition,
   ALL_NPCS, NPC_BY_ID,
 } from "../shared/constants.js";
+import { publicHouses } from "../shared/houses.js";
 import { isEstufaAt, isTileFreeForBuilding, ensureRegions } from "./worldState.js";
 import { persistPlayer } from "./rooms.js";
 import { RECIPES, recipeById } from "../shared/careers.js";
@@ -47,6 +48,7 @@ export function publicWorld(world) {
     tiles: world.tiles,
     plots: world.plots,
     buildings: world.buildings,
+    houses: publicHouses(world),
     animals: world.animals,
     communityProgress: world.communityProgress,
     festival: world.festival,

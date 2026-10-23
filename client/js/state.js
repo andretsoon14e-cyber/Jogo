@@ -183,7 +183,9 @@ export function nearbyNpc(radius = 2.6) {
 export function nearbyBuilding() {
   let best = null, bestD = 3.2;
   for (const b of currentBuildings()) {
-    const cx = b.x + b.w / 2, cy = b.y + b.h / 2;
+    // casa de jogador: o alvo é a porta, não o centro do telhado
+    const cx = b.houseId ? b.entry.x : b.x + b.w / 2;
+    const cy = b.houseId ? b.entry.y : b.y + b.h / 2;
     const d = Math.hypot(cx - game.x, cy - game.y);
     if (d < bestD) { best = b; bestD = d; }
   }
@@ -289,10 +291,28 @@ export function currentTiles() {
   return game.regions?.[region]?.tiles || [];
 }
 
-/** Construções da região atual. */
+/** Casas dos jogadores (só no vale) já no formato de construção. */
+export function houseBuildings() {
+  if (currentRegion() !== "vale") return [];
+  return (game.world.houses || [])
+    .filter((h) => !h.apartment && Number.isFinite(h.x))
+    .map((h) => ({
+      id: "casa_player",
+      house: true,
+      houseId: h.id,
+      owner: h.owner || null,
+      apartment: false,
+      name: h.label || (h.owner ? `Casa de ${h.owner}` : "Casa vazia"),
+      x: h.x, y: h.y, w: h.w, h: h.h,
+      color: h.color, roof: h.roof, icon: "🏠",
+      entry: h.entry,
+    }));
+}
+
+/** Construções da região atual (prédios fixos + casas dos jogadores). */
 export function currentBuildings() {
   const region = currentRegion();
-  if (region === "vale") return BUILDINGS;
+  if (region === "vale") return [...BUILDINGS, ...houseBuildings()];
   return REGION_DEFS[region]?.buildings || [];
 }
 
@@ -341,6 +361,22 @@ export const INTERIOR_DEFS = {
   casa_familia: { name: "Casa de Família", color: "#fff8e7" },
   chacara: { name: "Chácara", color: "#fff8e7" },
 };
+
+/** Definição do interior atual (casas de jogador entram como casa_player). */
+export function interiorDef(id = game.indoors) {
+  if (!id) return { name: "Interior", color: "#fff8e7" };
+  if (String(id).startsWith("casa:")) {
+    const house = (game.world.houses || []).find((h) => `casa:${h.id}` === id);
+    return { name: house?.label || "Casa", color: "#fff8e7" };
+  }
+  return INTERIOR_DEFS[id] || { name: "Interior", color: "#fff8e7" };
+}
+
+export function isMyHouseInterior(id = game.indoors) {
+  if (!id || !String(id).startsWith("casa:")) return false;
+  const house = (game.world.houses || []).find((h) => `casa:${h.id}` === id);
+  return !!house && house.owner === game.username;
+}
 
 function isCollidingIndoor(x, y) {
   if (x < 0.4 || y < 0.4 || x >= INTERIOR_W - 0.4 || y >= INTERIOR_H - 0.4) return true;

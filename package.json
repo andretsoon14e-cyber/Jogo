@@ -1,6 +1,6 @@
 {
   "name": "vale-aconchegante",
-  "version": "1.55.0",
+  "version": "1.56.0",
   "description": "Jogo 2D Simulacao de Vida, Fazenda e RPG Multiplayer - inspirado na atmosfera acolhedora de Stardew Valley",
   "main": "electron.cjs",
   "type": "module",
@@ -12,10 +12,11 @@
     "build:exe:portable": "electron-builder --win portable --x64",
     "test": "node test/multiplayer.test.js",
     "test:client": "node test/client.smoke.test.js",
-    "test:all": "node test/client.smoke.test.js && node test/jobs.test.js && node test/cave.test.js && node test/multiplayer.test.js && node test/sleepvotes.test.js && node test/movement.test.js && node test/coop.test.js",
+    "test:all": "node test/client.smoke.test.js && node test/jobs.test.js && node test/cave.test.js && node test/multiplayer.test.js && node test/sleepvotes.test.js && node test/movement.test.js && node test/coop.test.js && node test/houses.test.js",
     "test:sleep": "node test/sleepvotes.test.js",
-    "test:net": "node test/multiplayer.test.js && node test/sleepvotes.test.js && node test/movement.test.js && node test/coop.test.js",
-    "test:cave": "node test/cave.test.js"
+    "test:net": "node test/multiplayer.test.js && node test/sleepvotes.test.js && node test/movement.test.js && node test/coop.test.js && node test/houses.test.js",
+    "test:cave": "node test/cave.test.js",
+    "test:house": "node test/houses.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

@@ -47,13 +47,13 @@ function connect(name) {
   });
 }
 
-async function walkTo(socket, tx, ty) {
-  let x = 22, y = 21;
+async function walkTo(socket, tx, ty, from = { x: 22, y: 21 }) {
+  let x = from.x, y = from.y;
   const steps = Math.max(1, Math.ceil(Math.hypot(tx - x, ty - y)));
   for (let i = 1; i <= steps + 4; i++) {
     const k = Math.min(1, i / steps);
-    x = 22 + (tx - 22) * k;
-    y = 21 + (ty - 21) * k;
+    x = from.x + (tx - from.x) * k;
+    y = from.y + (ty - from.y) * k;
     socket.emit("move", { x, y, dir: "down" });
     if (Math.hypot(tx - x, ty - y) < 0.5) break;
     await new Promise((r) => setTimeout(r, 110));
@@ -71,11 +71,21 @@ for (const m of COOP_MISSIONS) {
 // ---------- 2) progresso compartilhado de verdade ----------
 const A = await connect("CooperaA");
 const B = await connect("CooperaB");
+
+/** Cada jogador nasce dentro da própria casa: sai pela porta como um cliente. */
+async function exitHouse(socket) {
+  const ev = waitFor(socket, "houseLeft", () => true, 5000);
+  socket.emit("interact", { type: "setIndoor", data: { buildingId: null } });
+  return (await ev) || null;
+}
+const aOut = await exitHouse(A.socket);
+const bOut = await exitHouse(B.socket);
+
 const start = await waitFor(A.socket, "coopUpdate", (list) => Array.isArray(list), 3000);
 const harvestBefore = start?.find((m) => m.id === "colheita")?.progress ?? 0;
 
 // prepara o canteiro perto do spawn e planta
-await walkTo(A.socket, 23, 16);
+await walkTo(A.socket, 23, 16, aOut || { x: 22, y: 21 });
 A.socket.emit("interact", { type: "till", data: { x: 23, y: 16 } });
 await waitFor(A.socket, "tileUpdate", (d) => d?.x === 23 && d?.y === 16, 2000);
 A.socket.emit("interact", { type: "plant", data: { x: 23, y: 16, seed: "nabo_seed" } });

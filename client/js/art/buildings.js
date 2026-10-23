@@ -494,6 +494,29 @@ function paint(g, o) {
     // cata-vento
     R(g, w / 2, roofY - 6, 1, 8, "#5f5e57");
     R(g, w / 2 - 3, roofY - 8, 7, 2, "#c3cbcf");
+  } else if (o.house && o.color) {
+    // casa de jogador: limpa, com jardim e telhado na cor do dono
+    const roofY = 10;
+    const wall = o.color || "#f3dcc4";
+    const roof = o.roof || "#8e4a3a";
+    wallPlaster(g, 3, roofY + 18, w - 6, h - roofY - 18, wall, shade(wall, -0.1));
+    R(g, 3, roofY + 18, w - 6, 2, shade(wall, -0.18));
+    R(g, 3, roofY + 18, w - 6, 1, "#fff8ea");
+    R(g, 3, h - 10, w - 6, 3, "#a99a86");
+    R(g, 3, h - 10, w - 6, 1, "#c4b6a2");
+    gableRoof(g, 3, roofY, w - 6, 18, [roof, shade(roof, -0.14), shade(roof, -0.28)]);
+    chimney(g, w - 17, roofY + 1, 6);
+    // porta com degrau e vaso
+    door(g, w / 2 - 5, h - 22, 10, 20, { wood: "#a97a48", frame: "#6b4a2f" });
+    R(g, w / 2 - 7, h - 3, 14, 2, "#b6a894");
+    windowBox(g, 8, roofY + 26, 9, 9, { frame: "#6b4a2f", flower: true });
+    windowBox(g, w - 19, roofY + 26, 9, 9, { frame: "#6b4a2f", flower: true });
+    pottedPlant(g, 3, h - 6, season);
+    pottedPlant(g, w - 11, h - 6, season);
+    // cerca baixinha na frente
+    for (let i = 1; i < 3; i++) {
+      R(g, 4 + i * 2, h + 2, 1, 4, "#d9c9a8");
+    }
   } else if (sid === "casa_player" || o.house) {
     const roofY = 10;
     // parede com reboco envelhecido/mancha — herança abandonada
@@ -644,7 +667,7 @@ function paint(g, o) {
 
 /** Gera o sprite de um prédio com metadados de janelas/porta. */
 export function buildingSprite(b, season) {
-  return cached(`bld:${b.id}:${b.w}x${b.h}:${season}:${b.roof || ""}`, () => {
+  return cached(`bld:${b.id}:${b.w}x${b.h}:${season}:${b.roof || ""}:${b.color || ""}:${b.house ? 1 : 0}`, () => {
     const w = b.w * 16, h = b.h * 16;
     const extraTop = b.id === "igreja" ? 36 : 0;
     const padBottom = 16;
@@ -669,7 +692,7 @@ export function buildingSprite(b, season) {
 
 /** Janelas iluminadas: desenhadas por cima à noite (coordenadas em px de tela). */
 export function buildingNightLights(b, season) {
-  return cached(`bldNight:${b.id}:${b.w}x${b.h}:${season}`, () => {
+  return cached(`bldNight:${b.id}:${b.w}x${b.h}:${season}:${b.house ? 1 : 0}`, () => {
     const w = b.w * 32, h = b.h * 32;
     const c = mkCanvas(w, h);
     const g = c.getContext("2d");

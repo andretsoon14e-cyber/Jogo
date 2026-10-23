@@ -48,18 +48,28 @@ function waitFor(socket, event, predicate = () => true, ms = 5000) {
  * O servidor limita a velocidade (9 tiles/s + folga), então teleporte
  * num pacote só é aparado — usar isto em vez de emitir um salto.
  */
-async function walkTo(socket, tx, ty) {
-  let x = 22, y = 21;
-  const steps = Math.ceil(Math.hypot(tx - x, ty - y) / 1);
+async function walkTo(socket, tx, ty, from = { x: 22, y: 21 }) {
+  let x = from.x, y = from.y;
+  const steps = Math.max(1, Math.ceil(Math.hypot(tx - x, ty - y) / 1));
   for (let i = 1; i <= steps + 6; i++) {
     const k = Math.min(1, i / steps);
-    x = 22 + (tx - 22) * k;
-    y = 21 + (ty - 21) * k;
+    x = from.x + (tx - from.x) * k;
+    y = from.y + (ty - from.y) * k;
     socket.emit("move", { x, y, dir: "down" });
     if (Math.hypot(tx - x, ty - y) < 0.5) break;
     await sleep(120);
   }
   return { x, y };
+}
+
+/**
+ * Cada jogador nasce dentro da própria casa (design novo). Para testar o
+ * mundo e a fazenda, sai pela porta como um cliente faria.
+ */
+async function exitHouse(socket) {
+  const ev = once(socket, "houseLeft", 5000);
+  socket.emit("interact", { type: "setIndoor", data: { buildingId: null } });
+  return (await ev) || null;
 }
 
 function connect(name, { token = null, x = 22, y = 21 } = {}) {
@@ -125,9 +135,17 @@ async function main() {
   ok("Lista de jogadores sincronizada", au?.length === 2, `${au?.length || 0} jogadores`);
   ok("Estado privado não vaza na lista pública", au && !("inventory" in au[0]));
 
+  // ---------- SAÍDA DE CASA ----------
+  // Todo jogador nasce dentro da própria casa (uma por vaga da sala).
+  // O resto do teste acontece no vale, então sai pela porta como o cliente faz.
+  const aOut = await exitHouse(A.socket);
+  const bOut = await exitHouse(B.socket);
+  ok("Cada jogador nasce na própria casa e sai pela porta", !!aOut && !!bOut,
+    `A ${aOut ? `${aOut.x},${aOut.y}` : "sem saída"} | B ${bOut ? `${bOut.x},${bOut.y}` : "sem saída"}`);
+
   // ---------- MOVIMENTO / CHAT ----------
   const moved = waitFor(B.socket, "playerMoved", (d) => d?.x > 23 && d?.y < 17.5);
-  const walkedA = await walkTo(A.socket, 23.5, 16.25);
+  const walkedA = await walkTo(A.socket, 23.5, 16.25, aOut);
   const mv = await moved;
   ok("Movimento em tempo real", !!mv, mv ? `${mv.x.toFixed(2)},${mv.y.toFixed(2)}` : `andou até ${walkedA.x.toFixed(2)},${walkedA.y.toFixed(2)}`);
 
@@ -175,7 +193,7 @@ async function main() {
   const plot = worldAfter.plots["22,15"];
   ok("Planta cresce 3 estágios (regada todo dia)", plot?.crop === "nabo" && plot.stage >= 3, `estágio ${plot?.stage}`);
 
-  await walkTo(B.socket, 23.2, 16.4);
+  await walkTo(B.socket, 23.2, 16.4, bOut);
   const harvestFx = waitFor(A.socket, "effect", (e) => e.type === "harvest");
   const invB = waitFor(B.socket, "inventoryUpdate", (inv) => (inv?.nabo || 0) >= 1);
   B.socket.emit("interact", { type: "harvest", data: { x: 22, y: 15 } });

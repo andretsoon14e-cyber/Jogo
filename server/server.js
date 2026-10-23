@@ -10,6 +10,9 @@ import {
   ensureRoom, getRoom, listRooms, joinPlayer, leavePlayer, saveRoom,
   saveDirtyRooms, allRooms, normalizedCode, resetRoom, persistPlayer,
 } from "./rooms.js";
+import { handleHouseAction, applyDailyRent } from "./houses.js";
+import { publicHouses } from "../shared/houses.js";
+import { houseById, houseIdFromInterior, isHouseInterior } from "../shared/houses.js";
 import { handleAction, publicPlayer, publicWorld } from "./gameActions.js";
 import { sanitizeLook } from "../shared/looks.js";
 import { handleBankAction } from "./bank.js";
@@ -87,7 +90,7 @@ app.get("/api/rooms", (req, res) => res.json(listRooms()));
 app.post("/api/create-room", (req, res) => {
   let code = normalizedCode(req.body?.code) || Math.random().toString(36).slice(2, 6).toUpperCase();
   if (getRoom(code)) return res.status(400).json({ error: "Já existe uma sala com esse código." });
-  const room = ensureRoom(code);
+  const room = ensureRoom(code, { slots: req.body?.houseSlots });
   saveWorldToDisk(code, room.world);
   res.json({ code });
 });
@@ -166,6 +169,7 @@ setInterval(() => {
 
 function advanceWorld(room, extraNotes = []) {
   const notes = advanceDay(room.world);
+  notes.push(...applyDailyRent(room.world, room, io));
   notes.push(...dailyCareerEffects(room, io));
   room.sleepVotes.clear();
   for (const p of room.players.values()) {
@@ -225,7 +229,7 @@ io.on("connection", (socket) => {
     try {
       const code = normalizedCode(payload.roomCode) || "VALE1";
       const tokenUser = verifyToken(payload.token);
-      room = ensureRoom(code);
+      room = ensureRoom(code, { slots: payload.houseSlots });
 
       let requested = String(payload.username || "").slice(0, 20);
       let name = tokenUser || requested || `Visitante${Math.floor(Math.random() * 999)}`;
@@ -256,6 +260,7 @@ io.on("connection", (socket) => {
         world: publicWorld(room.world),
       });
       socket.to(code).emit("playerJoined", publicPlayer(player));
+      io.to(code).emit("housesUpdate", publicHouses(room.world));
       io.to(code).emit("playersUpdate", [...room.players.values()].map(publicPlayer));
       socket.emit("chatHistory", room.chat.slice(-30));
       sendCareerState({ player, room, socket });
@@ -332,6 +337,7 @@ io.on("connection", (socket) => {
       // banco e social antes do genérico
       let handled = handleBankAction(ctx, data.type, data.data || {});
       if (handled === undefined) handled = handleSocialAction(ctx, data.type, data.data || {});
+      if (handled === undefined) handled = handleHouseAction(ctx, data.type, data.data || {});
       if (handled !== undefined) { persistPlayer(room.world, player); room.dirty = true; return; }
       handleAction(ctx, data.type, data.data || {});
       persistPlayer(room.world, player);
@@ -356,6 +362,14 @@ io.on("connection", (socket) => {
 
   socket.on("sleep", () => {
     if (!room || !player) return;
+    // visita não dorme na casa dos outros: só o dono usa a cama
+    if (isHouseInterior(player.indoors)) {
+      const casa = houseById(room.world, houseIdFromInterior(player.indoors));
+      if (casa && casa.owner !== player.username) {
+        socket.emit("notify", { msg: "Essa cama não é sua. Só o dono dorme aqui.", type: "error" });
+        return;
+      }
+    }
     room.sleepVotes.add(socket.id);
     // maioria simples: 1 jogador = 1 voto, 2 = 2, 3 = 2, 4 = 3...
     const needed = Math.max(1, Math.floor(room.players.size / 2) + 1);

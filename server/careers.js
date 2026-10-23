@@ -4,6 +4,8 @@ import {
   isVacationDay, isOnShiftNow, jobShiftHours, QUEST_CHAINS, COOP_MISSIONS, TRANSPORT,
   REGION_DEFS, REGION_NPCS, fmtHour,
 } from "../shared/careers.js";
+import { enterHouseFor, leaveHouseFor } from "./houses.js";
+import { houseById, houseIdFromInterior, isHouseInterior, canEnterHouse } from "../shared/houses.js";
 import { BUILDINGS, ITEM_INFO, TILE, ALL_NPCS, NPC_BY_ID, COMMUNITY_PROJECTS } from "../shared/constants.js";
 import { persistPlayer } from "./rooms.js";
 
@@ -358,8 +360,24 @@ function setIndoor(ctx, data) {
   player.moveAt = Date.now();
   player.tpUntil = Date.now() + 1500;
   if (!buildingId) {
+    if (isHouseInterior(player.indoors)) {
+      leaveHouseFor(ctx, player);
+      return;
+    }
     player.indoors = null;
     ctx.broadcast("playersUpdate", [...ctx.room.players.values()].map(publicPlayerSafe));
+    return;
+  }
+  // casas de jogador: só entra quem é dono ou tem permissão
+  if (isHouseInterior(buildingId)) {
+    const house = houseById(ctx.room.world, houseIdFromInterior(buildingId));
+    if (!house) return;
+    if (player.indoors === buildingId) return;
+    if (house.owner !== player.username && !canEnterHouse(house, player.username)) {
+      ctx.notify("Você precisa de permissão para entrar nessa casa.", "error");
+      return;
+    }
+    enterHouseFor(ctx, player, house);
     return;
   }
   const allowed = ["casa_player", "mercado", "taverna", "carpintaria", "ferraria", "clinica", "prefeitura"];

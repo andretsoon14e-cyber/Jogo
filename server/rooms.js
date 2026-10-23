@@ -1,5 +1,6 @@
 import { createWorldState, saveWorldToDisk, loadWorldFromDisk } from "./worldState.js";
 import { START_GOLD, START_INVENTORY, SKILLS } from "../shared/constants.js";
+import { ensurePlayerHouse, houseInteriorId, houseByOwner, apartmentByOwner } from "../shared/houses.js";
 import { normalizeUsername } from "./accounts.js";
 
 const rooms = new Map();
@@ -24,11 +25,11 @@ export function listRooms() {
   }));
 }
 
-export function ensureRoom(rawCode) {
+export function ensureRoom(rawCode, opts = {}) {
   const code = normalizedCode(rawCode);
   if (!code) throw new Error("Código de sala inválido");
   if (rooms.has(code)) return rooms.get(code);
-  const world = loadWorldFromDisk(code) || createWorldState(code);
+  const world = loadWorldFromDisk(code) || createWorldState(code, opts);
   const room = {
     roomCode: code,
     world,
@@ -36,6 +37,8 @@ export function ensureRoom(rawCode) {
     hostId: null,
     chat: [],
     sleepVotes: new Set(),
+    houseRequests: new Map(),
+    reqSeq: 0,
     dirty: false,
     createdAt: Date.now(),
   };
@@ -53,7 +56,8 @@ export function resetRoom(rawCode) {
     room.dirty = true;
   } else {
     rooms.set(code, {
-      roomCode: code, world, players: new Map(), hostId: null, chat: [], sleepVotes: new Set(), dirty: true, createdAt: Date.now(),
+      roomCode: code, world, players: new Map(), hostId: null, chat: [], sleepVotes: new Set(),
+      houseRequests: new Map(), reqSeq: 0, dirty: true, createdAt: Date.now(),
     });
   }
   saveWorldToDisk(code, world);
@@ -90,6 +94,10 @@ function freshState(username, account) {
     furniture: [], // {id,x,y,rot} para o interior da casa
     relationship: {}, // npcId -> {stage, sinceDay, events[]}
     family: null,
+    houseId: null,
+    rentApartment: null,
+    rentDebt: 0,
+    rentPaidDay: 0,
     x: 22,
     y: 21,
   };
@@ -117,6 +125,10 @@ export function persistPlayer(world, player) {
     furniture: player.furniture||[],
     relationship: player.relationship||{},
     family: player.family||null,
+    houseId: player.houseId || null,
+    rentApartment: player.rentApartment || null,
+    rentDebt: player.rentDebt || 0,
+    rentPaidDay: player.rentPaidDay || 0,
     region: player.region,
     x: player.x,
     y: player.y,
@@ -147,6 +159,10 @@ function restorePlayer(world, username) {
     furniture: saved.furniture || [],
     relationship: saved.relationship || {},
     family: saved.family || null,
+    houseId: saved.houseId || null,
+    rentApartment: saved.rentApartment || null,
+    rentDebt: saved.rentDebt || 0,
+    rentPaidDay: saved.rentPaidDay || 0,
     region: saved.region || "vale",
     x: Number.isFinite(saved.x) ? saved.x : 22,
     y: Number.isFinite(saved.y) ? saved.y : 21,
@@ -186,6 +202,20 @@ export function joinPlayer(room, socketId, { username, account, tokenUser, skin,
   player.online = true;
   player.indoors = null;
   player.shift = null;
+
+  // ---- moradia: cada jogador nasce dentro da própria casa ----
+  const apt = apartmentByOwner(room.world, player.username);
+  const own = houseByOwner(room.world, player.username);
+  const house = own || (apt ? null : ensurePlayerHouse(room.world, player));
+  const spawnHouse = own || apt || house;
+  if (spawnHouse) {
+    player.region = "vale";
+    player.indoors = houseInteriorId(spawnHouse.id);
+    player.entryPos = { ...spawnHouse.entry };
+    player.x = 8;
+    player.y = 9;
+    player.houseId = spawnHouse.id;
+  }
 
   room.players.set(socketId, player);
   if (!room.hostId || !room.players.has(room.hostId)) room.hostId = socketId;

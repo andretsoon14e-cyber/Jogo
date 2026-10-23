@@ -1,8 +1,10 @@
 import {
   game, commands, rebuildHotbar, screenToWorld, screenToWorldInterior, tileAt, npcPos, nearbyNpc,
   nearbyBuilding, isNearWater, isNearForest, isNearStone, itemMeta,
-  currentRegion, currentRegionDef, currentTiles, currentBuildings, currentNpcs, isIndoors, INTERIOR_W, INTERIOR_H,
+  currentRegion, currentRegionDef, currentTiles, currentBuildings, currentNpcs, isIndoors, interiorDef,
+  isMyHouseInterior, INTERIOR_W, INTERIOR_H,
 } from "./state.js";
+import { isHouseInterior, houseLabel } from "../../shared/houses.js";
 import {
   BUILDINGS, BUILD_OPTIONS, CROPS, NPCS_DATA, ALL_NPCS, PLAYER_SKINS, TILE, SEASONS,
 } from "../../shared/constants.js";
@@ -324,7 +326,8 @@ async function play() {
   localStorage.setItem("vale_room", room);
   localStorage.setItem("vale_mode", mode);
 
-  startGame({ username, roomCode: room, token, skin: game.skin, look: lookFromParts(game.skinParts) });
+  const houseSlots = Number(document.getElementById("inpSlots")?.value || 2);
+  startGame({ username, roomCode: room, token, skin: game.skin, look: lookFromParts(game.skinParts), houseSlots });
 }
 
 // ---------------- INÍCIO DO JOGO ----------------
@@ -336,6 +339,7 @@ function startGame(profile) {
   game.skin = profile.skin;
   game.token = profile.token;
   game.isAccount = mode !== "guest" && !!profile.token;
+  game.houseSlots = profile.houseSlots || 2;
 
   document.getElementById("loginScreen").classList.remove("active");
   document.getElementById("gameScreen").classList.add("active");
@@ -670,6 +674,11 @@ function handleWorldClick() {
       tryToggleInterior();
       return;
     }
+    // baú da casa (canto direito perto da parede)
+    if (isHouseInterior(game.indoors) && ipos.x >= 13.2 && ipos.x <= 14.8 && ipos.y >= 6.0 && ipos.y <= 7.6) {
+      commands.interact("openChest", { houseId: game.houseId });
+      return;
+    }
     // fogão
     if (["casa_player","taverna"].includes(game.indoors) && ipos.y >= 1.4 && ipos.y <= 3.4 && ipos.x >= 6 && ipos.x <= 10) {
       ui.togglePanel("kitchenPanel");
@@ -799,6 +808,11 @@ window.caveStairsStep = caveStairsStep;
 
 function tryToggleInterior(){
   if(game.indoors){
+    // casa de jogador: quem manda na saída é o servidor (guarda a porta)
+    if(isHouseInterior(game.indoors)){
+      commands.interact("setIndoor", { buildingId: null });
+      return;
+    }
     // sair: volta para posição externa memorizada
     const last = game._lastOutdoor || { x: game.x, y: game.y };
     game.indoors = null;
@@ -811,6 +825,12 @@ function tryToggleInterior(){
 }
 
 function interactBuilding(b) {
+  // casa de jogador: pede entrada (o servidor decide dono/permissão/pedido)
+  if (b.houseId) {
+    commands.interact("enterHouse", { houseId: b.houseId });
+    sfx("open");
+    return;
+  }
   if (["mercado", "carpintaria", "ferraria"].includes(b.id)) {
     // F dentro do prédio entra no interior; clique na fachada abre loja
     if(b.id==="mercado" && window.confirm("Entrar no mercado? (OK = entrar, Cancelar = abrir loja)")){
@@ -864,8 +884,14 @@ function enterInterior(buildingId){
   ui.notify(`🏠 Você entrou em ${buildingId}. Pressione F para sair.`, "success");
 }
 
+const BED_AT = [12.2, 4.4];
 function isNearBedGlobal(){
   if(!isIndoors()) return false;
+  if(isHouseInterior(game.indoors)){
+    // só o dono usa a própria cama
+    if(!isMyHouseInterior(game.indoors)) return false;
+    return Math.hypot(game.x - BED_AT[0], game.y - BED_AT[1]) < 1.9;
+  }
   const bedPositions = { casa_player:[12.2,4.4], casa_simples:[12.2,4.4], casa_familia:[12.2,4.4], chacara:[12.2,4.4], clinica:[11.4,5.0] };
   const pos = bedPositions[game.indoors];
   if(!pos) return false;

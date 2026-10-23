@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { MAP_W, MAP_H, TILE, CROPS, GAME_START_MINUTES, BUILD_OPTIONS, ANIMALS } from "../shared/constants.js";
 import { REGION_DEFS, JOBS, isVacationDay, jobShiftHours, weekdayIndex } from "../shared/careers.js";
+import { initHouses } from "../shared/houses.js";
 
 const WORLDS_DIR = () => process.env.DATA_DIR || path.join("server", "data", "worlds");
 
@@ -341,8 +342,8 @@ export function ensureRegions(world) {
   return world.regions;
 }
 
-export function createWorldState(roomCode) {
-  return {
+export function createWorldState(roomCode, opts = {}) {
+  const world = {
     roomCode,
     day: 1,
     seasonIndex: 0,
@@ -365,9 +366,15 @@ export function createWorldState(roomCode) {
     cave: { deepest: 0, crystals: 0 },
     coop: { week: 0, progress: {}, completed: [] },
     festival: null,
+    // casas dos jogadores (geradas já na criação do mundo)
+    houses: [],
+    nextHouseSeq: 1,
+    houseSlots: Math.max(1, Math.min(9, Number(opts.slots) || 2)),
     createdAt: Date.now(),
     updatedAt: Date.now(),
   };
+  initHouses(world, world.houseSlots);
+  return world;
 }
 
 export function saveWorldToDisk(roomCode, world) {
@@ -397,6 +404,9 @@ export function loadWorldFromDisk(roomCode) {
       for (const k of ["praca", "biblioteca", "ponte", "estrada", "porto", "estacao"]) world.communityProgress[k] ??= 0;
       if (!world.tiles || !world.tiles.length) world.tiles = createEmptyMap();
       ensureRegions(world);
+      world.houses ||= [];
+      world.nextHouseSeq ||= 1;
+      initHouses(world, world.houseSlots || 2);
       world.coop ||= { week: 0, progress: {}, completed: [] };
       // migração: garante que o rio só seja atravessável com a ponte comunitária
       const hasBridge = (world.communityProgress?.ponte || 0) >= 1000;

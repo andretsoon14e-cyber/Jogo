@@ -334,22 +334,47 @@ function caveFloorTile(g, x, y, tiles, tx, ty) {
 
 function caveWallTile(g, x, y) {
   const h = hash(x, y, 881);
-  g.fillStyle = h > 0.5 ? "#2e2823" : "#2a2420";
+  // rocha bem mais escura que o piso, para a caverna ter leitura de volume
+  g.fillStyle = h > 0.5 ? "#241d18" : "#1f1915";
   g.fillRect(x, y, T, T);
-  // blocos empilhados
-  for (let r = 0; r < 4; r++) {
-    const bh = 8, by = y + r * bh, off = r % 2 ? 8 : 0;
-    for (let c = -1; c < 5; c++) {
-      const bx = x + off + c * 16;
-      const tone = hash(bx, by, 882);
-      g.fillStyle = tone > 0.66 ? "#3a322c" : tone > 0.33 ? "#342d27" : "#2f2823";
-      g.fillRect(bx + 1, by + 1, 14, bh - 2);
-      g.fillStyle = alpha("#181310", 0.55);
-      g.fillRect(bx + 1, by + bh - 1, 14, 1);
-      g.fillStyle = alpha("#544940", 0.35);
-      g.fillRect(bx + 1, by + 1, 14, 1);
+  // rocha irregular: manchas de tamanhos diferentes, sem grade de tijolo
+  for (let i = 0; i < 9; i++) {
+    const px = x + Math.floor(hash(x + i, y + 3, 883) * (T - 12));
+    const py = y + Math.floor(hash(y + i, x + 5, 884) * (T - 11));
+    const w = 7 + Math.floor(hash(i, x + y, 885) * 11);
+    const hh = 5 + Math.floor(hash(i + 2, x - y, 886) * 8);
+    const tone = hash(px, py, 887);
+    g.fillStyle = tone > 0.66 ? "#332b24" : tone > 0.33 ? "#2d261f" : "#27211b";
+    g.fillRect(px, py, w, hh);
+    g.fillStyle = alpha("#4a3f35", 0.55);
+    g.fillRect(px, py, w, 1);
+    g.fillStyle = alpha("#0f0c0a", 0.65);
+    g.fillRect(px, py + hh - 1, w, 1);
+    // lasca clara ocasional, como quartzo na rocha
+    if (tone > 0.88) {
+      g.fillStyle = alpha("#7a6a58", 0.35);
+      g.fillRect(px + 2, py + 2, 3, 1);
     }
   }
+  // fissura vertical ocasional
+  if (h > 0.58) {
+    g.fillStyle = alpha("#0d0a08", 0.7);
+    let fx = x + 4 + Math.floor(hash(x, y, 888) * 20);
+    for (let i = 0; i < 7; i++) {
+      g.fillRect(fx, y + 3 + i * 3, 1, 3);
+      fx += hash(fx, i, 889) > 0.5 ? 1 : -1;
+    }
+  }
+  // musgo no topo da parede
+  if (h > 0.72) {
+    g.fillStyle = alpha("#3f5730", 0.26);
+    g.fillRect(x + 2, y, T - 4, 4);
+    g.fillStyle = alpha("#4d6b39", 0.2);
+    g.fillRect(x + 5, y + 4, T - 12, 2);
+  }
+  // base da parede com sombra, separando do piso
+  g.fillStyle = "rgba(0,0,0,.30)";
+  g.fillRect(x, y + T - 3, T, 3);
 }
 
 export function caveCrystalTile(g, x, y) {
@@ -388,66 +413,72 @@ export function caveStairsTile(g, x, y, up) {
   caveFloorTile(g, x, y, [], -1, -1);
 
   // sombra em volta da boca
-  g.fillStyle = "rgba(0,0,0,.26)";
-  g.fillRect(x + 2, y + 1, T - 4, T - 2);
+  g.fillStyle = "rgba(0,0,0,.30)";
+  g.fillRect(x + 1, y + 2, T - 2, T - 4);
 
-  // boca da escada, chanfrada nos cantos
-  const bx = x + 4, by = y + 3, bw = T - 8, bh = T - 6;
-  g.fillStyle = "#100c0a";
-  g.fillRect(bx + 2, by, bw - 4, bh);
-  g.fillRect(bx, by + 2, bw, bh - 4);
+  // pedras irregulares em volta da abertura (moldura de rocha)
+  const rim = [[1, 1, 10, 6], [T - 11, 2, 10, 5], [0, T - 9, 11, 6], [T - 12, T - 10, 11, 6],
+    [2, 8, 6, 10], [T - 9, 9, 6, 8]];
+  for (const [ox, oy, sw, sh] of rim) {
+    g.fillStyle = mix("#4b4238", "#7d6f5c", 0.4);
+    g.fillRect(x + ox, y + oy, sw, sh);
+    g.fillStyle = alpha("#c2b198", 0.5);
+    g.fillRect(x + ox, y + oy, sw, 1);
+    g.fillStyle = alpha("#100c09", 0.55);
+    g.fillRect(x + ox, y + oy + sh - 1, sw, 1);
+  }
 
-  // degraus: descer escurece para o fundo; subir clareia
-  const n = 5;
+  // boca escura (bem maior: é o que o jogador precisa achar)
+  const bx = x + 3, by = y + 4, bw = T - 6, bh = T - 8;
+  g.fillStyle = "#080605";
+  g.fillRect(bx + 1, by, bw - 2, bh);
+  g.fillRect(bx, by + 1, bw, bh - 2);
+
+  // degraus de madeira descendo para dentro
+  const n = 4;
   for (let i = 0; i < n; i++) {
     const k = i / (n - 1);
-    const inset = 2 + i;
-    const sy2 = by + 1 + Math.round((i * (bh - 4)) / n);
-    const hgt = Math.max(3, Math.round((bh - 4) / n) - 1);
+    const inset = 1 + i;
+    const sy2 = by + 1 + Math.round((i * (bh - 3)) / n);
+    const hgt = Math.max(4, Math.round((bh - 3) / n) - 1);
     const base = up
-      ? mix("#2b231c", "#a08a6b", 0.2 + k * 0.65)
-      : mix("#7c6a55", "#1a1511", 0.15 + k * 0.8);
+      ? mix("#3a2a1c", "#c09c6c", 0.25 + k * 0.55)
+      : mix("#a57f4f", "#1d1510", 0.15 + k * 0.55);
     g.fillStyle = base;
     g.fillRect(bx + inset, sy2, bw - inset * 2, hgt);
-    g.fillStyle = alpha(up ? "#f2dfb6" : "#a5906f", up ? 0.5 : 0.3);
+    g.fillStyle = alpha(up ? "#f0dcae" : "#d8ad74", 0.6);
     g.fillRect(bx + inset, sy2, bw - inset * 2, 1);
-    g.fillStyle = "rgba(0,0,0,.42)";
+    g.fillStyle = "rgba(0,0,0,.6)";
     g.fillRect(bx + inset, sy2 + hgt - 1, bw - inset * 2, 1);
   }
 
-  // paredes laterais: luz de um lado, sombra do outro
-  g.fillStyle = alpha("#c9b48f", 0.16);
-  g.fillRect(bx + 1, by + 2, 2, bh - 4);
-  g.fillStyle = "rgba(0,0,0,.5)";
-  g.fillRect(bx + bw - 3, by + 2, 2, bh - 4);
+  // corrimão curto nas laterais da boca
+  g.fillStyle = "#7a5a38";
+  g.fillRect(bx - 2, by - 1, 2, bh + 1);
+  g.fillRect(bx + bw, by - 1, 2, bh + 1);
+  g.fillStyle = alpha("#cfa570", 0.6);
+  g.fillRect(bx - 2, by - 1, 2, 1);
+  g.fillRect(bx + bw, by - 1, 2, 1);
 
-  // pedras soltas na borda (dão leitura de pedra, sem virar moldura)
-  const stones = [
-    [0, 0, 7, 4], [T - 8, 0, 8, 4], [0, T - 5, 8, 4], [T - 9, T - 5, 9, 4],
-    [2, T / 2 - 2, 4, 6], [T - 5, T / 2 - 3, 4, 7],
-  ];
-  for (const [ox, oy, sw, sh] of stones) {
-    g.fillStyle = mix("#5b5148", "#8b7d6a", 0.3);
-    g.fillRect(x + ox, y + oy, sw, sh);
-    g.fillStyle = alpha("#bfae92", 0.3);
-    g.fillRect(x + ox, y + oy, sw, 1);
-  }
-
-  // seta pequena sobre os degraus: amarela sobe, azul desce
-  const ax = Math.round(x + T / 2 - 2), ay = y + T - 14;
-  g.fillStyle = "rgba(8,6,5,.72)";
-  g.fillRect(ax - 3, ay - 2, 11, 12);
+  // seta: amarela sobe, azul desce
+  const ax = Math.round(x + T / 2 - 3), ay = y + T - 13;
+  g.fillStyle = "rgba(6,5,4,.85)";
+  g.fillRect(ax - 3, ay - 2, 13, 12);
+  g.fillStyle = alpha(up ? "#ffe9a8" : "#9fe0ff", 0.3);
+  g.fillRect(ax - 2, ay - 1, 11, 10);
   g.fillStyle = up ? "#ffe9a8" : "#9fe0ff";
   if (up) {
-    g.fillRect(ax + 2, ay, 1, 1);
-    g.fillRect(ax + 1, ay + 1, 3, 1);
-    g.fillRect(ax, ay + 2, 5, 1);
-    g.fillRect(ax + 2, ay + 3, 1, 5);
+    g.fillRect(ax + 3, ay, 1, 1);
+    g.fillRect(ax + 2, ay + 1, 3, 1);
+    g.fillRect(ax + 1, ay + 2, 5, 1);
+    g.fillRect(ax, ay + 3, 7, 1);
+    g.fillRect(ax + 3, ay + 4, 1, 5);
   } else {
-    g.fillRect(ax + 2, ay, 1, 5);
-    g.fillRect(ax, ay + 5, 5, 1);
-    g.fillRect(ax + 1, ay + 6, 3, 1);
-    g.fillRect(ax + 2, ay + 7, 1, 1);
+    g.fillRect(ax + 3, ay, 1, 4);
+    g.fillRect(ax, ay + 4, 7, 1);
+    g.fillRect(ax + 1, ay + 5, 5, 1);
+    g.fillRect(ax + 2, ay + 6, 3, 1);
+    g.fillRect(ax + 3, ay + 7, 1, 1);
   }
 }
 
