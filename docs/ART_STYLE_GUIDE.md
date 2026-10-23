@@ -11,9 +11,23 @@ Pixel art acolhedora e original: paleta quente (verde-oliva, madeira, pergaminho
 - Saída nativa **18×33** (`rig.js`: rig 16×32 + 1px de contorno em cada lado), `RIG_SCALE = 3` → 54×99 ao desenhar.
 - 6 idades, 2 silhuetas por idade (`newborn_A/B` … `elder_A/B`), 4 direções, 4 quadros de caminhada + pose de ferramenta.
 - Pés sempre na linha 31 do rig: nenhum quadro flutua; sombra elíptica discreta embaixo.
-- Pernas com `legW = (bodyW - 1) / 2` e **gap mínimo de 1px** entre elas (corpo e calça).
-- Recém-nascido é desenhado por função própria: cabeça + trouxa de pano, sem pernas nem braços.
-- Idoso tem `stoop: 1` (costas curvadas); adolescente é mais estreito que adulto.
+- **Cabeça grande em todas as fases** (8px de altura; 9px no idoso, para caber barba sem esmagar o rosto), pescoço de 2px com pele no decote. Altura visível = `legH + torsoH + headH + 1`: bebê 16–17, criança 20–22, adolescente 25–26, adulto 29–30, idoso 28.
+- Corpo em 2–3 tons: luz no lado esquerdo, sombra no direito, contorno `#2a1c12` por fora.
+- Pernas com `legW = (bodyW - 2) / 2` e **gap mínimo de 1px**; calça com cinto + fivela, swing por quadro (f1 frente, f3 trás), barra e sapato/bota de 2px com bico.
+- Mangas de `m.arm` px com punho; a **mão de pele** é desenhada depois da manga (`drawHands`), senão o braço vira um toco.
+- Recém-nascido é desenhado por função própria (`drawNewborn`): cabeça apoiada em **manta clara com pregas**, mãozinhas aparecendo, sem pernas nem braços. Variante B usa touca de tricô.
+- Idoso tem `stoop: 1` (costas curvadas), cabelo/barba grisalhos e **bengala** (`spec.cane`, cor opcional); os NPCs idosos da vila já usam.
+
+### Roupa-símbolo por idade (prancha `client/proposta-idades.html`)
+
+| Idade | Opção A | Opção B |
+|-------|---------|---------|
+| Recém-nascido | manta creme | manta verde + touca |
+| Bebê | macacãozinho creme + shorts | listrado azul |
+| Criança | macacão jeans (`overalls`) | macacão jeans claro |
+| Adolescente | moletom vermelho (`hoodie`) + tênis branco | moletom oliva |
+| Adulto | camisa xadrez verde + jeans + bota | xadrez azul, build mais esguio |
+| Idoso | cardigã marrom (`cardigan`) + bengala | cardigã azul + bengala |
 
 ## Retratos de diálogo
 

@@ -61,14 +61,29 @@ const VARIANTS = {
   teen: ["teen_A","teen_B"], adult: ["adult_A","adult_B"], elder: ["elder_A","elder_B"],
 };
 const NAMES = {
-  newborn_A:"cobertor xadrez", newborn_B:"touca e manta",
-  baby_A:"encorpado", baby_B:"franzino",
-  child_A:"robusta", child_B:"esguia",
-  teen_A:"atlético", teen_B:"esguio",
-  adult_A:"encorpado", adult_B:"esguio",
-  elder_A:"curvado", elder_B:"ereto",
+  newborn_A:"manta creme", newborn_B:"manta verde + touca",
+  baby_A:"macacãozinho creme", baby_B:"listrado azul",
+  child_A:"macacão jeans", child_B:"macacão claro",
+  teen_A:"moletom vermelho", teen_B:"moletom oliva",
+  adult_A:"xadrez verde", adult_B:"xadrez azul",
+  elder_A:"cardigã marrom + bengala", elder_B:"cardigã azul + bengala",
 };
 const LOOK = { shirt:"#7fa06a", shirtDark:"#5f7d4e", pants:"#43506b", hair:"#6b4226", hairDark:"#4a2c18", shirtDesign:"plaid", hat:{type:"none"}, skin:"#e0a877", skinShade:"#c98d5f" };
+// roupa-símbolo de cada fase (referência: image-1)
+const LOOKS = {
+  newborn_A: { blanket:"#f2e4cb", hair:"#8a5a34" },
+  newborn_B: { blanket:"#d7e6dc", hair:"#6b4226" },
+  baby_A: { shirt:"#f4ead6", shirtDark:"#d9c9a4", shirtDesign:"sweater", pants:"#c9ab7c", pantsStyle:"shorts", hairStyle:"short" },
+  baby_B: { shirt:"#cfe0ef", shirtDark:"#a9c3da", shirtDesign:"striped", pants:"#bfae92", pantsStyle:"shorts", hairStyle:"messy", hair:"#a9713f" },
+  child_A: { shirt:"#4a6fa8", shirtDesign:"overalls", undershirt:"#f6efdc", pants:"#3f5c8a", pantsStyle:"shorts", hairStyle:"messy", shoe:"#e9e2d2", shoeDark:"#cdc4b0", shoeLight:"#fbf7ee" },
+  child_B: { shirt:"#7ba3cf", shirtDesign:"overalls", undershirt:"#f2e8d2", pants:"#5f7fa8", pantsStyle:"shorts", hairStyle:"buzz", hair:"#8a5a34" },
+  teen_A: { shirt:"#bf3b32", shirtDark:"#8f2722", shirtDesign:"hoodie", pants:"#3a4152", hairStyle:"messy", shoe:"#f2efe6", shoeDark:"#cfc9bb", shoeLight:"#ffffff" },
+  teen_B: { shirt:"#7d8a3c", shirtDark:"#5d672c", shirtDesign:"hoodie", pants:"#4b4a55", hairStyle:"short", hair:"#5a3a22", shoe:"#dcd6c6", shoeDark:"#b9b2a2", shoeLight:"#f6f2e8" },
+  adult_A: { shirt:"#6d9160", shirtDark:"#4e6d45", shirtDesign:"plaid", pants:"#42527a", hairStyle:"short", shoe:"#6b4a2a", shoeDark:"#3d2a17", shoeLight:"#8a6238" },
+  adult_B: { shirt:"#5d82a8", shirtDark:"#42627f", shirtDesign:"plaid", pants:"#38445e", hairStyle:"short", hair:"#4a3020", shoe:"#5a3f24", shoeDark:"#33220f", shoeLight:"#7a5a34" },
+  elder_A: { shirt:"#8a5a3c", shirtDark:"#6a4229", shirtDesign:"cardigan", undershirt:"#efe4cd", pants:"#4a4038", hairStyle:"short", beard:true, cane:"#8a6a42" },
+  elder_B: { shirt:"#4c5b7d", shirtDark:"#3a4661", shirtDesign:"cardigan", undershirt:"#e6e0d2", pants:"#3f4148", hairStyle:"buzz", beard:true, cane:"#7a5a38" },
+};
 const state = JSON.parse(localStorage.getItem("vale_age_choice") || "{}");
 const z0 = 5;
 let z = z0, t0 = performance.now();
@@ -90,7 +105,7 @@ for (const age of AGES) {
     const big = mk(RIG_OUT_W*z0, RIG_OUT_H*z0);
     bigSlot.appendChild(big);
     const dirs = ["down","up","left","right"].map((d)=>{ const c=mk(RIG_OUT_W*3, RIG_OUT_H*3); c.style.opacity=.95; dirsSlot.appendChild(c); return {d,c}; });
-    const spec = { ...LOOK, bodyId:id };
+    const spec = { ...LOOK, ...(LOOKS[id] || {}), bodyId:id };
     const spr = {};
     items.push({ big, dirs, spec, spr });
     box.onclick = () => {

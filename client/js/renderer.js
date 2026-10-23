@@ -568,16 +568,22 @@ function atlasForPlayer(p, isSelf) {
   return characterFrames(specForLook(look, p.skin || "s1"));
 }
 function atlasForNpc(npc, season) {
+  const bodyId = NPC_BODY[npc.id] || "adult_A";
   const base = { ...(NPC_SPECS[npc.id] || {
     shirt: npc.color || "#7cb98a", shirtDark: shade(npc.color || "#7cb98a", -0.25),
     pants: "#44506b", skin: C.skin1, skinShade: "#dba97e",
     hair: npc.accent || "#4a3020", hairDark: shade(npc.accent || "#4a3020", -0.3), hairStyle: "short",
     hat: { type: "none" },
-  }), bodyId: NPC_BODY[npc.id] || "adult_A" };
+  }), bodyId };
+  // idosos da vila andam com bengala (mesma arte do rig)
+  const withCane = (spec) => {
+    if (String(bodyId).startsWith("elder") && !spec.cane) spec.cane = "#8a6a42";
+    return spec;
+  };
   if (season != null && typeof seasonSpec === "function") {
-    try { return characterFrames(seasonSpec(npc.id, season, base)); } catch {}
+    try { return characterFrames(withCane(seasonSpec(npc.id, season, base))); } catch {}
   }
-  return characterFrames(base);
+  return characterFrames(withCane(base));
 }
 
 function drawPlayerSprite(ctx, p, sx, sy, isSelf, time, action) {

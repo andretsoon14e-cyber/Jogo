@@ -103,16 +103,16 @@ export function ageOfBody(id) {
 const VARIANT_SHAPE = {
   newborn_A: { legH: 0, torsoH: 0, headH: 8, headW: 9, bodyW: 9, arm: 0 },
   newborn_B: { legH: 0, torsoH: 0, headH: 8, headW: 9, bodyW: 9, arm: 0 },
-  baby_A: { legH: 4, torsoH: 3, headH: 8, headW: 8, bodyW: 6, arm: 2 },
-  baby_B: { legH: 3, torsoH: 3, headH: 8, headW: 8, bodyW: 5, arm: 2 },
-  child_A: { legH: 7, torsoH: 6, headH: 8, headW: 7, bodyW: 7, arm: 2 },
-  child_B: { legH: 6, torsoH: 5, headH: 8, headW: 7, bodyW: 5, arm: 2 },
-  teen_A: { legH: 9, torsoH: 9, headH: 7, headW: 6, bodyW: 7, arm: 2 },
-  teen_B: { legH: 8, torsoH: 8, headH: 7, headW: 6, bodyW: 5, arm: 2 },
-  adult_A: { legH: 13, torsoH: 11, headH: 7, headW: 7, bodyW: 9, arm: 2 },
-  adult_B: { legH: 12, torsoH: 9, headH: 7, headW: 6, bodyW: 7, arm: 2 },
-  elder_A: { legH: 10, torsoH: 9, headH: 7, headW: 6, bodyW: 8, arm: 2, stoop: 1 },
-  elder_B: { legH: 11, torsoH: 9, headH: 7, headW: 6, bodyW: 7, arm: 2 },
+  baby_A: { legH: 4, torsoH: 4, headH: 8, headW: 9, bodyW: 7, arm: 2 },
+  baby_B: { legH: 3, torsoH: 4, headH: 8, headW: 8, bodyW: 6, arm: 2 },
+  child_A: { legH: 7, torsoH: 6, headH: 8, headW: 8, bodyW: 8, arm: 2 },
+  child_B: { legH: 6, torsoH: 5, headH: 8, headW: 8, bodyW: 6, arm: 2 },
+  teen_A: { legH: 9, torsoH: 8, headH: 8, headW: 8, bodyW: 8, arm: 2 },
+  teen_B: { legH: 8, torsoH: 8, headH: 8, headW: 7, bodyW: 6, arm: 2 },
+  adult_A: { legH: 11, torsoH: 10, headH: 8, headW: 9, bodyW: 10, arm: 2 },
+  adult_B: { legH: 10, torsoH: 10, headH: 8, headW: 8, bodyW: 8, arm: 2 },
+  elder_A: { legH: 9, torsoH: 9, headH: 9, headW: 8, bodyW: 8, arm: 2, stoop: 1 },
+  elder_B: { legH: 10, torsoH: 8, headH: 9, headW: 8, bodyW: 8, arm: 2 },
 };
 
 export function metricsFor(bodyId = "adult_A") {
@@ -139,7 +139,8 @@ function limbs(m) {
   const feet = 31;
   const hip = feet - m.legH;
   const shoulder = hip - m.torsoH + (m.torsoH ? 1 : 0);
-  const headTop = shoulder - m.headH + 1;
+  // 2px de pescoço entre o queixo e o ombro (a cabeça não encosta no tronco)
+  const headTop = shoulder - m.headH - 1;
   return { feet, hip, shoulder, headTop };
 }
 
@@ -153,11 +154,12 @@ export function drawBaseBody(g, m, dir, frame, skin, skinShade, opts = {}) {
   const up = dir === "up";
   const cx = 8;
   const bob = frame === 1 || frame === 3 ? -1 : 0;
-  const skinDark = shade(skin, -0.14);
+  const skinDark = skinShade || shade(skin, -0.18);
+  const skinLight = shade(skin, 0.10);
 
-  // ---- pernas (ocupam a largura do quadril) ----
-  const legW = Math.max(2, Math.floor((m.bodyW - 1) / 2));
-  const gap = Math.max(1, m.bodyW - legW * 2);
+  // ---- pernas ----
+  const legW = Math.max(2, Math.floor((m.bodyW - 2) / 2));
+  const gap = Math.max(1, m.bodyW - legW * 2 - 1);
   const x0 = cx - Math.floor((legW * 2 + gap) / 2);
   const legTop = L.hip + bob;
   const legLen = L.feet - L.hip;
@@ -165,8 +167,9 @@ export function drawBaseBody(g, m, dir, frame, skin, skinShade, opts = {}) {
   const liftB = frame === 3 ? 1 : 0;
   const swingA = side ? (frame === 1 ? 1 : frame === 3 ? -1 : 0) : 0;
   const swingB = side ? (frame === 3 ? 1 : frame === 1 ? -1 : 0) : 0;
-  px(g, x0 + swingB, legTop, legW, legLen - liftB, skinDark); // perna de trás
+  px(g, x0 + swingB, legTop, legW, legLen - liftB, shade(skin, -0.1));
   px(g, x0 + legW + gap + swingA, legTop, legW, legLen - liftA, skin);
+  px(g, x0 + legW + gap + swingA, legTop, 1, legLen - liftA, skinLight);
 
   // ---- tronco ----
   const tw = m.bodyW;
@@ -175,19 +178,22 @@ export function drawBaseBody(g, m, dir, frame, skin, skinShade, opts = {}) {
   const torsoH = Math.max(2, L.hip - L.shoulder);
   px(g, tx, torsoTop, tw, torsoH, skin);
   px(g, tx, torsoTop, 1, torsoH, skinDark);
-  px(g, tx + tw - 1, torsoTop, 1, torsoH, shade(skin, -0.06));
-  // pescoço
-  px(g, cx - 1, torsoTop - 1, 2, 2, skinDark);
+  px(g, tx + tw - 1, torsoTop, 1, torsoH, skinDark);
+  px(g, tx + 1, torsoTop, tw - 2, 1, skinLight);
 
-  // ---- braços ----
+  // ---- pescoço ----
+  px(g, cx - 1, torsoTop - 2, 2, 2, skinDark);
+  px(g, cx - 1, torsoTop - 2, 1, 1, skin);
+
+  // ---- braços (a manga da camisa cobre por cima; a mão volta depois) ----
   if (m.arm > 0) {
     const armY = torsoTop + 1;
-    const armH = Math.max(3, Math.round(torsoH * 0.7));
+    const armH = Math.max(3, Math.round(torsoH * 0.62));
     const swing = frame === 1 ? 1 : frame === 3 ? -1 : 0;
     if (side) {
-      px(g, cx - 1, armY + Math.max(0, swing), m.arm, armH, shade(skin, -0.08));
+      px(g, cx - 1, armY + Math.max(0, swing), m.arm, armH, shade(skin, -0.1));
     } else {
-      px(g, tx - m.arm, armY + Math.max(0, swing), m.arm, armH, shade(skin, -0.08));
+      px(g, tx - m.arm, armY + Math.max(0, swing), m.arm, armH, skinDark);
       px(g, tx + tw, armY + Math.max(0, -swing), m.arm, armH, shade(skin, -0.04));
     }
   }
@@ -199,99 +205,129 @@ export function drawBaseBody(g, m, dir, frame, skin, skinShade, opts = {}) {
   const hy = L.headTop + bob + (m.stoop ? 1 : 0);
   // orelhas
   if (!up) {
-    px(g, hx - 1, hy + Math.floor(hh / 2), 1, 2, skinDark);
-    px(g, hx + hw, hy + Math.floor(hh / 2), 1, 2, skinDark);
+    px(g, hx - 1, hy + Math.floor(hh / 2), 1, 1, skinDark);
+    px(g, hx + hw, hy + Math.floor(hh / 2), 1, 1, shade(skin, -0.06));
   }
-  // bloco do rosto com cantos suavizados
-  px(g, hx + 1, hy, hw - 2, hh, skin);
+  // formato arredondado: cantos de cima e de baixo cortados
+  px(g, hx + 1, hy, hw - 2, 1, skin);
   px(g, hx, hy + 1, hw, hh - 2, skin);
-  px(g, hx, hy + hh - 1, 2, 1, skinDark);
-  px(g, hx + hw - 2, hy + hh - 1, 2, 1, skinDark);
-  px(g, hx, hy + 1, 1, hh - 2, skinDark);
+  px(g, hx + 1, hy + hh - 1, hw - 2, 1, shade(skin, -0.04));
+  // luz no topo e sombra na lateral
+  px(g, hx + 2, hy, hw - 4, 1, skinLight);
+  px(g, hx, hy + 2, 1, hh - 3, skinDark);
+  px(g, hx + hw - 1, hy + 2, 1, hh - 3, shade(skin, -0.08));
 
+  const eyeY = hy + (hh >= 9 ? 3 : 4);
+  const eye = opts.eye || "#3b2b21";
   if (!up) {
-    const eyeY = hy + Math.max(3, Math.floor(hh * 0.55));
-    const eye = opts.eye || "#3b2b21";
     if (side) {
-      const ex = dir === "right" ? hx + hw - 3 : hx + 2;
-      px(g, ex, eyeY, 1, 2, eye);
-      px(g, ex, eyeY, 1, 1, "#ffffff");
-      px(g, dir === "right" ? hx + hw - 1 : hx, eyeY + 2, 1, 1, skinDark); // nariz
-      px(g, dir === "right" ? hx + hw - 3 : hx + 2, eyeY + 3, 2, 1, shade(skin, -0.28)); // boca
+      const ex = dir === "right" ? hx + hw - 4 : hx + 2;
+      px(g, ex, eyeY, 2, 2, eye);
+      px(g, ex + (dir === "right" ? 0 : 1), eyeY, 1, 1, "#fffdf6");
+      px(g, dir === "right" ? hx + hw - 1 : hx, eyeY + 1, 1, 2, skinDark);
+      px(g, dir === "right" ? hx + 1 : hx + hw - 3, eyeY - 1, 2, 1, shade(opts.hair || skinDark, -0.06));
+      px(g, dir === "right" ? hx + hw - 4 : hx + 2, eyeY + 3, 2, 1, shade(skin, -0.32));
+      px(g, dir === "right" ? hx + hw - 6 : hx + 2, eyeY + 2, 1, 1, "rgba(226,120,110,.30)");
     } else {
-      px(g, hx + 2, eyeY, 1, 2, eye);
-      px(g, hx + hw - 3, eyeY, 1, 2, eye);
-      px(g, hx + 2, eyeY, 1, 1, shade(eye, 0.65));
-      px(g, hx + hw - 3, eyeY, 1, 1, shade(eye, 0.65));
-      // sobrancelhas
-      px(g, hx + 1, eyeY - 1, 2, 1, shade(opts.hair || skinDark, -0.1));
-      px(g, hx + hw - 3, eyeY - 1, 2, 1, shade(opts.hair || skinDark, -0.1));
-      // boca e bochechas
-      px(g, cx - 1, hy + hh - 2, 2, 1, shade(skin, -0.3));
-      px(g, hx + 1, eyeY + 2, 1, 1, "rgba(226,120,110,.35)");
-      px(g, hx + hw - 2, eyeY + 2, 1, 1, "rgba(226,120,110,.35)");
+      // olhos 2×2 com brilho
+      px(g, hx + 2, eyeY, 2, 2, eye);
+      px(g, hx + hw - 4, eyeY, 2, 2, eye);
+      px(g, hx + 2, eyeY, 1, 1, "#f4e6d2");
+      px(g, hx + hw - 4, eyeY, 1, 1, "#f4e6d2");
+      // sorriso discreto com cantos e bochechas
+      px(g, cx - 2, eyeY + 3, 1, 1, shade(skin, -0.24));
+      px(g, cx - 1, eyeY + 3, 2, 1, shade(skin, -0.36));
+      px(g, cx + 1, eyeY + 3, 1, 1, shade(skin, -0.24));
+      px(g, hx + 1, eyeY + 2, 1, 1, "rgba(226,120,110,.28)");
+      px(g, hx + hw - 2, eyeY + 2, 1, 1, "rgba(226,120,110,.28)");
     }
   } else {
-    // nuca: cabelo cobre, aqui só a pele do pescoço
-    px(g, hx + 1, hy + hh - 2, hw - 2, 2, skinDark);
+    px(g, hx + 1, hy + hh - 3, hw - 2, 3, skinDark);
   }
 
   // ---- barba ----
   if (opts.beard && !up) {
     const beard = opts.hair || "#4a3020";
-    px(g, hx + 1, hy + hh - 4, hw - 2, 3, beard);
-    px(g, hx + 2, hy + hh - 3, hw - 4, 1, shade(beard, -0.22));
-    px(g, hx + 1, hy + hh - 2, hw - 2, 1, shade(beard, -0.12));
+    const beardDark = shade(beard, -0.22);
+    const by = hy + hh - 3;
+    // nariz
+    px(g, cx, eyeY + 2, 1, 1, shade(skin, -0.28));
+    // barba cheia no terço inferior, com bigode e boca legíveis
+    px(g, hx + 1, by, hw - 2, 3, beard);
+    px(g, hx + 1, by, hw - 2, 1, shade(beard, 0.12));
+    px(g, cx - 2, by, 4, 1, shade(beard, 0.18));
+    px(g, cx - 1, by + 1, 2, 1, shade(skin, -0.44));
+    px(g, hx + 1, by + 2, hw - 2, 1, beardDark);
+    px(g, hx, by + 1, 1, 1, beardDark);
+    px(g, hx + hw - 1, by + 1, 1, 1, beardDark);
   }
   return { ...L, hx, hy, hw, hh, tx, tw, torsoTop, torsoH };
 }
 
 function drawNewborn(g, m, dir, skin, opts) {
-  const skinDark = shade(skin, -0.14);
-  const blanket = opts.blanket || (m.variant === "A" ? "#d9a05b" : "#9ec3a6");
-  const blanketDark = shade(blanket, -0.22);
-  const blanketLight = shade(blanket, 0.15);
-  // manto: trapézio que abre na base (lê como bebê embrulhado)
-  px(g, 5, 22, 7, 2, blanket);
-  px(g, 4, 24, 9, 3, blanket);
-  px(g, 3, 27, 11, 4, blanket);
-  px(g, 4, 24, 1, 6, blanketLight);
-  px(g, 11, 24, 2, 6, blanketDark);
-  px(g, 3, 30, 11, 1, shade(blanket, -0.3));
-  if (m.variant === "A") {
-    for (let y = 25; y < 30; y += 2) px(g, 4, y, 9, 1, blanketLight);
-    for (let x = 5; x < 13; x += 3) px(g, x, 25, 1, 5, blanketLight);
-  } else {
-    for (let x = 4; x < 13; x += 2) px(g, x, 28, 1, 2, blanketLight);
-    px(g, 5, 25, 7, 1, blanketLight);
-  }
-  // gola de tricô no alto do manto
-  px(g, 6, 22, 5, 1, shade(blanket, 0.08));
-  // cabeça (menor que o manto para dar proporção de recém-nascido)
-  const hx = 5, hy = 15, hw = 7, hh = 7;
-  px(g, hx + 1, hy, hw - 2, hh, skin);
+  const up = dir === "up";
+  const side = dir === "left" || dir === "right";
+  const skinDark = shade(skin, -0.16);
+  const blanket = opts.blanket || (m.variant === "A" ? "#f2e4cb" : "#d7e6dc");
+  const blanketDark = shade(blanket, -0.16);
+  const blanketLight = shade(blanket, 0.1);
+  const hair = opts.hair || "#6b4226";
+
+  // cabeça (grande, de bebê) com queixo encostado na manta
+  const hx = 5, hy = 12, hw = 7, hh = 7;
+  px(g, hx + 1, hy, hw - 2, 1, skin);
   px(g, hx, hy + 1, hw, hh - 2, skin);
-  px(g, hx, hy + hh - 1, 2, 1, skinDark);
-  px(g, hx + hw - 1, hy + 1, 1, hh - 2, shade(skin, -0.06));
+  px(g, hx + 1, hy + hh - 1, hw - 2, 1, skin);
+  px(g, hx + hw - 1, hy + 1, 1, hh - 2, shade(skin, -0.07));
+  px(g, hx - 1, hy + 3, 1, 2, skinDark);          // orelhas
+  px(g, hx + hw, hy + 3, 1, 2, shade(skin, -0.1));
+
+  // cabelo/gorro
   if (m.variant === "A") {
-    px(g, hx + 1, hy - 1, hw - 2, 2, opts.hair || "#6b4226");
-    px(g, hx, hy, 1, 2, opts.hair || "#6b4226");
-    px(g, hx + 2, hy - 1, 2, 1, shade(opts.hair || "#6b4226", 0.2));
+    px(g, hx + 1, hy - 1, hw - 2, 2, hair);
+    px(g, hx, hy, 1, 2, hair);
+    px(g, hx + hw - 1, hy, 1, 2, hair);
+    px(g, hx + 2, hy - 1, 2, 1, shade(hair, 0.22));
   } else {
-    px(g, hx + 1, hy - 2, hw - 2, 3, blanket);
-    px(g, hx, hy, hw, 2, blanket);
-    px(g, hx + 2, hy - 3, 3, 1, blanketLight);
-    px(g, hx + 1, hy - 1, hw - 2, 1, blanketDark);
-    px(g, hx + 1, hy + 1, 1, 1, blanketDark);
+    px(g, hx, hy - 1, hw, 2, blanket);
+    px(g, hx + 1, hy - 2, hw - 2, 1, blanketLight);
+    px(g, hx + 3, hy - 3, 1, 1, blanketLight);     // pompom
+    px(g, hx, hy, hw, 1, blanketDark);
   }
-  if (dir !== "up") {
-    const ey = hy + 3;
+
+  if (!up) {
+    const ey = hy + 4;
     px(g, hx + 2, ey, 1, 1, "#3b2b21");
     px(g, hx + hw - 3, ey, 1, 1, "#3b2b21");
-    px(g, hx + Math.floor(hw / 2) - 1, ey + 2, 2, 1, shade(skin, -0.24));
-    px(g, hx + 1, ey + 1, 1, 1, "rgba(226,120,110,.4)");
-    px(g, hx + hw - 2, ey + 1, 1, 1, "rgba(226,120,110,.4)");
+    px(g, hx + 1, ey + 1, 1, 1, "rgba(226,120,110,.34)");
+    px(g, hx + hw - 2, ey + 1, 1, 1, "rgba(226,120,110,.34)");
+    px(g, hx + Math.floor(hw / 2) - (side ? 0 : 0), ey + 2, 2, 1, shade(skin, -0.22));
+  } else {
+    px(g, hx + 1, hy, hw - 2, 3, hair);
+    px(g, hx, hy + 1, hw, 2, hair);
   }
+
+  // manta-casulo por cima do colo
+  px(g, 5, 19, 6, 1, blanketLight);
+  px(g, 4, 20, 8, 3, blanket);
+  px(g, 3, 23, 10, 4, blanket);
+  px(g, 2, 27, 12, 3, blanket);
+  px(g, 3, 30, 10, 1, blanketDark);
+  px(g, 4, 20, 8, 1, blanketLight);
+  px(g, 5, 19, 4, 1, shade(blanket, 0.2));
+  px(g, 12, 21, 1, 9, blanketDark);      // sombra na lateral
+  px(g, 3, 24, 1, 6, blanketLight);
+  // pregas do tecido
+  px(g, 6, 22, 1, 7, blanketDark);
+  px(g, 9, 23, 1, 6, blanketDark);
+  px(g, 4, 28, 8, 1, blanketLight);
+  px(g, 5, 29, 6, 1, blanketDark);
+  // pontinha do cobertor dobrada
+  px(g, 10, 20, 2, 2, shade(blanket, 0.18));
+
+  // mãozinhas aparecendo
+  px(g, 2, 26, 1, 2, skin);
+  px(g, 13, 26, 1, 2, skinDark);
 }
 
 // ------------------------------------------------------------------
@@ -299,19 +335,20 @@ function drawNewborn(g, m, dir, skin, opts) {
 // ------------------------------------------------------------------
 const PANTS_STYLES = new Set(["skirt", "shorts", "long"]);
 
-export function drawPants(g, m, dir, frame, pants, skin, style = "long") {
+export function drawPants(g, m, dir, frame, pants, skin, style = "long", opts = {}) {
   if (m.bundle) return;
   const L = limbs(m);
   const side = dir === "left" || dir === "right";
   const bob = frame === 1 || frame === 3 ? -1 : 0;
-  const legW = Math.max(2, Math.floor((m.bodyW - 1) / 2));
-  const gap = Math.max(1, m.bodyW - legW * 2);
+  const legW = Math.max(2, Math.floor((m.bodyW - 2) / 2));
+  const gap = Math.max(1, m.bodyW - legW * 2 - 1);
   const x0 = 8 - Math.floor((legW * 2 + gap) / 2);
-  const dark = shade(pants, -0.2);
-  const light = shade(pants, 0.14);
-  const shoe = "#4a3620", shoeDark = "#2c1e12";
+  const dark = shade(pants, -0.22);
+  const light = shade(pants, 0.16);
+  const shoe = opts.shoe || "#4a3620", shoeDark = opts.shoeDark || shade(shoe, -0.4), shoeLight = opts.shoeLight || shade(shoe, 0.24);
   const legTop = L.hip + bob;
   const legLen = L.feet - L.hip;
+  const tx = 8 - Math.floor(m.bodyW / 2);
 
   if (style === "skirt") {
     const top = L.hip - 2 + bob;
@@ -322,29 +359,40 @@ export function drawPants(g, m, dir, frame, pants, skin, style = "long") {
       px(g, 8 - Math.floor(ww / 2), top + i, ww, 1, i === h - 1 ? dark : (i === 0 ? light : pants));
     }
     const below = top + h;
-    const bare = Math.max(0, L.feet - below - 1);
+    const bare = Math.max(0, L.feet - below - 2);
     if (bare > 0) {
       px(g, x0 + (side && frame === 1 ? 1 : 0), below, legW, bare, skin);
       px(g, x0 + legW + gap + (side && frame === 3 ? 1 : 0), below, legW, bare, shade(skin, -0.06));
     }
-    px(g, x0 + (side && frame === 1 ? 1 : 0), L.feet - 1, legW, 2, shoe);
-    px(g, x0 + legW + gap + (side && frame === 3 ? 1 : 0), L.feet - 1, legW, 2, shoe);
+    for (const [sxx, lift] of [[x0 + (side && frame === 1 ? 1 : 0), frame === 1], [x0 + legW + gap + (side && frame === 3 ? 1 : 0), frame === 3]]) {
+      const by = L.feet - 2 - (lift ? 1 : 0);
+      px(g, sxx, by, legW, 2, shoe);
+      px(g, sxx, by + 1, legW, 1, shoeDark);
+      px(g, sxx, by, 1, 1, shoeLight);
+    }
     return;
   }
+
+  // cinto com fivela
+  px(g, tx, L.hip - 2 + bob, m.bodyW, 2, shade(pants, -0.3));
+  px(g, 7, L.hip - 2 + bob, 2, 1, "#c9a24a");
+  px(g, 7, L.hip - 1 + bob, 2, 1, "#8a6a2a");
 
   const liftA = frame === 1 ? 1 : 0;
   const liftB = frame === 3 ? 1 : 0;
   const swingA = side ? (frame === 1 ? 1 : frame === 3 ? -1 : 0) : 0;
   const swingB = side ? (frame === 3 ? 1 : frame === 1 ? -1 : 0) : 0;
-  // cintura
-  px(g, 8 - Math.floor(m.bodyW / 2), legTop - 1, m.bodyW, 2, pants);
-  // pernas
   const lenA = style === "shorts" ? Math.max(2, Math.round(legLen * 0.45)) : legLen;
+
+  // pernas (traseira mais escura, frente com brilho)
   px(g, x0 + swingB, legTop, legW, lenA - liftB - 1, dark);
   px(g, x0 + legW + gap + swingA, legTop, legW, lenA - liftA - 1, pants);
   px(g, x0 + legW + gap + swingA, legTop, 1, lenA - liftA - 2, light);
+  // barra
+  px(g, x0 + swingB, legTop + lenA - liftB - 2, legW, 1, shade(pants, -0.34));
+  px(g, x0 + legW + gap + swingA, legTop + lenA - liftA - 2, legW, 1, dark);
+
   if (style === "shorts") {
-    // canelas aparecem
     const bareTop = legTop + lenA - 1;
     const bare = Math.max(0, L.feet - bareTop - 1);
     if (bare > 0) {
@@ -352,10 +400,15 @@ export function drawPants(g, m, dir, frame, pants, skin, style = "long") {
       px(g, x0 + legW + gap + swingA, bareTop, legW, bare - liftA, skin);
     }
   }
-  // sapatos sempre apoiados
-  px(g, x0 + swingB, L.feet - 1 - liftB, legW, 1, shoe);
-  px(g, x0 + legW + gap + swingA, L.feet - 1 - liftA, legW, 2, shoe);
-  px(g, x0 + legW + gap + swingA, L.feet, legW - 1, 1, shoeDark);
+
+  // sapatos: 2px de altura, bico 1px para fora e sola escura
+  for (const [sxx, lift, back] of [[x0 + swingB, liftB, true], [x0 + legW + gap + swingA, liftA, false]]) {
+    const by = L.feet - 2 - lift;
+    px(g, sxx, by, legW + 1, 2, shoe);
+    px(g, sxx, by, legW + 1, 1, shoeLight);
+    px(g, sxx, by + 1, legW + 1, 1, shoeDark);
+    if (!back) px(g, sxx + legW + 1, by + (side && dir === "right" ? 0 : 1), 1, 1, shoeDark);
+  }
 }
 
 // ------------------------------------------------------------------
@@ -366,38 +419,63 @@ export function drawShirt(g, m, dir, frame, shirt, shirtDark, design = "solid", 
   const L = limbs(m);
   const side = dir === "left" || dir === "right";
   const bob = frame === 1 || frame === 3 ? -1 : 0;
-  const tx = 8 - Math.floor(m.bodyW / 2);
+  const tw = m.bodyW;
+  const tx = 8 - Math.floor(tw / 2);
   const top = L.shoulder + bob;
   const h = Math.max(2, L.hip - L.shoulder);
-  const light = shade(shirt, 0.14);
-  const dark = shirtDark || shade(shirt, -0.2);
-  const sleeve = Math.max(2, Math.round(h * 0.5));
+  const light = shade(shirt, 0.16);
+  const dark = shirtDark || shade(shirt, -0.22);
+  const sleeve = Math.max(2, Math.round(h * 0.55));
 
-  // mangas
+  // mangas (2px, com punho) — a mão de pele é desenhada depois
   if (m.arm > 0) {
-    if (side) px(g, 7, top + 1, m.arm + 1, sleeve, shirt);
-    else {
+    if (side) {
+      px(g, 7, top + 1, m.arm + 1, sleeve, shirt);
+      px(g, 7, top + sleeve, m.arm + 1, 1, dark);
+    } else {
       px(g, tx - m.arm, top + 1, m.arm, sleeve, shirt);
-      px(g, tx + m.bodyW, top + 1, m.arm, sleeve, shade(shirt, -0.08));
+      px(g, tx + tw, top + 1, m.arm, sleeve, shade(shirt, -0.08));
+      px(g, tx - m.arm, top + sleeve, m.arm, 1, dark);
+      px(g, tx + tw, top + sleeve, m.arm, 1, dark);
     }
   }
+  // ombros: 1px a mais de cada lado nas duas primeiras linhas
+  const ox = side ? 0 : 1;
+  px(g, tx - ox, top, tw + ox * 2, 2, shirt);
+  px(g, tx - ox, top, tw + ox * 2, 1, light);
   // tronco
-  px(g, tx, top, m.bodyW, h, shirt);
-  px(g, tx, top, 1, h, light);
-  px(g, tx + m.bodyW - 1, top, 1, h, dark);
-  // gola
-  px(g, 7, top, 2, 1, shade(shirt, -0.3));
-  if (dir === "down") px(g, 7, top + 1, 2, 1, shade(shirt, -0.18));
-  // barra da camisa
-  px(g, tx, top + h - 1, m.bodyW, 1, shade(shirt, -0.1));
+  px(g, tx, top + 2, tw, h - 2, shirt);
+  px(g, tx, top + 2, 1, h - 2, light);
+  px(g, tx + tw - 1, top + 2, 1, h - 2, dark);
+  // separação entre tronco e braço (senão a camisa vira um bloco só)
+  if (!side && m.arm > 0) {
+    px(g, tx, top + 2, 1, sleeve - 1, shade(shirt, -0.2));
+    px(g, tx + tw - 1, top + 2, 1, sleeve - 1, shade(shirt, -0.2));
+  }
+  // gola aberta em V, com 1px de pele no decote
+  px(g, 7, top + 1, 1, 1, dark);
+  px(g, 9, top + 1, 1, 1, dark);
+  px(g, 6, top + 1, 1, 1, light);
+  px(g, 10, top + 1, 1, 1, light);
+  px(g, 8, top + 1, 1, 1, shade(opts.skin || "#e8b98c", -0.2));
+  px(g, 7, top + 2, 2, 1, light);
+  // botões
+  if (!side) {
+    px(g, 8, top + 3, 1, 1, light);
+    px(g, 8, top + Math.round(h * 0.55), 1, 1, light);
+  }
+  // cinto na cintura, por cima da barra
+  px(g, tx, top + h - 1, tw, 1, "#4c3826");
+  px(g, 8, top + h - 1, 1, 1, "#d0aa55");
 
   switch (design) {
-    case "plaid":
-      px(g, tx + 1, top + 2, 1, h - 3, shade(shirt, 0.18));
-      px(g, tx + m.bodyW - 2, top + 2, 1, h - 3, shade(shirt, 0.18));
-      px(g, tx, top + Math.round(h * 0.5), m.bodyW, 1, dark);
-      px(g, tx, top + Math.round(h * 0.8), m.bodyW, 1, dark);
+    case "plaid": {
+      // grade fina e de baixo contraste (não vira faixa na barriga)
+      for (let x = tx + 2; x < tx + m.bodyW - 1; x += 3) px(g, x, top + 2, 1, h - 3, shade(shirt, 0.14));
+      for (let y = top + 3; y < top + h - 1; y += 3) px(g, tx, y, m.bodyW, 1, shade(shirt, -0.1));
+      px(g, tx + 2, top + 3, 1, 1, shade(shirt, 0.24));
       break;
+    }
     case "striped":
       for (let y = top + 1; y < top + h - 1; y += 2) px(g, tx, y, m.bodyW, 1, light);
       break;
@@ -415,15 +493,30 @@ export function drawShirt(g, m, dir, frame, shirt, shirtDark, design = "solid", 
       px(g, tx, top + 2, m.bodyW, 1, light);
       px(g, tx, top + h - 2, m.bodyW, 1, dark);
       break;
-    case "hoodie":
-      px(g, tx + 1, top + 2, m.bodyW - 2, 1, dark);
-      px(g, 7, top + 2, 2, 3, dark);
-      px(g, 7, top + 6, 1, 1, "#f3e7cd");
+    case "hoodie": {
+      // gola do capuz (arco) e cordões
+      px(g, tx + 2, top + 1, m.bodyW - 4, 1, dark);
+      px(g, tx + 1, top + 1, 1, 2, dark);
+      px(g, tx + m.bodyW - 2, top + 1, 1, 2, dark);
+      px(g, 7, top + 2, 1, 3, shade(shirt, 0.45));
+      px(g, 9, top + 2, 1, 2, shade(shirt, 0.45));
+      // bolso canguru discreto
+      px(g, tx + 2, top + h - 3, Math.max(1, m.bodyW - 4), 1, shade(shirt, -0.16));
       break;
-    case "overalls":
-      px(g, 7, top, 2, h, dark);
-      px(g, tx + 1, top + 3, m.bodyW - 2, 1, dark);
+    }
+    case "overalls": {
+      // camiseta por baixo + jardineira jeans com alças e botões
+      const under = opts.undershirt || "#f3e8d3";
+      px(g, tx, top + 2, m.bodyW, 1, under);
+      px(g, tx + 1, top + 2, 1, 4, shirt);
+      px(g, tx + m.bodyW - 2, top + 2, 1, 4, shirt);
+      px(g, tx + 2, top + 3, m.bodyW - 4, h - 4, shade(shirt, 0.04));
+      px(g, tx + 2, top + 3, m.bodyW - 4, 1, shade(shirt, 0.2));
+      px(g, tx + 2, top + 3, 1, 1, "#e8c86a");
+      px(g, tx + m.bodyW - 3, top + 3, 1, 1, "#e8c86a");
+      px(g, tx + 3, top + 5, Math.max(1, m.bodyW - 6), 1, shade(shirt, -0.2));
       break;
+    }
     case "jumpsuit":
       px(g, tx + 1, top + 2, m.bodyW - 2, 1, dark);
       px(g, 7, top, 2, h, shade(shirt, -0.12));
@@ -436,6 +529,23 @@ export function drawShirt(g, m, dir, frame, shirt, shirtDark, design = "solid", 
       px(g, tx + 1, top + 2, 1, h - 3, light);
       px(g, 7, top + 2, 1, 1, "#ffe9a8");
       break;
+    case "cardigan": {
+      // camiseta aparecendo no V do peito e cardigã fechado por baixo
+      const under = opts.undershirt || "#f4ead6";
+      // só o colarinho da camisa aparece (sem "guardanapo" no peito)
+      px(g, 7, top + 1, 2, 1, under);
+      px(g, 6, top + 1, 1, 2, shade(shirt, -0.3));
+      px(g, 9, top + 1, 1, 2, shade(shirt, -0.3));
+      px(g, 6, top + 2, 1, 1, light);
+      px(g, 9, top + 2, 1, 1, shade(shirt, -0.4));
+      // transpasse central discreto (sem faixa clara)
+      px(g, 8, top + 4, 1, h - 5, shade(shirt, -0.2));
+      for (let i = 0; i < 3; i++) px(g, 8, top + 5 + i * 2, 1, 1, "#d9c08a");
+      px(g, tx, top + 2, 1, h - 2, light);
+      // tricô: linhas horizontais de baixo contraste
+      for (let y = top + 4; y < top + h - 2; y += 3) px(g, tx + 1, y, m.bodyW - 2, 1, shade(shirt, -0.07));
+      break;
+    }
     case "hearts":
       px(g, tx + 1, top + 3, 1, 1, "#ff8fa3");
       px(g, tx + m.bodyW - 3, top + 5, 1, 1, "#ff8fa3");
@@ -449,6 +559,31 @@ export function drawShirt(g, m, dir, frame, shirt, shirtDark, design = "solid", 
   if (opts.apron) {
     px(g, tx + 1, top + 2, Math.max(1, m.bodyW - 2), h - 3, opts.apron);
     px(g, 7, top + 1, 2, 1, shade(opts.apron, -0.25));
+  }
+}
+
+// ------------------------------------------------------------------
+//  Mãos (por cima da manga, para o braço não parecer um toco)
+// ------------------------------------------------------------------
+export function drawHands(g, m, dir, frame, skin, skinShade) {
+  if (m.bundle || !m.arm) return;
+  const L = limbs(m);
+  const side = dir === "left" || dir === "right";
+  const bob = frame === 1 || frame === 3 ? -1 : 0;
+  const torsoH = Math.max(2, L.hip - L.shoulder);
+  const armY = L.shoulder + bob + 1;
+  const armH = Math.max(3, Math.round(torsoH * 0.62));
+  const swing = frame === 1 ? 1 : frame === 3 ? -1 : 0;
+  const tx = 8 - Math.floor(m.bodyW / 2);
+  const handY = Math.min(L.hip - 3, armY + armH - 1);
+  const skinDark = skinShade || shade(skin, -0.18);
+  if (side) {
+    px(g, 7, handY, m.arm + 1, 2, skin);
+    px(g, 7, handY + 1, 1, 1, skinDark);
+  } else {
+    px(g, tx - m.arm, handY + Math.max(0, swing), m.arm, 2, skin);
+    px(g, tx + m.bodyW, handY + Math.max(0, -swing), m.arm, 2, skin);
+    px(g, tx - m.arm, handY + 1 + Math.max(0, swing), 1, 1, skinDark);
   }
 }
 
@@ -472,17 +607,25 @@ export function drawHairRig(g, m, dir, style, hair, hairDark, opts = {}) {
   const dark = hairDark || shade(hair, -0.25);
   // tampo do cabelo: cobre o alto da cabeça; na visão lateral só a parte de trás desce
   const cap = (depth = 0) => {
-    px(g, hx + 1, hy - 1, hw - 2, 1, hair);
+    // volume no topo: 1px mais alto, cantos arredondados
+    const topY = Math.max(0, hy - 1);
+    px(g, hx + 1, topY, hw - 2, 1, hair);
     px(g, hx, hy, hw, 2, hair);
-    if (side) {
-      // nuca desce; frente do rosto fica livre
-      px(g, back === hx ? hx : hx + hw - 2, hy + 2, 2, Math.max(1, Math.round(hh * 0.55)), hair);
-      px(g, hx + (back === hx ? 0 : hw - 2), hy, 1, 2, dark);
-    } else if (depth > 0) {
-      px(g, hx, hy + 2, 1, depth, hair);
-      px(g, hx + hw - 1, hy + 2, 1, depth, hair);
+    px(g, hx + 1, topY, 2, 1, light);
+    if (!up) {
+      // franja curta nos cantos, testa central livre
+      px(g, hx, hy + 2, 1, 1, hair);
+      px(g, hx + hw - 1, hy + 2, 1, 1, hair);
     }
-    px(g, hx + 2, hy, 2, 1, light);
+    if (side) {
+      const bx = back === hx ? hx : hx + hw - 2;
+      px(g, bx, hy + 2, 2, Math.max(2, Math.round(hh * 0.45)), hair);
+      px(g, bx + (back === hx ? 0 : 1), hy + 2, 1, 2, dark);
+    } else {
+      // costeletas curtas
+      px(g, hx, hy + 2, 1, Math.max(1, Math.min(2, depth)), hair);
+      px(g, hx + hw - 1, hy + 2, 1, Math.max(1, Math.min(2, depth)), hair);
+    }
   };
   const drapeDepth = m.age === "baby" ? 0 : Math.max(0, hh - 4);
 
@@ -498,10 +641,6 @@ export function drawHairRig(g, m, dir, style, hair, hairDark, opts = {}) {
     case "messy":
     case "pixie":
       cap(2);
-      if (!side) {
-        px(g, hx + 1, hy + 2, 1, 1, dark);
-        px(g, hx + hw - 2, hy + 2, 1, 1, dark);
-      }
       if (style === "messy") { px(g, hx + 3, hy - 1, 1, 1, hair); px(g, hx + hw - 4, hy - 1, 1, 1, hair); }
       if (up) px(g, hx + 1, hy, hw - 2, hh - 2, hair);
       return;
@@ -738,6 +877,25 @@ export function drawToolRig(g, m, dir, tool) {
 }
 
 // ------------------------------------------------------------------
+//  Bengala (idoso)
+// ------------------------------------------------------------------
+export function drawCane(g, m, dir, color = "#8a6a42") {
+  if (m.bundle || !m.arm) return;
+  const L = limbs(m);
+  const side = dir === "left" || dir === "right";
+  const handX = side ? (dir === "right" ? 13 : 1) : (dir === "up" ? 13 : 1);
+  const handY = L.shoulder + Math.round((L.hip - L.shoulder) * 0.55);
+  const wood = color, woodD = shade(color, -0.3), woodL = shade(color, 0.22);
+  px(g, handX, handY + 1, 1, Math.max(2, L.feet - handY - 1), wood);
+  px(g, handX, handY + 1, 1, 3, woodL);
+  px(g, handX, L.feet - 1, 1, 1, woodD);
+  // cabo curvo
+  const dirX = handX < 8 ? 1 : -1;
+  px(g, handX + dirX, handY, 1, 1, woodL);
+  px(g, handX + dirX * 2, handY + (dirX > 0 ? 1 : 1), 1, 1, woodD);
+}
+
+// ------------------------------------------------------------------
 //  Composição + contorno
 // ------------------------------------------------------------------
 function drawParts(g, spec, dir, frame, tool) {
@@ -753,14 +911,20 @@ function drawParts(g, spec, dir, frame, tool) {
     blanket: spec.blanket,
   });
   const pantsStyle = spec.pantsStyle || (spec.skirt ? "skirt" : "long");
-  drawPants(g, m, dir, frame, spec.pants || "#43506b", skin, pantsStyle);
-  drawShirt(g, m, dir, frame, spec.shirt || "#e2695e", spec.shirtDark, spec.shirtDesign, { apron: spec.apron });
+  drawPants(g, m, dir, frame, spec.pants || "#43506b", skin, pantsStyle, {
+    shoe: spec.shoe, shoeDark: spec.shoeDark, shoeLight: spec.shoeLight,
+  });
+  drawShirt(g, m, dir, frame, spec.shirt || "#e2695e", spec.shirtDark, spec.shirtDesign, {
+    apron: spec.apron, skin, undershirt: spec.undershirt,
+  });
+  drawHands(g, m, dir, frame, skin, skinShade);
   drawHairRig(g, m, dir, spec.hairStyle || "short", spec.hair || "#6b4226", spec.hairDark, { bald: spec.bald });
   drawHatRig(g, m, dir, spec.hat);
   if (spec.necklace) {
     const L = limbs(m);
     px(g, 7, L.shoulder, 2, 1, spec.necklace);
   }
+  if (spec.cane) drawCane(g, m, dir, spec.cane === true ? "#8a6a42" : spec.cane);
   if (spec.bracelet && m.arm > 0) {
     const L = limbs(m);
     px(g, 8 - Math.floor(m.bodyW / 2) - m.arm, L.shoulder + Math.round((L.hip - L.shoulder) * 0.6), m.arm, 1, spec.bracelet);
