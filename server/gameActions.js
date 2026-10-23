@@ -243,6 +243,8 @@ export function handleAction(ctx, type, data = {}) {
       addItem(player, plot.crop, qty);
       player.stats.harvested += qty;
       player.stats[`harvested_${plot.crop}`] = (player.stats[`harvested_${plot.crop}`] || 0) + qty;
+      // co-op: o mutirão da colheita conta a soma de todo mundo na sala
+      recordCoop(room, "harvested", qty, ctx.io);
       addXp(ctx, "farming", 10);
       tiles[y][x] = TILE.TILLED;
       world.plots[key] = { crop: null, stage: 0, watered: false, plantedDay: null, owner: player.username };
@@ -250,7 +252,7 @@ export function handleAction(ctx, type, data = {}) {
       ctx.broadcast("tileUpdate", { x, y, tile: TILE.TILLED });
       ctx.broadcast("plotUpdate", { key, plot: world.plots[key] });
       ctx.broadcast("effect", { x, y, type: "harvest" });
-      ctx.notify(`🌾 Você colheu ${qty}x ${cropDef.name}!`, "success");
+      ctx.notify(`Você colheu ${qty}x ${cropDef.name}!`, "success");
       break;
     }
 

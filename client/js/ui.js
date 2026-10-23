@@ -16,6 +16,18 @@ import { iconImg } from "./art/icons.js";
 import { characterFrames, NPC_SPECS } from "./art/characters.js";
 import { C } from "./art/palette.js";
 
+/** Ícone de moeda/estrela/check em tamanho de texto (sem emoji). */
+
+/** Ícone desenhado para cada área de trabalho (sem emoji). */
+const JOB_ICON = {
+  caixa: "bag", padeiro: "pao", pescador: "peixe", ferreiro: "hammer",
+  operario: "madeira", entregador: "bag", agricultor: "sprout",
+};
+const jobIcon = (id, n = 16) => iconTag(JOB_ICON[id] || "job", n);
+const coinIco = (n = 14) => iconTag("coin", n);
+const starIco = (n = 14) => iconTag("star", n);
+const checkIco = (n = 14) => iconTag("check", n);
+
 const $ = (id) => document.getElementById(id);
 let toastTimer = null;
 
@@ -105,12 +117,12 @@ function renderAgenda(){
     const isWork = job.isWorkday;
     const inWin = job.inShiftWindow;
     let tag="", detail="";
-    if(isVac){ tag=`<span class="agendaTag vacation">FÉRIAS</span>`; detail=`🌴 Férias pagas hoje (+50% do turno). Aproveite!`;}
-    else if(!isWork){ tag=`<span class="agendaTag off">FOLGA</span>`; detail=`😴 Hoje é folga. Próximo turno: ${wdShort.filter((_,i)=>job.workdays.includes(i)).join(", ") || "—"}.`;}
-    else if(inWin){ tag=`<span class="agendaTag working">EM TURNO</span>`; detail=`⏰ Vá até <b>${job.job.employer}</b> e comece o turno!`;}
+    if(isVac){ tag=`<span class="agendaTag vacation">FÉRIAS</span>`; detail=`Férias pagas hoje (+50% do turno). Aproveite o descanso!`;}
+    else if(!isWork){ tag=`<span class="agendaTag off">FOLGA</span>`; detail=`Hoje é folga. Próximo turno: ${wdShort.filter((_,i)=>job.workdays.includes(i)).join(", ") || "—"}.`;}
+    else if(inWin){ tag=`<span class="agendaTag working">EM TURNO</span>`; detail=`Vá até <b>${job.job.employer}</b> e comece o turno!`;}
     else { const hm = `${String(Math.floor(job.shift.start/60)).padStart(2,"0")}:${String(job.shift.start%60).padStart(2,"0")}–${String(Math.floor(job.shift.end/60)).padStart(2,"0")}:${String(job.shift.end%60).padStart(2,"0")}`; tag=`<span class="agendaTag work">TRABALHO</span>`; detail=`🕘 Turno <b>${hm}</b> no ${job.job.employer}.`;}
 
-    html += `<div>${job.job.icon} <b>${job.job.name}</b>${tag}</div><div style="margin-top:2px">${detail}</div>`;
+    html += `<div>${jobIcon(job.job.id)} <b>${job.job.name}</b>${tag}</div><div style="margin-top:2px">${detail}</div>`;
     html += `<div style="margin-top:4px">Turnos: <b>${job.shiftsWorked||0}</b> • Ganhos: <b>$${job.totalEarned||0}</b> • Rep: <b>${job.reputation||50}/100</b></div>`;
   }
   // week strips
@@ -132,7 +144,7 @@ function renderAgenda(){
     if(job && job.job && !job.isVacation && job.isWorkday){
       const b = document.createElement("button");
       b.className="btn small primary";
-      b.textContent= job.inShiftWindow? "▶ Começar turno" : `⏰ Turno ${String(Math.floor(job.shift.start/60)).padStart(2,"0")}:${String(job.shift.start%60).padStart(2,"0")}`;
+      b.textContent= job.inShiftWindow? "Começar turno" : `Turno ${String(Math.floor(job.shift.start/60)).padStart(2,"0")}:${String(job.shift.start%60).padStart(2,"0")}`;
       b.onclick=()=>{ if(window.startShift) window.startShift(); else commands.interact("startShift",{}); };
       if(!job.inShiftWindow) b.disabled=true;
       acts.appendChild(b);
@@ -281,11 +293,11 @@ function updateStatsLine() {
 
 // ---------------- LOJA ----------------
 const SHOP_TABS = [
-  { id: "seeds", label: "🌱 Sementes" },
-  { id: "tools", label: "🔧 Ferramentas" },
-  { id: "animals", label: "🐔 Animais" },
-  { id: "materials", label: "🪵 Materiais" },
-  { id: "sell", label: "💰 Vender" },
+  { id: "seeds", label: "Sementes", icon: "sprout" },
+  { id: "tools", label: "Ferramentas", icon: "hammer" },
+  { id: "animals", label: "Animais", icon: "animal" },
+  { id: "materials", label: "Materiais", icon: "madeira" },
+  { id: "sell", label: "Vender", icon: "coin" },
 ];
 
 export function renderShop(tab = game.shopTab) {
@@ -296,7 +308,7 @@ export function renderShop(tab = game.shopTab) {
     for (const t of SHOP_TABS) {
       const b = document.createElement("button");
       b.className = `tab${t.id === tab ? " active" : ""}`;
-      b.textContent = t.label;
+      b.innerHTML = `${iconTag(t.icon, 17)} ${t.label}`;
       b.onclick = () => { renderShop(t.id); sfx("open"); };
       tabsEl.appendChild(b);
     }
@@ -312,10 +324,10 @@ export function renderShop(tab = game.shopTab) {
       row.className = "shopItem";
       row.innerHTML = `
         <div class="shopInfo"><b>${crop.icon} ${crop.name}</b>
-          <div class="sub">${crop.daysToGrow} dias • ${SEASONS[crop.season]} ${inSeason ? "" : "• ❌ fora de estação"} • vende por ${crop.sellPrice}</div>
+          <div class="sub">${crop.daysToGrow} dias • ${SEASONS[crop.season]} ${inSeason ? "" : "• não cresce agora"} • vende por ${crop.sellPrice}</div>
         </div>
         <div class="shopBuy">
-          <span class="price">💰 ${crop.seedPrice}</span>
+          <span class="price">${coinIco()} ${crop.seedPrice}</span>
           <button class="btn small primary" data-buy="${id}" data-qty="1">+1</button>
           <button class="btn small secondary" data-buy="${id}" data-qty="5">+5</button>
         </div>`;
@@ -335,7 +347,7 @@ export function renderShop(tab = game.shopTab) {
       row.innerHTML = `
         <div class="shopInfo"><b>${t.icon} ${t.name}</b><div class="sub">${t.id === "vara" ? "Pesque no lago e nos rios" : t.id === "machado" ? "Corte árvores na floresta" : "Minere rochas na mina"}</div></div>
         <div class="shopBuy">
-          <span class="price">💰 ${t.price}</span>
+          <span class="price">${coinIco()} ${t.price}</span>
           <button class="btn small ${owned ? "disabled" : "primary"}" ${owned ? "disabled" : ""} data-buy="${t.id}" data-qty="1">${owned ? "Já possui" : "Comprar"}</button>
         </div>`;
       c.appendChild(row);
@@ -349,7 +361,7 @@ export function renderShop(tab = game.shopTab) {
       row.innerHTML = `
         <div class="shopInfo"><b>${a.icon} ${a.name}</b><div class="sub">Produz ${itemMeta(a.product).icon} ${itemMeta(a.product).name} todo dia • precisa de celeiro</div></div>
         <div class="shopBuy">
-          <span class="price">💰 ${a.price}</span>
+          <span class="price">${coinIco()} ${a.price}</span>
           <button class="btn small ${hasStable ? "primary" : "secondary"}" ${hasStable ? "" : "disabled"} data-buy="${id}" data-qty="1">${hasStable ? "Comprar" : "Sem celeiro"}</button>
         </div>`;
       c.appendChild(row);
@@ -361,7 +373,7 @@ export function renderShop(tab = game.shopTab) {
       const row = document.createElement("div");
       row.className = "shopItem";
       row.innerHTML = `<div class="shopInfo"><b>${m.icon} ${m.name}</b><div class="sub">Material de construção</div></div>
-        <div class="shopBuy"><span class="price">💰 ${m.price}</span><button class="btn small primary" data-buy="${m.id}" data-qty="${m.qty}">Comprar</button></div>`;
+        <div class="shopBuy"><span class="price">${coinIco()} ${m.price}</span><button class="btn small primary" data-buy="${m.id}" data-qty="${m.qty}">Comprar</button></div>`;
       c.appendChild(row);
     }
   } else if (tab === "sell") {
@@ -401,7 +413,7 @@ export function renderBuild() {
   c.innerHTML = `<p class="hintLine">Escolha uma construção, confira o custo e clique em um espaço livre da sua fazenda. Todos no multiplayer veem a obra.</p>`;
   for (const [id, def] of Object.entries(BUILD_OPTIONS)) {
     const owned = Object.values(game.world.buildings).filter((b) => b.owner === game.username && b.buildingId === id).length;
-    const costText = Object.entries(def.cost).map(([m, v]) => m === "gold" ? `💰 ${v}` : `${itemMeta(m).icon} ${v}`).join(" • ");
+    const costText = Object.entries(def.cost).map(([m, v]) => m === "gold" ? `${coinIco()} ${v}` : `${itemMeta(m).icon} ${v}`).join(" • ");
     const canAfford = Object.entries(def.cost).every(([m, v]) => m === "gold" ? game.self.gold >= v : (game.self.inventory[m] || 0) >= v);
     const full = owned >= def.max;
     const row = document.createElement("div");
@@ -440,8 +452,8 @@ export function renderQuests() {
     const row = document.createElement("div");
     row.className = `questCard${claimed ? " claimed" : ""}`;
     row.innerHTML = `
-      <div class="questTop"><h4>${claimed ? "✅" : done ? "🎁" : "📌"} ${q.title}</h4>
-      <span class="reward">💰 ${q.reward} • ⭐ ${q.xp} ${SKILLS[q.skill]?.icon || ""}</span></div>
+      <div class="questTop"><h4>${claimed ? checkIco(13) : done ? "🎁" : "📌"} ${q.title}</h4>
+      <span class="reward">${coinIco()} ${q.reward} • ${starIco()} ${q.xp} ${SKILLS[q.skill]?.icon || ""}</span></div>
       <div class="questDesc">${q.desc}</div>
       <div class="progress"><div style="width:${(prog / q.need) * 100}%"></div></div>
       <div class="questBottom"><span>${prog}/${q.need}</span>
@@ -466,7 +478,7 @@ export function renderCommunity() {
     const row = document.createElement("div");
     row.className = `questCard${done ? " claimed" : ""}`;
     row.innerHTML = `
-      <div class="questTop"><h4>${p.icon} ${p.name} ${done ? "✅" : ""}</h4><span class="reward">${value}/${p.goal} 💰</span></div>
+      <div class="questTop"><h4>${p.icon} ${p.name} ${done ? checkIco(13) : ""}</h4><span class="reward">${value}/${p.goal} ${coinIco()}</span></div>
       <div class="questDesc">${p.desc}</div>
       <div class="progress"><div style="width:${Math.min(100, (value / p.goal) * 100)}%"></div></div>
       <div class="questBottom"><span>${done ? "Projeto concluído!" : "Contribua com ouros"}</span>
@@ -803,7 +815,7 @@ export function renderJobs(){
   if(cur && cur.job){
     const card=document.createElement("div");
     card.className="jobCard active";
-    card.innerHTML=`<div class="jobTop"><h4>${cur.job.icon} ${cur.job.name} — ${cur.job.employer}</h4><span class="agendaTag work">ATUAL</span></div><div class="jobMeta">Salário <b>$${cur.wagePerHour}/h</b> • Turno ${String(Math.floor(cur.shift.start/60)).padStart(2,"0")}:${String(cur.shift.start%60).padStart(2,"0")}–${String(Math.floor(cur.shift.end/60)).padStart(2,"0")}:${String(cur.shift.end%60).padStart(2,"0")} • ${cur.isVacation?"🌴 Férias hoje": cur.isWorkday ? (cur.inShiftWindow?"⏰ Em horário de turno":"🕘 Hoje é dia de trabalho"):"😴 Folga hoje"}</div><div class="jobSalary">Turnos feitos: ${cur.shiftsWorked||0} • Total ganho: $${cur.totalEarned||0} • Reputação ${cur.reputation||50}/100</div><div class="panelActions"><button class="btn small primary" id="btnStartShift2" ${!cur.inShiftWindow || cur.isVacation || !cur.isWorkday?"disabled":""}>▶ Começar turno</button><button class="btn small danger" id="btnQuitJob">Pedir demissão</button></div>`;
+    card.innerHTML=`<div class="jobTop"><h4>${jobIcon(cur.job.id)} ${cur.job.name} — ${cur.job.employer}</h4><span class="agendaTag work">ATUAL</span></div><div class="jobMeta">Salário <b>${coinIco()} ${cur.wagePerHour}/h</b> • Turno ${String(Math.floor(cur.shift.start/60)).padStart(2,"0")}:${String(cur.shift.start%60).padStart(2,"0")}–${String(Math.floor(cur.shift.end/60)).padStart(2,"0")}:${String(cur.shift.end%60).padStart(2,"0")} • ${cur.isVacation ? "Férias hoje" : cur.isWorkday ? (cur.inShiftWindow ? "Em horário de turno" : "Hoje é dia de trabalho") : "Folga hoje"}</div><div class="jobSalary">Turnos feitos: ${cur.shiftsWorked||0} • Total ganho: $${cur.totalEarned||0} • Reputação ${cur.reputation||50}/100</div><div class="panelActions"><button class="btn small primary" id="btnStartShift2" ${!cur.inShiftWindow || cur.isVacation || !cur.isWorkday?"disabled":""}>▶ Começar turno</button><button class="btn small danger" id="btnQuitJob">Pedir demissão</button></div>`;
     c.appendChild(card);
     setTimeout(()=>{
       const b1=document.getElementById("btnStartShift2"); if(b1) b1.onclick=()=> window.startShift?window.startShift():commands.interact("startShift",{});
@@ -811,14 +823,15 @@ export function renderJobs(){
     },0);
   }
 
-  c.insertAdjacentHTML("beforeend", `<div class="sectionTitle">${cur?.job ? "Outras vagas" : "Vagas disponíveis"}</div><p class="hintLine">Vá até o local (mercado, taverna, píer, ferraria) e candidate-se. Cada emprego tem escala própria e férias pagas.</p>`);
+  const curJobId = cur?.job?.id || null;
+  c.insertAdjacentHTML("beforeend", `<div class="sectionTitle">${cur?.job ? "Outras áreas" : "Vagas disponíveis"}</div><p class="hintLine">Vá até o local (mercado, carpintaria, celeiro, píer, taverna, ferraria) e candidate-se. Você pode trabalhar no que quiser: trocar de área a qualquer momento não custa nada, e cada uma tem salário, escala e tarefa próprios.</p>`);
   for(const [id,job] of Object.entries(JOBS)){
     if(cur?.job?.id===id) continue;
     const days = ["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
     const wdHtml = [0,1,2,3,4,5,6].map(i=> `<span class="dayPill ${job.workdays.includes(i)?"workday":""}">${days[i]}</span>`).join("");
     const row=document.createElement("div");
     row.className="jobCard";
-    row.innerHTML=`<div class="jobTop"><h4>${job.icon} ${job.name}</h4><span class="price">$${job.wagePerHour}/h</span></div><div class="jobMeta">${job.desc}<br>🏢 ${job.employer} • ⏰ ${String(Math.floor(job.shift.start/60)).padStart(2,"0")}:${String(job.shift.start%60).padStart(2,"0")}–${String(Math.floor(job.shift.end/60)).padStart(2,"0")}:${String(job.shift.end%60).padStart(2,"0")} • <b>${job.workdays.map(i=>days[i]).join(", ")}</b><br>${job.bonus}</div><div class="jobSchedule">${wdHtml}</div><div class="jobMeta" style="margin-top:4px">Férias nos dias: ${Object.entries(job.vacationDays).map(([s,days])=> SEASONS[s]+": "+days.join(",")).join(" • ")}</div><div class="panelActions"><button class="btn small primary" data-apply="${id}">Candidatar-se</button></div>`;
+    row.innerHTML=`<div class="jobTop"><h4>${jobIcon(job.id)} ${job.name}</h4><span class="price">${coinIco()} ${job.wagePerHour}/h</span></div><div class="jobMeta">${job.desc}<br>${iconTag("casa", 14)} ${job.employer} • ${iconTag("clock", 14)} ${String(Math.floor(job.shift.start/60)).padStart(2,"0")}:${String(job.shift.start%60).padStart(2,"0")}–${String(Math.floor(job.shift.end/60)).padStart(2,"0")}:${String(job.shift.end%60).padStart(2,"0")} • <b>${job.workdays.map(i=>days[i]).join(", ")}</b><br>${job.bonus}</div><div class="jobSchedule">${wdHtml}</div><div class="jobMeta" style="margin-top:4px">Férias nos dias: ${Object.entries(job.vacationDays).map(([s,days])=> SEASONS[s]+": "+days.join(",")).join(" • ")}</div><div class="panelActions"><button class="btn small primary" data-apply="${id}">${curJobId === id ? "Empregado" : curJobId ? "Trocar para esta área" : "Candidatar-se"}</button></div>`;
     c.appendChild(row);
   }
   c.querySelectorAll("[data-apply]").forEach(b=> b.onclick=()=> { commands.interact("applyJob",{jobId:b.dataset.apply}); sfx("buy"); });
@@ -835,7 +848,7 @@ export function renderTravel(){
     const card=document.createElement("div");
     card.className=`travelCard ${done?"":"locked"}`;
     const dests = tr.destinations.map(d=> `${REGION_DEFS[d]?.icon||"📍"} ${REGION_DEFS[d]?.name||d}`).join(", ");
-    card.innerHTML=`<div class="questTop"><h4>${tr.icon} ${tr.name}</h4><span class="reward">${done?"✅ Liberado":"🔒 Bloqueado"}</span></div><div class="questDesc">${tr.desc}<br>Destinos: ${dests}${cost}<br>Projeto: ${COMMUNITY_PROJECTS[tr.project]?.name||tr.project} (${prog[tr.project]||0}/${COMMUNITY_PROJECTS[tr.project]?.goal||"?"})<br>Embarque: ${(BUILDINGS.find(b=>b.id===tr.originBuilding)?.name)||tr.originBuilding}</div><div class="panelActions">${tr.destinations.map(d=> `<button class="btn small ${done?"primary":"secondary"}" ${done?"":"disabled"} data-travel="${d}">${REGION_DEFS[d]?.icon||"✈️"} Ir para ${REGION_DEFS[d]?.name||d}</button>`).join("")} ${game.region!=="vale"?`<button class="btn small secondary" data-travel="vale">🏠 Voltar ao Vale</button>`:""}</div>`;
+    card.innerHTML=`<div class="questTop"><h4>${tr.icon} ${tr.name}</h4><span class="reward">${done ? checkIco(13) : "Bloqueado"}</span></div><div class="questDesc">${tr.desc}<br>Destinos: ${dests}${cost}<br>Projeto: ${COMMUNITY_PROJECTS[tr.project]?.name||tr.project} (${prog[tr.project]||0}/${COMMUNITY_PROJECTS[tr.project]?.goal||"?"})<br>Embarque: ${(BUILDINGS.find(b=>b.id===tr.originBuilding)?.name)||tr.originBuilding}</div><div class="panelActions">${tr.destinations.map(d=> `<button class="btn small ${done?"primary":"secondary"}" ${done?"":"disabled"} data-travel="${d}">${REGION_DEFS[d]?.icon||"✈️"} Ir para ${REGION_DEFS[d]?.name||d}</button>`).join("")} ${game.region!=="vale"?`<button class="btn small secondary" data-travel="vale">🏠 Voltar ao Vale</button>`:""}</div>`;
     c.appendChild(card);
   }
   // lista de regiões visitáveis
@@ -858,7 +871,7 @@ export function renderCoop(){
     const done=m.completed;
     const row=document.createElement("div");
     row.className=`questCard ${done?"claimed":""}`;
-    row.innerHTML=`<div class="questTop"><h4>${m.icon} ${m.name} ${done?"✅":""}</h4><span class="reward">${m.progress}/${m.goal} • $${m.reward}</span></div><div class="questDesc">${m.desc}</div><div class="progress"><div style="width:${pct}%"></div></div><div class="questBottom"><span>${done?"Concluída! Recompensa paga a todos.":"Progresso da sala nesta semana"}</span><span class="reward">${pct}%</span></div>`;
+    row.innerHTML=`<div class="questTop"><h4>${m.icon} ${m.name} ${done ? checkIco(13) : ""}</h4><span class="reward">${m.progress}/${m.goal} • $${m.reward}</span></div><div class="questDesc">${m.desc}</div><div class="progress"><div style="width:${pct}%"></div></div><div class="questBottom"><span>${done?"Concluída! Recompensa paga a todos.":"Progresso da sala nesta semana"}</span><span class="reward">${pct}%</span></div>`;
     c.appendChild(row);
   }
 }
@@ -876,11 +889,11 @@ export function renderChainsExtra(container){
     card.className=`questCard ${done?"claimed":""}`;
     const stepsHtml = chain.steps.map((s,i)=>{
       const cur = Math.min(s.current, s.need);
-      const stepClass = s.done? `✅` : (i===chain.currentStep?`▶️`:`○`);
+      const stepClass = s.done ? checkIco(12) : (i === chain.currentStep ? "▶" : "○");
       const barW = Math.round((cur/s.need)*100);
       return `<div style="display:flex;justify-content:space-between;gap:8px;align-items:center;margin:4px 0"><span style="font-size:11.5px;flex:1">${stepClass} ${s.desc}: <b>${cur}/${s.need}</b></span><span style="min-width:54px;text-align:right;font-size:10px;color:${s.done?"#2e9e5b":"#8a7a60"}">${s.done?"feito":`${barW}%`}</span></div><div class="progress" style="height:6px;margin:2px 0 4px"><div style="width:${barW}%"></div></div>`;
     }).join("");
-    card.innerHTML=`<div class="questTop"><h4>${chain.icon} ${chain.title} ${done?"✅":""}</h4><span class="reward">💰 ${chain.reward.gold} • ⭐ ${chain.reward.xp}</span></div><div class="questDesc">${chain.desc} • NPC: ${(NPC_BY_ID[chain.npc]?.name)||chain.npc}</div>${stepsHtml}<div class="questBottom"><span>${done?"Concluída": allDone?"Pronta para resgatar":`Etapa ${chain.currentStep+1}/${chain.steps.length}`}</span>${done?`<span class="doneTag">Resgatada</span>`: `<button class="btn small ${allDone?"primary":"secondary"}" ${allDone?"":"disabled"} data-chain="${chain.id}">${allDone?"Resgatar":"Em andamento"}</button>`}</div>`;
+    card.innerHTML=`<div class="questTop"><h4>${chain.icon} ${chain.title} ${done ? checkIco(13) : ""}</h4><span class="reward">${coinIco()} ${chain.reward.gold} • ${starIco()} ${chain.reward.xp}</span></div><div class="questDesc">${chain.desc} • NPC: ${(NPC_BY_ID[chain.npc]?.name)||chain.npc}</div>${stepsHtml}<div class="questBottom"><span>${done?"Concluída": allDone?"Pronta para resgatar":`Etapa ${chain.currentStep+1}/${chain.steps.length}`}</span>${done?`<span class="doneTag">Resgatada</span>`: `<button class="btn small ${allDone?"primary":"secondary"}" ${allDone?"":"disabled"} data-chain="${chain.id}">${allDone?"Resgatar":"Em andamento"}</button>`}</div>`;
     container.appendChild(card);
   }
   container.querySelectorAll("[data-chain]").forEach(b=> b.onclick=()=> { commands.interact("claimChain",{chainId:b.dataset.chain}); sfx("buy"); });
@@ -906,7 +919,7 @@ export function renderBank(){
   const ownedLoan = b.loan;
   c.innerHTML="";
   const grid=document.createElement("div"); grid.className="bankGrid";
-  grid.innerHTML=`<div class="bankCard"><h4>💰 Carteira</h4><div style="font-size:22px;font-weight:900">$${game.self.gold||0}</div><div class="sub" style="font-size:11px;color:#8a7a60">Dinheiro com você</div></div><div class="bankCard"><h4>🏦 Saldo bancário</h4><div style="font-size:22px;font-weight:900">$${b.balance||0}</div><div class="sub" style="font-size:11px;color:#8a7a60">Seguro, rende sem risco</div></div>`;
+  grid.innerHTML=`<div class="bankCard"><h4>${coinIco(16)} Carteira</h4><div style="font-size:22px;font-weight:900">$${game.self.gold||0}</div><div class="sub" style="font-size:11px;color:#8a7a60">Dinheiro com você</div></div><div class="bankCard"><h4>🏦 Saldo bancário</h4><div style="font-size:22px;font-weight:900">$${b.balance||0}</div><div class="sub" style="font-size:11px;color:#8a7a60">Seguro, rende sem risco</div></div>`;
   c.appendChild(grid);
 
   const actions=document.createElement("div");
@@ -1035,7 +1048,7 @@ function initSettings() {
 }
 
 export function onSleepVote({ votes, needed, by }) {
-  notify(`😴 ${by} quer dormir (${votes}/${needed}). Pressione "Dormir" nas configurações para acompanhar.`);
+  notify(`${by} quer dormir (${votes}/${needed}). Pressione "Dormir" nas configurações para acompanhar.`);
 }
 
 export function showDisconnected() {

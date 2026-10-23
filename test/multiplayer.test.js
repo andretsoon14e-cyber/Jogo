@@ -43,6 +43,25 @@ function waitFor(socket, event, predicate = () => true, ms = 5000) {
   });
 }
 
+/**
+ * Caminha até (tx,ty) em passos de até 1 tile, como um cliente real.
+ * O servidor limita a velocidade (9 tiles/s + folga), então teleporte
+ * num pacote só é aparado — usar isto em vez de emitir um salto.
+ */
+async function walkTo(socket, tx, ty) {
+  let x = 22, y = 21;
+  const steps = Math.ceil(Math.hypot(tx - x, ty - y) / 1);
+  for (let i = 1; i <= steps + 6; i++) {
+    const k = Math.min(1, i / steps);
+    x = 22 + (tx - 22) * k;
+    y = 21 + (ty - 21) * k;
+    socket.emit("move", { x, y, dir: "down" });
+    if (Math.hypot(tx - x, ty - y) < 0.5) break;
+    await sleep(120);
+  }
+  return { x, y };
+}
+
 function connect(name, { token = null, x = 22, y = 21 } = {}) {
   return new Promise((resolve, reject) => {
     const s = io(URL, { transports: ["websocket"], reconnection: false });
@@ -107,10 +126,10 @@ async function main() {
   ok("Estado privado não vaza na lista pública", au && !("inventory" in au[0]));
 
   // ---------- MOVIMENTO / CHAT ----------
-  const moved = once(B.socket, "playerMoved");
-  A.socket.emit("move", { x: 23.5, y: 16.25, dir: "down" });
+  const moved = waitFor(B.socket, "playerMoved", (d) => d?.x > 23 && d?.y < 17.5);
+  const walkedA = await walkTo(A.socket, 23.5, 16.25);
   const mv = await moved;
-  ok("Movimento em tempo real", mv?.x === 23.5 && mv?.y === 16.25, `${mv?.x},${mv?.y}`);
+  ok("Movimento em tempo real", !!mv, mv ? `${mv.x.toFixed(2)},${mv.y.toFixed(2)}` : `andou até ${walkedA.x.toFixed(2)},${walkedA.y.toFixed(2)}`);
 
   const chat = once(B.socket, "chatMsg");
   A.socket.emit("chat", { msg: "Olá, Beto!" });
@@ -156,8 +175,7 @@ async function main() {
   const plot = worldAfter.plots["22,15"];
   ok("Planta cresce 3 estágios (regada todo dia)", plot?.crop === "nabo" && plot.stage >= 3, `estágio ${plot?.stage}`);
 
-  B.socket.emit("move", { x: 23.2, y: 16.4, dir: "up" });
-  await sleep(120);
+  await walkTo(B.socket, 23.2, 16.4);
   const harvestFx = waitFor(A.socket, "effect", (e) => e.type === "harvest");
   const invB = waitFor(B.socket, "inventoryUpdate", (inv) => (inv?.nabo || 0) >= 1);
   B.socket.emit("interact", { type: "harvest", data: { x: 22, y: 15 } });

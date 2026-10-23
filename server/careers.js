@@ -185,7 +185,18 @@ function applyJob(ctx, data) {
   const job = JOBS[data.jobId];
   if (!job) return;
   if (player.job?.id === job.id) return ctx.notify("Você já trabalha aqui.", "error");
-  if (player.job) return ctx.notify("Peça demissão do emprego atual antes de assumir outro.", "error");
+  // Trabalhar é escolha livre: dá para trocar de área a qualquer momento,
+  // sem precisar pedir demissão. O histórico fica registrado no perfil.
+  const previous = player.job ? JOBS[player.job.id] : null;
+  if (previous) {
+    player.jobHistory = player.jobHistory || [];
+    player.jobHistory.push({
+      id: previous.id, shifts: player.job.shiftsWorked || 0,
+      earned: player.job.totalEarned || 0, untilDay: room.world.day,
+    });
+    if (player.jobHistory.length > 12) player.jobHistory.shift();
+    player.shift = null;
+  }
   if (!nearBuilding(player, job.building) && player.indoors !== job.building) {
     return ctx.notify(`Vá até o local de trabalho (${job.employer}) para se candidatar.`, "error");
   }
@@ -199,7 +210,9 @@ function applyJob(ctx, data) {
   };
   ctx.emitSelf("jobUpdate", jobSnapshot(player, room.world));
   ctx.emitSelf("notify", {
-    msg: `💼 Contratado como ${job.name}! Turno ${fmtHour(job.shift.start)}–${fmtHour(job.shift.end)}, $${job.wagePerHour}/h.`,
+    msg: previous
+      ? `Contrato trocado: agora você é ${job.name}. Turno ${fmtHour(job.shift.start)}–${fmtHour(job.shift.end)}, $${job.wagePerHour}/h.`
+      : `Contratado como ${job.name}! Turno ${fmtHour(job.shift.start)}–${fmtHour(job.shift.end)}, $${job.wagePerHour}/h.`,
     type: "success",
   });
   ctx.room.dirty = true;
@@ -340,6 +353,9 @@ function eat(ctx, data) {
 function setIndoor(ctx, data) {
   const { player } = ctx;
   const buildingId = data.buildingId;
+  // entrar/sair de casa troca de cena: libera o passo por 1,5s
+  player.moveAt = Date.now();
+  player.tpUntil = Date.now() + 1500;
   if (!buildingId) {
     player.indoors = null;
     ctx.broadcast("playersUpdate", [...ctx.room.players.values()].map(publicPlayerSafe));
@@ -412,6 +428,8 @@ function travel(ctx, data) {
   const sp = spawns[to] || { x: 22, y: 20 };
   player.x = sp.x;
   player.y = sp.y;
+  player.moveAt = Date.now();
+  player.tpUntil = Date.now() + 1500; // posição definida pelo servidor
   player.dir = "up";
 
   ctx.emitSelf("traveled", {

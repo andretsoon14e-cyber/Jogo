@@ -136,7 +136,36 @@ const itemIcons = {
   pizza: (g) => { for (let i = 0; i < 9; i++) { P(g, 4 + i, 4 + i, 9 - i, 1, "#e8b575"); } P(g, 5, 5, 7, 1, "#e8b575"); for (let i = 0; i < 5; i++) P(g, 6 + i, 5 + i, 1, 1, "#e04a3c"); P(g, 4, 4, 9, 1, "#c98a4a"); },
   banquete: (g) => { disc(g, 8, 11, 4, "#e8f1f5"); disc(g, 8, 10, 3, "#d9e8ef"); P(g, 2, 2, 3, 3, C.o2); P(g, 5, 3, 3, 3, C.g3); P(g, 9, 2, 3, 3, C.y2); P(g, 11, 5, 3, 2, C.r2); },
   estufa: (g) => { P(g, 3, 6, 10, 7, "#bfe6da"); P(g, 3, 6, 10, 1, "#e8f8f2"); P(g, 3, 12, 10, 1, "#8fbfb0"); for (let i = 0; i < 4; i++) P(g, 3 + i * 3, 6, 1, 7, "#8fbfb0"); P(g, 5, 2, 6, 2, "#c9564a"); P(g, 13, 3, 1, 4, C.w4); },
-  animal: (g) => { disc(g, 7, 9, 4, "#f6f1e6"); disc(g, 10, 5, 3, "#f6f1e6"); P(g, 11, 2, 1, 2, C.w2); P(g, 9, 4, 1, 1, C.ink); P(g, 12, 5, 1, 1, C.ink); P(g, 4, 12, 6, 1, "#d9d0be"); },
+  // galinha de perfil — mapa de pixels 16×16, mesma linguagem dos outros ícones
+  animal: (g) => {
+    const W = "#f8f3e7", s = "#ddd5c2", R = "#d4584c", O = "#ef8a3f", K = "#3a2a20";
+    const rows = [
+      "................",
+      "................",
+      ".......RRR......",
+      "......RRRRR.....",
+      "......WWWWW.....",
+      "......WWKWW.OO..",
+      "......WWWWWOOO..",
+      "......WWWWWR....",
+      "....WWWWWWWWR...",
+      "..WWWWWWWWWWR...",
+      ".WWWWWWWWWWWW...",
+      "WWWWWWWWWWWWW...",
+      "WWWWWWWWWWWs....",
+      ".WWWWWWWWWs.....",
+      "..WWWWWWW.......",
+      "..OO..OOO.......",
+    ];
+    const map = { W, s, R, O, K };
+    rows.forEach((row, y) => {
+      [...row].forEach((ch, x) => {
+        if (ch === ".") return;
+        g.fillStyle = map[ch] || W;
+        g.fillRect(x, y, 1, 1);
+      });
+    });
+  },
   casa: (g) => { P(g, 2, 7, 12, 7, "#f2ddc0"); P(g, 2, 13, 12, 1, "#cfae86"); for (let i = 0; i < 5; i++) P(g, 2 + i, 6 - i, 12 - i * 2, 2, C.roof1); P(g, 7, 9, 3, 5, C.w3); P(g, 3, 8, 2, 2, C.b1); P(g, 11, 8, 2, 2, C.b1); },
   celeiro: (g) => { P(g, 2, 6, 12, 8, "#c0503f"); P(g, 2, 6, 12, 1, "#d97a63"); for (let i = 0; i < 4; i++) P(g, 2 + i, 5 - i, 12 - i * 2, 2, "#8f3129"); P(g, 6, 8, 6, 6, "#a8453a"); line(g, 6, 8, 11, 13, "#f2ead6"); line(g, 11, 8, 6, 13, "#f2ead6"); },
   cerca: (g) => { P(g, 1, 6, 2, 9, C.w3); P(g, 7, 6, 2, 9, C.w3); P(g, 13, 6, 2, 9, C.w3); P(g, 1, 8, 14, 2, C.w2); P(g, 1, 11, 14, 2, C.w2); },

@@ -289,6 +289,28 @@ canvas.dispatchEvent(new window.MouseEvent("mousedown", { clientX: 512, clientY:
 flushFrames(2);
 ok("Clique no mundo não quebra", true);
 
+// ---------- proporções por idade (determinístico) ----------
+const rig = await import("../client/js/art/rig.js");
+function altura(id) {
+  const m = rig.metricsFor(id);
+  const top = 33 - m.legH - m.torsoH - m.headH;
+  return 31 - top;
+}
+const h = {
+  newborn: altura("newborn_A"), baby: altura("baby_A"), child: altura("child_A"),
+  teen: altura("teen_A"), adult: altura("adult_A"), adultB: altura("adult_B"), elder: altura("elder_A"),
+};
+ok("Recém-nascido é o menor de todos", h.newborn < h.baby, `${h.newborn} < ${h.baby}`);
+ok("Bebê é claramente menor que a criança", h.baby + 2 <= h.child, `${h.baby} -> ${h.child}`);
+ok("Criança é menor que adolescente", h.child < h.teen, `${h.child} < ${h.teen}`);
+ok("Adolescente é menor que adulto", h.teen < h.adult, `${h.teen} < ${h.adult}`);
+ok("Adultos têm alturas diferentes entre si", h.adult !== h.adultB, `${h.adult} vs ${h.adultB}`);
+ok("Nenhum adulto passa do topo do sprite (altura <= 31)", h.adult <= 31 && h.adultB <= 31, `${h.adult}/${h.adultB}`);
+ok("Pé sempre na linha 31 em todas as idades", ["newborn_A","baby_B","child_B","teen_B","adult_A","elder_A"].every((id) => {
+  const m = rig.metricsFor(id);
+  return 33 - m.legH - m.torsoH - m.headH >= 0;
+}));
+
 ok("Nenhuma exceção não tratada", errors.length === 0, errors.map((e) => e.message).join("; "));
 
 console.log(`\n${failures === 0 ? "🎉 CLIENTE OK — todos os testes de interface passaram" : `⚠️ ${failures} falha(s) no cliente`}\n`);

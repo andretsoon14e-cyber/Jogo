@@ -12,8 +12,9 @@
     "build:exe:portable": "electron-builder --win portable --x64",
     "test": "node test/multiplayer.test.js",
     "test:client": "node test/client.smoke.test.js",
-    "test:all": "node test/client.smoke.test.js && node test/multiplayer.test.js && node test/sleepvotes.test.js",
-    "test:sleep": "node test/sleepvotes.test.js"
+    "test:all": "node test/client.smoke.test.js && node test/jobs.test.js && node test/multiplayer.test.js && node test/sleepvotes.test.js && node test/movement.test.js && node test/coop.test.js",
+    "test:sleep": "node test/sleepvotes.test.js",
+    "test:net": "node test/multiplayer.test.js && node test/sleepvotes.test.js && node test/movement.test.js && node test/coop.test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

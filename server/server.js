@@ -19,6 +19,12 @@ import { saveWorldToDisk, loadWorldFromDisk, advanceDay } from "./worldState.js"
 import { GAME_END_MINUTES, ANIMALS } from "../shared/constants.js";
 
 const __filename = fileURLToPath(import.meta.url);
+
+// Velocidade máxima aceita do cliente, em tiles por segundo.
+// O jogo roda a 4.2 (7.14 com Shift); 9 dá folga para lag sem abrir teleporte.
+const MOVE_SPEED = 9;
+// Tolerância fixa por pacote (arredondamento + latência).
+const MOVE_SLACK = 1.2;
 const __dirname = path.dirname(__filename);
 const PORT = Number(process.env.PORT) || 3000;
 
@@ -270,10 +276,30 @@ io.on("connection", (socket) => {
     const x = Number(data.x), y = Number(data.y);
     if (!Number.isFinite(x) || !Number.isFinite(y)) return;
     if (x < 0 || y < 0 || x > 100 || y > 100) return;
-    player.x = x;
-    player.y = y;
+    // ---- validação de velocidade ----
+    // O servidor é a autoridade sobre a posição: ninguém atravessa o mapa
+    // num pacote só. O excedente é aparado em vez de recusado, para não
+    // desincronizar quem está com lag (o cliente continua de onde dá).
+    const now = Date.now();
+    const lastAt = player.moveAt || now;
+    const elapsed = Math.max(0, (now - lastAt) / 1000);
+    const maxStep = MOVE_SPEED * elapsed + MOVE_SLACK;
+    const dx = x - (player.x ?? x), dy = y - (player.y ?? y);
+    const dist = Math.hypot(dx, dy);
+    let nx = x, ny = y;
+    if (now < (player.tpUntil || 0)) {
+      // posição definida pelo servidor (viagem, entrar/sair de casa): livre
+    } else if (dist > maxStep && dist > 0.001) {
+      const k = maxStep / dist;
+      nx = player.x + dx * k;
+      ny = player.y + dy * k;
+      player.moveClamps = (player.moveClamps || 0) + 1;
+    }
+    player.x = nx;
+    player.y = ny;
+    player.moveAt = now;
     player.dir = ["up", "down", "left", "right"].includes(data.dir) ? data.dir : player.dir;
-    socket.to(room.roomCode).emit("playerMoved", { id: socket.id, x, y, dir: player.dir });
+    socket.to(room.roomCode).emit("playerMoved", { id: socket.id, x: nx, y: ny, dir: player.dir });
     room.dirty = true;
   });
 

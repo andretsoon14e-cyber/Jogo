@@ -94,17 +94,40 @@ export function ageOfBody(id) {
   return (BODY_VARIANTS[rigBodyId(id)] || BODY_VARIANTS.adult_A).age;
 }
 
+/**
+ * Silhueta explícita de cada variante.
+ * `headTop` resultante = 33 - legH - torsoH - headH (pé na linha 31):
+ * adulto A 2 (28px de altura visível), adulto B 6 (25px),
+ * adolescente 7/9, idoso 7/5, criança 12/14, bebê 18/19.
+ */
+const VARIANT_SHAPE = {
+  newborn_A: { legH: 0, torsoH: 0, headH: 8, headW: 9, bodyW: 9, arm: 0 },
+  newborn_B: { legH: 0, torsoH: 0, headH: 8, headW: 9, bodyW: 9, arm: 0 },
+  baby_A: { legH: 4, torsoH: 3, headH: 8, headW: 8, bodyW: 6, arm: 2 },
+  baby_B: { legH: 3, torsoH: 3, headH: 8, headW: 8, bodyW: 5, arm: 2 },
+  child_A: { legH: 7, torsoH: 6, headH: 8, headW: 7, bodyW: 7, arm: 2 },
+  child_B: { legH: 6, torsoH: 5, headH: 8, headW: 7, bodyW: 5, arm: 2 },
+  teen_A: { legH: 9, torsoH: 9, headH: 7, headW: 6, bodyW: 7, arm: 2 },
+  teen_B: { legH: 8, torsoH: 8, headH: 7, headW: 6, bodyW: 5, arm: 2 },
+  adult_A: { legH: 13, torsoH: 11, headH: 7, headW: 7, bodyW: 9, arm: 2 },
+  adult_B: { legH: 12, torsoH: 9, headH: 7, headW: 6, bodyW: 7, arm: 2 },
+  elder_A: { legH: 10, torsoH: 9, headH: 7, headW: 6, bodyW: 8, arm: 2, stoop: 1 },
+  elder_B: { legH: 11, torsoH: 9, headH: 7, headW: 6, bodyW: 7, arm: 2 },
+};
+
 export function metricsFor(bodyId = "adult_A") {
   const def = BODY_VARIANTS[rigBodyId(bodyId)] || BODY_VARIANTS.adult_A;
   const m = AGE_METRICS[def.age] || AGE_METRICS.adult;
+  const shape = VARIANT_SHAPE[BODY_VARIANTS[rigBodyId(bodyId)] ? rigBodyId(bodyId) : ""];
+  if (shape) return { age: def.age, variant: def.variant, ...shape, bundle: !!m.bundle };
   const A = (def.variant || "A") === "A";
   return {
     age: def.age,
     variant: def.variant,
     legH: m.legH + (A ? 0 : 1),
-    torsoH: m.torsoH + (def.age === "adult" && A ? 1 : 0),
+    torsoH: m.torsoH,
     headH: m.headH,
-    headW: m.headW + (def.age === "baby" || def.age === "adult" ? (A ? 1 : 0) : 0),
+    headW: m.headW,
     bodyW: Math.max(4, m.bodyW + (A ? 1 : -1)),
     arm: m.arm,
     stoop: m.stoop || 0,
