@@ -886,6 +886,12 @@ function tryInteract() {
     tryToggleInterior(); return;
   }
   if (ui.isPanelOpen()) return;
+  // caverna: F em cima da escada sobe/desce (o clique também funciona)
+  const hereTile = tileAt(Math.floor(game.x), Math.floor(game.y));
+  if (hereTile === TILE.CAVE_STAIRS_DOWN || hereTile === TILE.CAVE_STAIRS_UP) {
+    caveStairsStep(hereTile === TILE.CAVE_STAIRS_DOWN ? 1 : -1);
+    return;
+  }
   const npc = nearbyNpc(2.8);
   if (npc) {
     commands.talk(npc.id);
