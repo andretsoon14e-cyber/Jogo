@@ -24,6 +24,7 @@ export function publicPlayer(p) {
     id: p.id,
     username: p.username,
     skin: p.skin,
+    look: p.look || null,
     x: p.x,
     y: p.y,
     dir: p.dir,

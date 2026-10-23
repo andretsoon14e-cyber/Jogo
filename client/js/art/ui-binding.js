@@ -5,6 +5,7 @@
 import { iconURL, iconize, iconImg, EMOJI_TO_ICON } from "./icons.js";
 import { characterFrames, specForSkin, NPC_SPECS, seasonSpec } from "./characters.js";
 import { mkCanvas } from "./pixel.js";
+import { drawPortrait, PORTRAIT_SIZE } from "./portrait.js";
 
 let observer = null;
 let pending = null;
@@ -19,6 +20,20 @@ export function hydrateIcons(root = document) {
     el.innerHTML = iconImg(key, "pxIcon", size);
     el.dataset.iconDone = "1";
   });
+}
+
+/**
+ * HTML do ícone em escala inteira (sem esticar): 16px de arte × 2/4 = 32/64px.
+ * Se a chave não existir, cai no emoji de fallback em vez de um buraco.
+ */
+export function iconTag(key, size = 32, fallback = "") {
+  try {
+    const url = iconURL(key);
+    if (url) {
+      return `<img class="pxIcon" src="${url}" width="${size}" height="${size}" alt="" draggable="false" style="width:${size}px;height:${size}px;image-rendering:pixelated">`;
+    }
+  } catch {}
+  return fallback ? `<span class="emojiFallback" style="font-size:${Math.round(size * 0.62)}px">${fallback}</span>` : "";
 }
 
 /** Troca o ícone de um elemento já hidratado. */
@@ -174,70 +189,10 @@ export function drawLogo() {
 }
 
 /** Retrato pixel-art (busto) de um NPC para os painéis — grande + sazonal + detalhado */
-export function npcPortrait(npc, size = 96, opts = {}) {
-  const season = (typeof window !== "undefined" && window.__seasonOverride != null) ? window.__seasonOverride : (opts.seasonIndex ?? (typeof game !== "undefined" ? game?.world?.seasonIndex : 0));
-  const c = mkCanvas(size, size);
-  const g = c.getContext("2d");
-  g.imageSmoothingEnabled = false;
-
-  // paleta de fundo por estação
-  const seasonBg = [
-    { bg: "#e8f2d6", bg2: "#d0e6b2", accent: "#7cb98a" }, // primavera - flores
-    { bg: "#fff6bf", bg2: "#ffe8a0", accent: "#e8c15c" }, // verão - sol
-    { bg: "#f5d6b0", bg2: "#e0b88a", accent: "#c97a3a" }, // outono - folhas
-    { bg: "#dce8f5", bg2: "#c4d6ea", accent: "#6f90b8" }, // inverno - neve
-  ];
-  const th = seasonBg[season] || seasonBg[0];
-  // fundo degradê + padrão xadrez sutil
-  const grd = g.createLinearGradient(0, 0, 0, size);
-  grd.addColorStop(0, th.bg);
-  grd.addColorStop(1, th.bg2);
-  g.fillStyle = grd;
-  g.fillRect(0, 0, size, size);
-  for (let y = 0; y < size; y += 8) {
-    for (let x = 0; x < size; x += 8) {
-      if (((x/8)+(y/8))%2===0) {
-        g.fillStyle = "rgba(255,255,255,.18)";
-        g.fillRect(x,y,8,8);
-      }
-    }
-  }
-  // vinheta de estação no canto
-  g.fillStyle = th.accent;
-  g.globalAlpha = 0.14;
-  g.beginPath();
-  g.arc(size - 10, 10, 22, 0, 6.3);
-  g.fill();
-  g.globalAlpha = 1;
-  // ícone sazonal pequeno
-  const seasonIcon = ["🌸","☀","🍂","❄"][season] || "🌸";
-  g.font = `${Math.round(size*0.18)}px serif`;
-  g.textAlign = "center";
-  g.fillStyle = "rgba(90,60,30,.45)";
-  // usamos texto pequeno como emoji já é estilizado, mas desenha fallback
-  // (não depende de emoji rendering - desenha círculo)
-  g.fillStyle = th.accent;
-  g.globalAlpha = 0.85;
-  g.beginPath();
-  if (season===0) { // primavera - flor
-    g.fillStyle = "#f8a8c0";
-    for(let i=0;i<5;i++){ const a=i/5*6.28; g.beginPath(); g.arc(size-10+Math.cos(a)*5, 10+Math.sin(a)*5, 3.2,0,6.3); g.fill(); }
-    g.fillStyle="#ffe066"; g.beginPath(); g.arc(size-10,10,2.4,0,6.3); g.fill();
-  } else if(season===1) { // verão - sol
-    g.fillStyle="#ffe066"; g.beginPath(); g.arc(size-10,10,5.5,0,6.3); g.fill();
-    g.strokeStyle="rgba(255,200,60,.5)"; g.lineWidth=1.5;
-    for(let i=0;i<8;i++){ const a=i/8*6.28; g.beginPath(); g.moveTo(size-10+Math.cos(a)*7, 10+Math.sin(a)*7); g.lineTo(size-10+Math.cos(a)*9, 10+Math.sin(a)*9); g.stroke(); }
-  } else if(season===2) { // outono - folha
-    g.fillStyle="#c97a3a";
-    g.beginPath(); g.ellipse(size-10, 11, 4.5, 7, -0.3, 0, 6.3); g.fill();
-    g.fillStyle="#a85a2a"; g.beginPath(); g.moveTo(size-10, 4); g.lineTo(size-10, 18); g.stroke();
-  } else { // inverno - floco
-    g.fillStyle="white";
-    for(let i=0;i<6;i++){ const a=i/6*6.28; g.beginPath(); g.moveTo(size-10,10); g.lineTo(size-10+Math.cos(a)*6, 10+Math.sin(a)*6); g.lineWidth=1.4; g.strokeStyle="white"; g.stroke(); }
-    g.fillStyle="white"; g.beginPath(); g.arc(size-10,10,1.8,0,6.3); g.fill();
-  }
-  g.globalAlpha = 1;
-
+export function npcPortrait(npc, size = PORTRAIT_SIZE, opts = {}) {
+  const season = (typeof window !== "undefined" && window.__seasonOverride != null)
+    ? window.__seasonOverride
+    : (opts.seasonIndex ?? (typeof game !== "undefined" ? game?.world?.seasonIndex : 0));
   let baseSpec = NPC_SPECS[npc.id];
   if (!baseSpec) {
     baseSpec = {
@@ -248,53 +203,44 @@ export function npcPortrait(npc, size = 96, opts = {}) {
   } else if (season != null && typeof seasonSpec === "function") {
     try { baseSpec = seasonSpec(npc.id, season, baseSpec); } catch {}
   }
+  const portraitSpec = { ...baseSpec, bodyAge: npc.age || NPC_AGE[npc.id] || "adult" };
+  const bg = ["#e6f0d4", "#fdf1c8", "#f6e0c8", "#e2ebf6"][season] || "#e6f0d4";
+  const bust = drawPortrait(portraitSpec, { size, background: bg });
+  if (opts.plain) return bust;   // avatar pequeno de lista: sem moldura
+  const S = bust.width;
 
-  const atlas = characterFrames(baseSpec);
-  const frame = atlas.down[0];
-  const sw = frame.width, sh = frame.height;
-  // recorte maior: mostra busto completo com mais detalhe
-  const cropY = sh * 0.02;
-  const cropH = sh * 0.68;
-  // escala ampliada para retrato grande
-  const scale = (size * 0.92) / (sw * 0.92);
-  const dw = sw * scale, dh = cropH * scale;
-  // sombra suave atrás do busto
-  g.fillStyle = "rgba(60,40,20,.12)";
-  g.beginPath();
-  g.ellipse(size/2, size - 8, size*0.38, size*0.10, 0, 0, 6.3);
-  g.fill();
-  g.drawImage(frame, 0, cropY, sw, cropH, (size - dw)/2, size - dh - 1, dw, dh);
-
-  // moldura de madeira pergaminho — dupla
-  g.strokeStyle = "#6b4a2e";
-  g.lineWidth = 3;
-  g.strokeRect(1.5, 1.5, size-3, size-3);
-  g.strokeStyle = "#d9c79a";
-  g.lineWidth = 2;
-  g.strokeRect(4.5, 4.5, size-9, size-9);
-  g.strokeStyle = "rgba(107,74,47,.25)";
-  g.lineWidth = 1;
-  g.strokeRect(7, 7, size-14, size-14);
-
-  // placa de nome na base do retrato
+  // moldura de madeira + placa de nome, sem recortar a arte
+  const c = mkCanvas(S, S);
+  const g = c.getContext("2d");
+  g.imageSmoothingEnabled = false;
+  g.drawImage(bust, 0, 0);
+  g.strokeStyle = "#6b4a2e"; g.lineWidth = 3; g.strokeRect(1.5, 1.5, S - 3, S - 3);
+  g.strokeStyle = "#d9c79a"; g.lineWidth = 2; g.strokeRect(4.5, 4.5, S - 9, S - 9);
+  g.strokeStyle = "rgba(107,74,47,.22)"; g.lineWidth = 1; g.strokeRect(7, 7, S - 14, S - 14);
   const name = npc.name || npc.id || "";
-  if (size >= 88 && name) {
-    const tagH = Math.max(14, Math.round(size*0.16));
-    const tagY = size - tagH - 2;
-    // fundo da placa
-    g.fillStyle = "rgba(90,60,40,.92)";
-    const tw = Math.min(size-16, name.length * (size*0.09) + 14);
-    const tx = (size - tw)/2;
+  if (S >= 88 && name) {
+    const tagH = Math.max(16, Math.round(S * 0.14));
+    const tagY = S - tagH - 5;
+    const tw = Math.min(S - 20, name.length * (S * 0.082) + 16);
+    const tx = (S - tw) / 2;
+    g.fillStyle = "rgba(74,50,30,.94)";
     g.fillRect(tx, tagY, tw, tagH);
     g.fillStyle = "#f2e6c8";
-    g.fillRect(tx+1, tagY+1, tw-2, tagH-2);
+    g.fillRect(tx + 1, tagY + 1, tw - 2, tagH - 2);
     g.fillStyle = "#3a2416";
-    g.font = `700 ${Math.round(tagH*0.62)}px Trebuchet MS, Segoe UI, sans-serif`;
+    g.font = `700 ${Math.round(tagH * 0.6)}px Trebuchet MS, Segoe UI, sans-serif`;
     g.textAlign = "center";
     g.textBaseline = "middle";
-    g.fillText(name, size/2, tagY + tagH/2 + 0.5);
+    g.fillText(name, S / 2, tagY + tagH / 2 + 0.5);
   }
   return c;
 }
 
-
+/** Idade de cada morador (usada pelo retrato e pelo sprite). */
+export const NPC_AGE = {
+  maria: "elder", joao: "adult", ana: "adult", carlos: "elder", luna: "teen",
+  pedro: "adult", bia: "adult", tai: "adult", rita: "elder", duda: "teen",
+  sofia: "adult", marcos: "adult", helena: "adult", rafael: "adult",
+  clara: "teen", edu: "teen", paulo: "adult", larissa: "adult",
+  roberto: "elder", fernanda: "adult",
+};

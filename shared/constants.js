@@ -385,17 +385,17 @@ export const PANTS_OPTIONS = [
   { id: "marrom", name: "Marrom", pants: "#6b4a2f", desc: "Marrom terra", gender: "masc" },
   { id: "jeans_claro", name: "Jeans claro", pants: "#6b7d9c", desc: "Jeans lavado", gender: "masc", asset: "layer_pants_black.png" },
   { id: "caqui", name: "Cáqui", pants: "#c2a46a", desc: "Cáqui campo", gender: "masc", asset: "layer_pants_cargo.png" },
-  { id: "bermuda", name: "Bermuda cáqui", pants: "#c2b280", desc: "Bermuda verão", gender: "masc" },
+  { id: "bermuda", name: "Bermuda cáqui", pants: "#c2b280", desc: "Bermuda verão", gender: "masc", style: "shorts" },
   { id: "cargo_masc", name: "Cargo verde", pants: "#4a5a3a", desc: "Cargo militar", gender: "masc" },
   { id: "preto", name: "Preto", pants: "#2b2b2b", desc: "Preto urbano", gender: "uni" },
   { id: "cinza", name: "Cinza", pants: "#7a7a7a", desc: "Cinza pedra", gender: "uni", asset: "layer_skirt_denim.png" },
-  { id: "saia_azul", name: "Saia azul", pants: "#4a6fa5", desc: "Saia plissada azul", gender: "fem", asset: "layer_skirt_floral.png" },
-  { id: "saia_rosa", name: "Saia rosa", pants: "#e89a9e", desc: "Saia rodada rosa", gender: "fem" },
-  { id: "saia_verde", name: "Saia verde", pants: "#5a8f5a", desc: "Saia longa verde", gender: "fem", asset: "layer_skirt_beige.png" },
-  { id: "saia_longa_fem", name: "Saia longa preta", pants: "#2b2b2b", desc: "Saia midi", gender: "fem" },
-  { id: "legging_fem", name: "Legging vinho", pants: "#6b2630", desc: "Legging justa", gender: "fem" },
+  { id: "saia_azul", name: "Saia plissada azul", pants: "#4a6fa5", desc: "Saia plissada", gender: "fem", style: "skirt" },
+  { id: "saia_rosa", name: "Saia rodada rosa", pants: "#e89a9e", desc: "Saia rodada", gender: "fem", style: "skirt" },
+  { id: "saia_verde", name: "Saia longa verde", pants: "#5a8f5a", desc: "Saia longa", gender: "fem", style: "skirt" },
+  { id: "saia_longa_fem", name: "Saia midi preta", pants: "#2b2b2b", desc: "Saia midi", gender: "fem", style: "skirt" },
+  { id: "legging_fem", name: "Legging vinho", pants: "#6b2630", desc: "Legging justa", gender: "fem", style: "long" },
   { id: "calca_flare_fem", name: "Calça flare", pants: "#6b5a4a", desc: "Calça flare", gender: "fem" },
-  { id: "short_fem", name: "Short jeans", pants: "#5d7fa0", desc: "Short curto", gender: "fem" },
+  { id: "short_fem", name: "Short jeans", pants: "#5d7fa0", desc: "Short curto", gender: "fem", style: "shorts" },
 ];
 export const EYE_COLOR_OPTIONS = [
   { id: "castanho", name: "Castanho", eye: "#5a3a1e", eyeLight: "#8a6240" },
@@ -439,23 +439,18 @@ export const HAIR_STYLE_OPTIONS = [
   { id: "braid_long", name: "Trança longa", gender: "fem" },
 ];
 export const BODY_OPTIONS = [
-  { id: "baby_generic", name: "Bebê genérico", age: "baby", gender: "uni", asset: "body_baby_generic.png", scale: 0.85 },
-  { id: "child_masc_A", name: "Menino criança A", age: "child", gender: "masc", asset: "body_child_masc_A.png", scale: 0.95 },
-  { id: "child_masc_B", name: "Menino criança B", age: "child", gender: "masc", asset: "body_child_masc_B.png", scale: 1.00 },
-  { id: "child_fem_A", name: "Menina criança A", age: "child", gender: "fem", asset: "body_child_fem_A.png", scale: 0.95 },
-  { id: "child_fem_B", name: "Menina criança B", age: "child", gender: "fem", asset: "body_child_fem_B.png", scale: 1.00 },
-  { id: "teen_masc_A", name: "Adolescente menino A", age: "teen", gender: "masc", asset: "body_teen_masc_A.png", scale: 1.10 },
-  { id: "teen_masc_B", name: "Adolescente menino B", age: "teen", gender: "masc", asset: "body_teen_masc_B.png", scale: 1.10 },
-  { id: "teen_fem_A", name: "Adolescente menina A", age: "teen", gender: "fem", asset: "body_teen_fem_A.png", scale: 1.10 },
-  { id: "teen_fem_B", name: "Adolescente menina B", age: "teen", gender: "fem", asset: "body_teen_fem_B.png", scale: 1.10 },
-  { id: "adult_masc_A", name: "Adulto homem A", age: "adult", gender: "masc", asset: "body_adult_masc_A.png", scale: 1.20 },
-  { id: "adult_masc_B", name: "Adulto homem B", age: "adult", gender: "masc", asset: "body_adult_masc_B.png", scale: 1.20 },
-  { id: "adult_fem_A", name: "Adulto mulher A", age: "adult", gender: "fem", asset: "body_adult_fem_A.png", scale: 1.20 },
-  { id: "adult_fem_B", name: "Adulto mulher B", age: "adult", gender: "fem", asset: "body_adult_fem_B.png", scale: 1.20 },
-  { id: "elder_masc_A", name: "Velhinho", age: "elder", gender: "masc", asset: "body_elder_masc_A.png", scale: 1.15 },
-  { id: "elder_masc_B", name: "Velhinho B", age: "elder", gender: "masc", asset: "body_elder_masc_B.png", scale: 1.15 },
-  { id: "elder_fem_A", name: "Velhinha", age: "elder", gender: "fem", asset: "body_elder_fem_A.png", scale: 1.15 },
-  { id: "elder_fem_B", name: "Velhinha B", age: "elder", gender: "fem", asset: "body_elder_fem_B.png", scale: 1.15 },
+  { id: "newborn_A", name: "Recém-nascido — cobertor", age: "newborn", gender: "uni", scale: 0.72 },
+  { id: "newborn_B", name: "Recém-nascido — touca", age: "newborn", gender: "uni", scale: 0.72 },
+  { id: "baby_A", name: "Bebê encorpado", age: "baby", gender: "uni", scale: 0.8 },
+  { id: "baby_B", name: "Bebê franzino", age: "baby", gender: "uni", scale: 0.8 },
+  { id: "child_A", name: "Criança robusta", age: "child", gender: "uni", scale: 0.88 },
+  { id: "child_B", name: "Criança esguia", age: "child", gender: "uni", scale: 0.88 },
+  { id: "teen_A", name: "Adolescente atlético", age: "teen", gender: "uni", scale: 0.95 },
+  { id: "teen_B", name: "Adolescente esguio", age: "teen", gender: "uni", scale: 0.95 },
+  { id: "adult_A", name: "Adulto encorpado", age: "adult", gender: "uni", scale: 1 },
+  { id: "adult_B", name: "Adulto esguio", age: "adult", gender: "uni", scale: 1 },
+  { id: "elder_A", name: "Idoso curvado", age: "elder", gender: "uni", scale: 0.98 },
+  { id: "elder_B", name: "Idoso ereto", age: "elder", gender: "uni", scale: 0.98 },
 ];
 export const GENDER_OPTIONS = [
   { id: "fem", name: "Feminino" },
@@ -514,7 +509,7 @@ export function buildCustomSpec(baseId, hatId, shirtId, necklaceId, braceletId, 
   const hairColorOpt = HAIR_COLOR_OPTIONS.find(h=>h.id===hairColorId) || null;
   const pantsOpt = PANTS_OPTIONS.find(p=>p.id===pantsId) || null;
   const eyeOpt = EYE_COLOR_OPTIONS.find(e=>e.id===eyeColorId) || null;
-  const bodyOpt = BODY_OPTIONS.find(b=>b.id===bodyId) || BODY_OPTIONS.find(b=>b.id==="adult_masc_A") || null;
+  const bodyOpt = BODY_OPTIONS.find(b=>b.id===bodyId) || BODY_OPTIONS.find(b=>b.id==="adult_A") || null;
   const skin = skinOpt ? skinOpt.skin : fb.skin;
   const skinShade = skinOpt ? skinOpt.skinShade : fb.skinShade;
   const hairStyle = hairStyleOpt ? hairStyleOpt.id : fb.hairStyle;
@@ -528,7 +523,7 @@ export function buildCustomSpec(baseId, hatId, shirtId, necklaceId, braceletId, 
   const bodyAge = bodyOpt ? bodyOpt.age : "adult";
   const hairAsset = hairStyleOpt ? hairStyleOpt.asset : null;
   const hatAsset = hatOpt ? hatOpt.asset : null;
-  return { id: baseId, ...base, ...fb, skin, skinShade, hairStyle, hair, hairDark, shirt: shirtOpt.shirt, shirtDark: shirtOpt.shirtDark, shirtDesign: shirtOpt.design || "solid", shirtAsset: shirtOpt.asset || null, pantsAsset: pantsOpt ? pantsOpt.asset : null, pants, eyeColor, eyeLight, hat: hatOpt.hat, hatAsset, hairAsset, necklace: neckOpt.necklace, bracelet: braceOpt.bracelet, bodyAsset, bodyScale, bodyAge, bodyId: bodyOpt ? bodyOpt.id : "adult_masc_A", _customKey: `${baseId}|${hatId}|${shirtId}|${necklaceId}|${braceletId}|${skinToneId||""}|${hairStyleId||""}|${hairColorId||""}|${pantsId||""}|${eyeColorId||""}|${bodyId||""}` };
+  return { id: baseId, ...base, ...fb, skin, skinShade, hairStyle, hair, hairDark, shirt: shirtOpt.shirt, shirtDark: shirtOpt.shirtDark, shirtDesign: shirtOpt.design || "solid", shirtAsset: shirtOpt.asset || null, pantsAsset: pantsOpt ? pantsOpt.asset : null, pantsStyle: pantsOpt ? (pantsOpt.style || "long") : "long", pants, eyeColor, eyeLight, hat: hatOpt.hat, hatAsset, hairAsset, necklace: neckOpt.necklace, bracelet: braceOpt.bracelet, bodyAsset, bodyScale, bodyAge, bodyId: bodyOpt ? bodyOpt.id : "adult_A", _customKey: `${baseId}|${hatId}|${shirtId}|${necklaceId}|${braceletId}|${skinToneId||""}|${hairStyleId||""}|${hairColorId||""}|${pantsId||""}|${eyeColorId||""}|${bodyId||""}` };
 }
 
 

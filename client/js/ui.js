@@ -11,7 +11,7 @@ import { RECIPES, JOBS, QUEST_CHAINS, COOP_MISSIONS, TRANSPORT, REGION_DEFS, WEE
 import { BANK } from "../../shared/bank.js";
 import { REL_STAGES, ROMANCEABLE, DIALOG_CHOICES } from "../../shared/social.js";
 import { renderMiniMap } from "./renderer.js";
-import { setIcon, npcPortrait } from "./art/ui-binding.js";
+import { setIcon, npcPortrait, iconTag } from "./art/ui-binding.js";
 import { iconImg } from "./art/icons.js";
 import { characterFrames, NPC_SPECS } from "./art/characters.js";
 import { C } from "./art/palette.js";
@@ -187,13 +187,11 @@ export function updateHotbar() {
     d.className = `slot${i === game.selected ? " selected" : ""}${slot ? "" : " empty"}`;
     if (slot) {
       const meta = itemMeta(slot.id);
-      // ícone grande preenchido Stardew-like: usa iconImg se disponível (ferramentas/crops) senão emoji fallback
-      let iconHtml = meta.icon;
-      try { const url = iconImg(slot.id); if(url && url.includes("<img")) iconHtml = url.replace('width="24"','width="78"').replace('height="24"','height="78"').replace('size:24px','size:78px').replace('width="60"','width="78"').replace('height="60"','height="78"'); } catch {}
-      // fallback: se ainda emoji, mantém mas centraliza grande
+      // ícone em escala inteira (16px de arte × 4 = 64px): sem esticar nem borrar
+      const iconHtml = iconTag(slot.id, 64);
       d.innerHTML = `
         <div class="key">${i + 1}</div>
-        <div class="icon" style="width:78px;height:78px;display:flex;align-items:center;justify-content:center;font-size:32px;">${iconHtml}</div>
+        <div class="icon">${iconHtml}</div>
         ${slot.qty > 1 ? `<div class="count">x${slot.qty}</div>` : ""}`;
       d.title = meta.name;
       d.onclick = () => selectSlot(i);
@@ -226,9 +224,7 @@ export function renderInventory() {
     const d = document.createElement("div");
     d.className = "invSlot";
     // usa ícone pixelado Stardew-like se disponível, senão emoji
-    let icoHtml = meta.icon;
-    try{ const url = iconImg(id); if(url && url.includes("<img")) icoHtml = url.replace('width="24"','width="32"').replace('height="24"','height="32"'); }catch{}
-    d.innerHTML = `<div class="ico">${icoHtml}</div><div class="nm">${meta.name}</div><div class="qty">x${qty}</div>`;
+    d.innerHTML = `<div class="ico">${iconTag(id, 32)}</div><div class="nm">${meta.name}</div><div class="qty">x${qty}</div>`;
     d.title = `${meta.name} — vende por ${meta.sell || "?"} ouros`;
     d.onclick = () => {
       const idx = game.hotbar.findIndex((s) => s.id === id);
@@ -242,8 +238,7 @@ export function renderInventory() {
     const meta = itemMeta(t);
     const d = document.createElement("div");
     d.className = "invSlot tool";
-    let icoHtml2 = meta.icon; try{ const url2=iconImg(t); if(url2 && url2.includes("<img")) icoHtml2=url2; }catch{}
-    d.innerHTML = `<div class="ico">${icoHtml2}</div><div class="nm">${meta.name}</div>`;
+    d.innerHTML = `<div class="ico">${iconTag(t, 32)}</div><div class="nm">${meta.name}</div>`;
     d.onclick = () => togglePanel("inventoryPanel");
     grid.appendChild(d);
   }
@@ -252,8 +247,7 @@ export function renderInventory() {
     const meta = itemMeta(t);
     const d = document.createElement("div");
     d.className = "invSlot tool owned";
-    let icoHtml3 = meta.icon; try{ const url3=iconImg(t); if(url3 && url3.includes("<img")) icoHtml3=url3; }catch{}
-    d.innerHTML = `<div class="ico">${icoHtml3}</div><div class="nm">${meta.name}</div>`;
+    d.innerHTML = `<div class="ico">${iconTag(t, 32)}</div><div class="nm">${meta.name}</div>`;
     grid.appendChild(d);
   }
   updateSkills();
@@ -496,18 +490,18 @@ export function renderSocial() {
   const soc = game.social;
   if (soc.family) {
     const f = soc.family;
-    c.innerHTML = `<div class="childBadge">👶 ${f.kidName} — ${f.trait} • estágio ${f.stage} • desde dia ${f.sinceDay}</div>`;
+    c.innerHTML = `<div class="childBadge">Bebê: ${f.kidName} — ${f.trait} • estágio ${f.stage} • desde dia ${f.sinceDay}</div>`;
   } else c.innerHTML = "";
   c.innerHTML += `<h4>Jogadores no mundo</h4>`;
   const selfRow = document.createElement("div");
   selfRow.className = "shopItem";
-  selfRow.innerHTML = `<div class="shopInfo"><b>${game.isAccount ? "★" : "👤"} ${game.username} (você)</b><div class="sub">Sala ${game.roomCode} • ${game.isHost ? "Anfitrião" : "Convidado"} • ${game.isAccount ? "conta salva" : "visitante (progresso não salvo)"}</div></div>`;
+  selfRow.innerHTML = `<div class="shopInfo"><b>${game.isAccount ? "★" : "•"} ${game.username} (você)</b><div class="sub">Sala ${game.roomCode} • ${game.isHost ? "Anfitrião" : "Convidado"} • ${game.isAccount ? "conta salva" : "visitante (progresso não salvo)"}</div></div>`;
   c.appendChild(selfRow);
   for (const p of game.players.values()) {
     if (p.id === game.selfId) continue;
     const row = document.createElement("div");
     row.className = "shopItem";
-    row.innerHTML = `<div class="shopInfo"><b>${p.account ? "★" : "👤"} ${p.username}</b><div class="sub">Nv ${p.level?.farming || 1} agricultura • ${p.animals || 0} animais</div></div>`;
+    row.innerHTML = `<div class="shopInfo"><b>${p.account ? "★" : "•"} ${p.username}</b><div class="sub">Nv ${p.level?.farming || 1} agricultura • ${p.animals || 0} animais</div></div>`;
     c.appendChild(row);
   }
   c.insertAdjacentHTML("beforeend", `<h4 style="margin-top:14px">Moradores e amizades</h4>`);
@@ -520,24 +514,21 @@ export function renderSocial() {
     row.className = "shopItem";
     // avatar mini (usa portrait pequeno)
     const avatarId = `mini-${npc.id}`;
-    row.innerHTML = `<div style="display:flex;gap:8px;align-items:center;flex:1"><canvas id="${avatarId}" width="60" height="60" style="width:42px;height:42px;image-rendering:pixelated;border:1.5px solid #c9a06a;border-radius:8px;background:#fff8dc;flex-shrink:0"></canvas><div class="shopInfo"><b>${npc.name} ${stageLabel? "• "+stageLabel:""}</b><div class="sub">${npc.role} • <span class="heartsRow">${"❤️".repeat(hearts)}${"<span style='opacity:.35'>🤍</span>".repeat(5 - hearts)}</span> ${pts}/${FRIENDSHIP.MAX}</div></div></div>
-      <button class="btn small secondary">💬 Conversar</button>`;
+    row.innerHTML = `<div style="display:flex;gap:8px;align-items:center;flex:1"><canvas id="${avatarId}" width="56" height="56" style="width:56px;height:56px;image-rendering:pixelated;border:1.5px solid #c9a06a;border-radius:8px;background:#fff8dc;flex-shrink:0"></canvas><div class="shopInfo"><b>${npc.name} ${stageLabel? "• "+stageLabel:""}</b><div class="sub">${npc.role} • <span class="heartsRow" title="${pts}/${FRIENDSHIP.MAX}"><span style="color:#c9564a">${"★".repeat(hearts)}</span><span style="opacity:.3">${"★".repeat(5 - hearts)}</span></span> ${pts}/${FRIENDSHIP.MAX}</div></div></div>
+      <button class="btn small secondary">Conversar</button>`;
     // desenha avatar pequeno usando characterFrames importado
     try{
-      const spec = (NPC_SPECS?.[npc.id] || { shirt: npc.color, shirtDark: "#6b4a2f", hair: npc.accent, hairDark: "#2c1c10", hairStyle:"short", pants:"#44506b", skin: "#f6c99b", skinShade:"#dba97e", hat:{type:"none"} });
-      const atlas = characterFrames(spec);
-      if(atlas){
-        const cv=row.querySelector(`#${avatarId}`);
-        const g=cv.getContext("2d"); g.imageSmoothingEnabled=false;
-        // desenha frente
-        g.drawImage(atlas.down[0], 0,0, cv.width, cv.height);
-      }
+      const cv = row.querySelector(`#${avatarId}`);
+      const small = npcPortrait(npc, 56, { seasonIndex: game.world.seasonIndex || 0, plain: true });
+      const g = cv.getContext("2d");
+      g.imageSmoothingEnabled = false;
+      g.drawImage(small, 0, 0, cv.width, cv.height);
     }catch(e){}
     row.querySelector("button").onclick = () => openNpc(npc.id);
     c.appendChild(row);
   }
   // botão casas
-  const houseBtn=document.createElement("button"); houseBtn.className="btn small primary"; houseBtn.style.marginTop="10px"; houseBtn.textContent="🏠 Casas & Família";
+  const houseBtn=document.createElement("button"); houseBtn.className="btn small primary"; houseBtn.style.marginTop="10px"; houseBtn.textContent="Casas & Família";
   houseBtn.onclick=()=> togglePanel("housePanel");
   c.appendChild(houseBtn);
 }
@@ -561,14 +552,16 @@ export function openNpc(id) {
   const portraitCanvas = npcPortrait(npc, portraitSize, { seasonIndex: seasonIdx });
   // estação como atributo para tooltip
   portraitCanvas.title = ["Primavera","Verão","Outono","Inverno"][seasonIdx] || "";
+  portraitCanvas.className = "npcPortraitCanvas";
   avatarEl.appendChild(portraitCanvas);
-  // badge sazonal pequeno
-  const seasonBadge = document.createElement("div");
-  seasonBadge.style.cssText = "font-size:10px;color:#6b4a2e;text-align:center;margin-top:4px;opacity:.75";
-  seasonBadge.textContent = ["🌸 Primavera","☀ Verão","🍂 Outono","❄ Inverno"][seasonIdx] || "";
-  avatarEl.appendChild(seasonBadge);
+  // estação aparece como etiqueta ao lado do nome (não sobrepõe o retrato)
+  const seasonName = ["Primavera", "Verão", "Outono", "Inverno"][seasonIdx] || "";
+  const seasonChip = document.createElement("span");
+  seasonChip.className = "seasonChip";
+  seasonChip.textContent = seasonName;
+  $("npcName").appendChild(seasonChip);
   $("npcDialog").textContent = `“${line}”`;
-  $("npcMeta").innerHTML = `<b>${pos.label}</b> • ${npc.personality}<br><span class="story">📖 ${npc.story}</span>`;
+  $("npcMeta").innerHTML = `<b>${pos.label}</b> • ${npc.personality}<br><span class="story">${npc.story}</span>`;
   $("npcLikes").textContent = `Gosta: ${npc.likes.map((l) => itemMeta(l).name).join(", ")} • Não gosta: ${npc.dislikes.map((l) => itemMeta(l).name).join(", ")}`;
   const pts = game.self.friendship[id] || 0;
   $("npcFriend").innerHTML = `<span>Amizade ${pts}/${FRIENDSHIP.MAX}</span><div class="bar"><div style="width:${pts}%"></div></div>`;

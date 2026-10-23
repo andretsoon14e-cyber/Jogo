@@ -142,7 +142,7 @@ function floorTexture(room, W, H) {
 }
 
 // ---------------- desenho principal ----------------
-export function renderInterior(ctx, { W, H, time, season, game, characterFrames, specForSkin, drawCharacter }) {
+export function renderInterior(ctx, { W, H, time, season, game, characterFrames, specForLook, drawCharacter, feetAnchor }) {
   const roomId = game.indoors;
   const def = {
     casa_player: { name: "Sua Casa" }, taverna: { name: "Taverna" }, mercado: { name: "Mercado" },
@@ -545,10 +545,11 @@ export function renderInterior(ctx, { W, H, time, season, game, characterFrames,
   const drawP = (p, isSelf) => {
     const px = sx(isSelf ? game.x : (p.renderX ?? p.x));
     const py = sy(isSelf ? game.y : (p.renderY ?? p.y));
-    drawCharacter(ctx, characterFrames(specForSkin(p.skin || "s1")), p.dir || "down", {
-      x: px - 16, y: py - 40, moving: isSelf ? game.moving : !!p.moving, time: time + (p.id ? p.id.length : 0),
+    const look = isSelf ? game.look : p.look;
+    drawCharacter(ctx, characterFrames(specForLook(look, p.skin || "s1")), p.dir || "down", {
+      ...feetAnchor(px, py + 51), moving: isSelf ? game.moving : !!p.moving, time: time + (p.id ? p.id.length : 0),
     });
-    inkText(ctx, p.username || "", px, py - 44, { size: 11, fill: isSelf ? "#ffe9a8" : "#eafff0", stroke: "rgba(28,20,12,.85)", lw: 3.5 });
+    inkText(ctx, p.username || "", px, py + 51 - 99 - 4, { size: 11, fill: isSelf ? "#ffe9a8" : "#eafff0", stroke: "rgba(28,20,12,.85)", lw: 3.5 });
   };
   for (const p of game.players.values()) {
     if (p.id === game.selfId) continue;

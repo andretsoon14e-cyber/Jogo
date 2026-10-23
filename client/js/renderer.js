@@ -10,7 +10,9 @@ import {
 import { TILE_SIZE, TILE, CROPS, BUILDINGS, BUILD_OPTIONS, PLAYER_SKINS, npcPosition, ALL_NPCS } from "../../shared/constants.js";
 import { SEASON_ART, PIX, C, shade, alpha, mix } from "./art/palette.js";
 import { mkCanvas, hash, cached, inkText } from "./art/pixel.js";
-import { characterFrames, actionFrames, specForSkin, NPC_SPECS, drawCharacter, seasonSpec, isPremiumNpc, premiumReady, drawPremiumNpc } from "./art/characters.js";
+import { characterFrames, actionFrames, specForSkin, NPC_SPECS, drawCharacter, feetAnchor, CHAR_W, CHAR_H, seasonSpec, isPremiumNpc, premiumReady, drawPremiumNpc } from "./art/characters.js";
+import { buildCustomSpec } from "../../shared/constants.js";
+import { sanitizeLook } from "../../shared/looks.js";
 import { buildGround, drawWaterTile, drawMapBorder } from "./art/ground.js";
 import { buildingSprite, buildingNightLights } from "./art/buildings.js";
 import {
@@ -510,16 +512,36 @@ function drawCustomBuilding(ctx, b, sx, sy, season) {
 // ------------------------------------------------------------------
 //  Jogador / NPC
 // ------------------------------------------------------------------
-function atlasForPlayer(p) {
-  return characterFrames(specForSkin(p.skin || "s1"));
+/** Idade/apresentação de cada morador (a vila tem todas as gerações). */
+const NPC_BODY = {
+  maria: "elder_B", joao: "adult_A", ana: "adult_B", carlos: "elder_A", luna: "teen_B",
+  pedro: "adult_A", bia: "adult_B", tai: "adult_A", rita: "elder_B", duda: "teen_A",
+  sofia: "adult_B", marcos: "adult_A", helena: "adult_B", rafael: "adult_A",
+  clara: "teen_B", edu: "teen_A", paulo: "adult_A", larissa: "adult_B",
+  roberto: "elder_A", fernanda: "adult_B",
+};
+
+/** Constrói a aparência a partir do look validado (ou dos skins antigos). */
+export function specForLook(look, fallbackSkin = "s1") {
+  if (!look) return specForSkin(fallbackSkin);
+  const l = sanitizeLook(look);
+  return buildCustomSpec(
+    fallbackSkin, l.hat, l.shirt, l.necklace, l.bracelet,
+    l.skin, l.hair, l.hairColor, l.pants, l.eye, l.body,
+  );
+}
+
+function atlasForPlayer(p, isSelf) {
+  const look = isSelf ? (game.look || p.look) : p.look;
+  return characterFrames(specForLook(look, p.skin || "s1"));
 }
 function atlasForNpc(npc, season) {
-  const base = NPC_SPECS[npc.id] || {
+  const base = { ...(NPC_SPECS[npc.id] || {
     shirt: npc.color || "#7cb98a", shirtDark: shade(npc.color || "#7cb98a", -0.25),
     pants: "#44506b", skin: C.skin1, skinShade: "#dba97e",
     hair: npc.accent || "#4a3020", hairDark: shade(npc.accent || "#4a3020", -0.3), hairStyle: "short",
     hat: { type: "none" },
-  };
+  }), bodyId: NPC_BODY[npc.id] || "adult_A" };
   if (season != null && typeof seasonSpec === "function") {
     try { return characterFrames(seasonSpec(npc.id, season, base)); } catch {}
   }
@@ -528,7 +550,8 @@ function atlasForNpc(npc, season) {
 
 function drawPlayerSprite(ctx, p, sx, sy, isSelf, time, action) {
   const px = sx(p.renderX ?? p.x), py = sy(p.renderY ?? p.y);
-  const atlas = atlasForPlayer(p);
+  const atlas = atlasForPlayer(p, isSelf);
+  const footY = py + 51;
   // pose de ação (ferramenta) quando o jogador acabou de usar um item
   const acting = isSelf && game.actionUntil && performance.now() < game.actionUntil;
   if (acting) action = true;
@@ -540,13 +563,13 @@ function drawPlayerSprite(ctx, p, sx, sy, isSelf, time, action) {
     const k = Math.max(0, Math.min(1, elapsed / 420));
     // bob suave durante ação
     const lift = k < 0.4 ? -k * 6 : k < 0.7 ? -2.4 + (k - 0.4) * 8 : -2;
-    const img = actionFrames(specForSkin(p.skin || "s1"), tool, p.dir || "down");
+    const img = actionFrames(specForLook(isSelf ? game.look : p.look, p.skin || "s1"), tool, p.dir || "down");
     ctx.save();
-    ctx.fillStyle = "rgba(28,34,22,.24)";
-    ctx.beginPath(); ctx.ellipse(px, py + 4, 10, 4, 0, 0, 6.3); ctx.fill();
+    ctx.fillStyle = "rgba(28,34,22,.22)";
+    ctx.beginPath(); ctx.ellipse(px, footY - 2, CHAR_W * 0.26, 3, 0, 0, 6.3); ctx.fill();
     // leve tremor no impacto
     const shake = (k > 0.45 && k < 0.6) ? (Math.sin(k * 80) * 1.2) : 0;
-    ctx.drawImage(img, Math.round(px - 16 + shake), Math.round(py - 40 + lift));
+    ctx.drawImage(img, Math.round(px - CHAR_W / 2 + shake), Math.round(footY - 99 + lift), CHAR_W, CHAR_H);
     // partículas extras por ferramenta
     if (tool === "enxada" && k > 0.5 && k < 0.65) {
       ctx.fillStyle = "#8b7355";
@@ -558,12 +581,12 @@ function drawPlayerSprite(ctx, p, sx, sy, isSelf, time, action) {
     ctx.restore();
   } else {
     drawCharacter(ctx, atlas, p.dir || "down", {
-      x: px - 16, y: py - 40, moving: isSelf ? game.moving : !!p.moving, action, time: time + (p.id?.length || 0),
+      ...feetAnchor(px, footY), moving: isSelf ? game.moving : !!p.moving, action, time: time + (p.id?.length || 0),
     });
   }
   // nome
   const name = p.username || "";
-  inkText(ctx, name, px, py - 44, {
+  inkText(ctx, name, px, footY - CHAR_H - 4, {
     size: 11, fill: isSelf ? "#ffe9a8" : "#eafff0", stroke: "rgba(28,20,12,.85)", lw: 3.5,
   });
   if (isSelf && game.pendingBuild) {
@@ -594,7 +617,7 @@ export function render(canvas, ctx) {
   const time = performance.now() / 1000;
   ctx.imageSmoothingEnabled = false;
   if (game.indoors) {
-    renderInterior(ctx, { W, H, time, season, game, characterFrames, specForSkin, drawCharacter });
+    renderInterior(ctx, { W, H, time, season, game, characterFrames, specForLook, drawCharacter, feetAnchor });
     return;
   }
   renderOverworld(canvas, ctx, W, H, season, time);
@@ -787,7 +810,7 @@ function renderOverworld(canvas, ctx, W, H, season, time) {
                   if (near) {
                     const bobI = Math.sin(time * 4) * 2;
                     ctx.save();
-                    ctx.translate(px + 16, py - 56 + bobI);
+                    ctx.translate(px + 16, py - 116 + bobI);
                     ctx.fillStyle = "rgba(255,250,235,.96)";
                     roundRect(ctx, -11, -10, 22, 18, 6); ctx.fill();
                     ctx.strokeStyle = "rgba(70,50,30,.5)"; ctx.lineWidth = 1.5; ctx.stroke();
@@ -801,12 +824,13 @@ function renderOverworld(canvas, ctx, W, H, season, time) {
                   return;
           }
         }
-        drawCharacter(ctx, atlas, dir, { x: px - 16, y: py - 40, moving, time: time + npc.id.length * 0.7 });
-        inkText(ctx, npc.name, px, py - 44, { size: 10.5, fill: "#fff8e7", stroke: "rgba(28,20,12,.85)", lw: 3.2 });
+        const nFoot = py + 51;
+        drawCharacter(ctx, atlas, dir, { ...feetAnchor(px, nFoot), moving, time: time + npc.id.length * 0.7 });
+        inkText(ctx, npc.name, px, nFoot - CHAR_H - 4, { size: 10.5, fill: "#fff8e7", stroke: "rgba(28,20,12,.85)", lw: 3.2 });
         if (near) {
           const bobI = Math.sin(time * 4) * 2;
           ctx.save();
-          ctx.translate(px + 16, py - 56 + bobI);
+          ctx.translate(px + 16, py - 116 + bobI);
           ctx.fillStyle = "rgba(255,250,235,.96)";
           roundRect(ctx, -11, -10, 22, 18, 6); ctx.fill();
           ctx.strokeStyle = "rgba(70,50,30,.5)"; ctx.lineWidth = 1.5; ctx.stroke();

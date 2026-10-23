@@ -354,7 +354,7 @@ function setIndoor(ctx, data) {
 
 function publicPlayerSafe(p) {
   return {
-    id: p.id, username: p.username, skin: p.skin, x: p.x, y: p.y, dir: p.dir,
+    id: p.id, username: p.username, skin: p.skin, look: p.look || null, x: p.x, y: p.y, dir: p.dir,
     level: p.level, account: p.account, animals: p.stats?.animals || 0,
     region: p.region || "vale", indoors: p.indoors || null,
   };

@@ -6,6 +6,8 @@ import {
 import {
   BUILDINGS, BUILD_OPTIONS, CROPS, NPCS_DATA, ALL_NPCS, PLAYER_SKINS, TILE, SEASONS,
 } from "../../shared/constants.js";
+import { lookFromParts, partsFromLook, DEFAULT_LOOK } from "../../shared/looks.js";
+import { mountCreator } from "./creator.js";
 import { RECIPES, JOBS, REGION_DEFS } from "../../shared/careers.js";
 import { GENDER_OPTIONS, HAT_OPTIONS, SHIRT_OPTIONS, NECKLACE_OPTIONS, BRACELET_OPTIONS, PANTS_OPTIONS, EYE_COLOR_OPTIONS, SKIN_TONE_OPTIONS, HAIR_STYLE_OPTIONS, HAIR_COLOR_OPTIONS, buildCustomSpec, PET_OPTIONS, BODY_OPTIONS } from "../../shared/constants.js";
 import { hasFurniturePick, consumeFurniturePick, cancelFurniture } from "./ui.js";
@@ -44,12 +46,18 @@ function initLogin() {
   const savedSkin = localStorage.getItem("vale_skin") || "s1";
   game.skin = PLAYER_SKINS.some((s) => s.id === savedSkin) ? savedSkin : "s1";
   // modular parts
-  const defaultParts = { base: savedSkin, hat: HAT_OPTIONS[1]?.id||"none", shirt: SHIRT_OPTIONS[0]?.id||"red", necklace: "none", bracelet: "none", skinTone: SKIN_TONE_OPTIONS[1]?.id||"tone2", hairStyle: HAIR_STYLE_OPTIONS[0]?.id||"long", hairColor: HAIR_COLOR_OPTIONS[0]?.id||"castanho", pants: PANTS_OPTIONS[0]?.id||"jeans", eyeColor: EYE_COLOR_OPTIONS[2]?.id||"brown", farmName: localStorage.getItem("vale_farmName")||"", favorite: localStorage.getItem("vale_favorite")||"", gender: localStorage.getItem("vale_gender")||"fem", pet: localStorage.getItem("vale_pet")||"cat", petName: localStorage.getItem("vale_petName")||"", body: localStorage.getItem("vale_body")||"adult_masc_A" };
+  const defaultParts = { base: savedSkin, hat: HAT_OPTIONS[1]?.id||"none", shirt: SHIRT_OPTIONS[0]?.id||"red", necklace: "none", bracelet: "none", skinTone: SKIN_TONE_OPTIONS[1]?.id||"tone2", hairStyle: HAIR_STYLE_OPTIONS[0]?.id||"long", hairColor: HAIR_COLOR_OPTIONS[0]?.id||"castanho", pants: PANTS_OPTIONS[0]?.id||"jeans", eyeColor: EYE_COLOR_OPTIONS[2]?.id||"brown", farmName: localStorage.getItem("vale_farmName")||"", favorite: localStorage.getItem("vale_favorite")||"", gender: localStorage.getItem("vale_gender")||"fem", pet: localStorage.getItem("vale_pet")||"cat", petName: localStorage.getItem("vale_petName")||"", body: localStorage.getItem("vale_body")||"adult_A" };
   try {
     game.skinParts = JSON.parse(localStorage.getItem("vale_skin_parts")||"null") || defaultParts;
     for(const k of Object.keys(defaultParts)) if(!(k in game.skinParts)) game.skinParts[k]=defaultParts[k];
   } catch { game.skinParts = { ...defaultParts }; }
   if(!PLAYER_SKINS.some(s=>s.id===game.skinParts.base)) game.skinParts.base = "s1";
+  // ids antigos de corpo (adult_masc_A) migram para o rig novo (adult_A)
+  if(!BODY_OPTIONS.some(b=>b.id===game.skinParts.body)){
+    const age = ["adult","elder","teen","child","baby","newborn"].find(a=>String(game.skinParts.body||"").startsWith(a)) || "adult";
+    game.skinParts.body = `${age}_A`;
+  }
+
   // sync Stardew-like inputs with login name
   const inpCharName = document.getElementById("inpCharName");
   const inpFarmName = document.getElementById("inpFarmName");
@@ -91,167 +99,54 @@ function initLogin() {
         if(alt) { game.skinParts.body = alt.id; localStorage.setItem("vale_body", alt.id); }
       }
       localStorage.setItem("vale_body", game.skinParts.body);
-      try{ rebuildModularPick(); }catch{}
+      try{ creator?.refresh?.(); }catch{}
       refreshPreview(); sfx("open");
     };
   });
   function refreshPreview(){
     const spec = buildCustomSpec(game.skinParts.base, game.skinParts.hat, game.skinParts.shirt, game.skinParts.necklace, game.skinParts.bracelet, game.skinParts.skinTone, game.skinParts.hairStyle, game.skinParts.hairColor, game.skinParts.pants, game.skinParts.eyeColor, game.skinParts.body);
     game.customSpec = spec;
+    game.look = lookFromParts(game.skinParts);
     game.skin = game.skinParts.base;
-    localStorage.setItem("vale_skin_parts", JSON.stringify(game.skinParts));
-    localStorage.setItem("vale_skin", game.skinParts.base);
-    // Update all arrow rows labels to reflect current selection (single selection invariant)
-    document.querySelectorAll(".arrowRow").forEach(row=>{
-      const k=row.dataset.key;
-      const cur=game.skinParts[k];
-      const opts = row._opts;
-      if(!opts) return;
-      const idx = opts.findIndex(o=>o.id===cur);
-      const safeIdx = idx>=0?idx:0;
-      const opt = opts[safeIdx];
-      const labelEl=row.querySelector(".arrowLabel");
-      const swatch=row.querySelector(".arrowSwatch");
-      if(labelEl) labelEl.textContent = opt.name + (opt.desc?` — ${opt.desc}`:"");
-      if(swatch){
-        if(opt.color) swatch.style.background = opt.color;
-        else if(opt.shirt) swatch.style.background = opt.shirt;
-        else if(opt.pants) swatch.style.background = opt.pants;
-        else if(opt.eye) swatch.style.background = opt.eye;
-        else if(opt.skin) swatch.style.background = opt.skin;
-        else if(opt.hair) swatch.style.background = opt.hair;
-        else if(opt.necklace) swatch.style.background = opt.necklace;
-        else if(opt.bracelet) swatch.style.background = opt.bracelet;
-        else if(opt.hat) swatch.style.background = opt.hat.color || "#c9a86a";
-        else swatch.style.background = "#d9b06a";
-        // hat emoji distinction
-        const emojiEl=row.querySelector(".arrowEmoji");
-        if(emojiEl){
-          const hatEmoji = { none:"🚫", straw:"👒", cap:"🧢", bandana:"🎀", sailor:"⛵", flower:"🌸", goggles:"🥽" };
-          emojiEl.textContent = hatEmoji[opt.hat?.type] || hatEmoji[opt.id] || (k==="hat"?(hatEmoji[opt.hat?.type]||"🎩"):"");
-          emojiEl.style.display = k==="hat" ? "inline" : "none";
-        }
-      }
-    });
-    updateModularPreview();
+    try {
+      localStorage.setItem("vale_skin_parts", JSON.stringify(game.skinParts));
+      localStorage.setItem("vale_skin", game.skinParts.base);
+    } catch {}
+    // a grade já mostra o item selecionado; a prévia grande é desenhada pelo criador
+    try { creator?.refresh?.(); } catch {}
   }
-  function updateModularPreview(){
-    const wrap = document.getElementById("modularPreview");
-    if(!wrap) return;
-    wrap.innerHTML="";
-    const spec = buildCustomSpec(game.skinParts.base, game.skinParts.hat, game.skinParts.shirt, game.skinParts.necklace, game.skinParts.bracelet, game.skinParts.skinTone, game.skinParts.hairStyle, game.skinParts.hairColor, game.skinParts.pants, game.skinParts.eyeColor, game.skinParts.body);
-    const atlas = characterFrames(spec);
-    const cv = document.createElement("canvas");
-    // preview ampliado 3× para ver detalhes (usuário reclamou retângulo minúsculo)
-    const baseW = atlas.down[0].width, baseH = atlas.down[0].height;
-    cv.width = baseW * 3; cv.height = baseH * 3;
-    cv.style.cssText="width:140px;height:200px;image-rendering:pixelated; animation: breathe 3s ease-in-out infinite;";
-    const g = cv.getContext("2d"); g.imageSmoothingEnabled=false; g.scale(3,3); g.drawImage(atlas.down[0],0,0);
-    wrap.appendChild(cv);
-    try{ wrap.animate && wrap.animate([{transform:"scale(1)"},{transform:"scale(1.06)"},{transform:"scale(1)"}],{duration:360,easing:"ease-out"});}catch{}
-  }
-  // grade base antiga escondida — escolha agora é via setas, sem duplo selecionado
+  // base antiga (6 skins) fica só como compatibilidade invisível
   skinPick.style.display = "none";
-  // mantém compat: popula mas escondida (para testes smoke que esperam .skinOpt existir?)
-  for (const s of PLAYER_SKINS.slice(0,6)) {
+  for (const s of PLAYER_SKINS.slice(0, 6)) {
     const d = document.createElement("div");
     d.className = `skinOpt${s.id === game.skinParts.base ? " selected" : ""}`;
     d.dataset.skin = s.id;
     d.style.display = "none";
     skinPick.appendChild(d);
   }
-  // Build modular selectors rows — ESTILO STARDEW com SETAS cíclicas (corrige duplo selecionado)
-  const charControls = document.querySelector(".charControls") || skinPick.parentElement;
-  let container = document.getElementById("modularPick");
-  if(!container){
-    container = document.createElement("div");
-    container.id="modularPick";
-    container.style.cssText="display:flex;flex-direction:column;gap:6px;margin-top:6px;";
-    charControls.appendChild(container);
-  }
-  container.innerHTML = "";
-  function createArrowRow(label, opts, key){
-    const row = document.createElement("div");
-    row.className = "arrowRow";
-    row.dataset.key = key;
-    row._opts = opts;
-    row.style.cssText = "display:flex;align-items:center;gap:6px;background:#fff7d6;border:1.5px solid #d5bd94;border-radius:8px;padding:6px 8px;";
-    const lab = document.createElement("div");
-    lab.style.cssText="font-weight:800;font-size:10px;color:#4a3520;min-width:72px;max-width:72px;line-height:1.1;";
-    lab.textContent = label;
-    const left = document.createElement("button");
-    left.type="button"; left.textContent="◀"; left.className="arrowBtnLeft";
-    left.style.cssText="width:28px;height:28px;border-radius:6px;border:1.5px solid #b8882a;background:#ffe9a8;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;";
-    const center = document.createElement("div");
-    center.style.cssText="flex:1;display:flex;align-items:center;gap:6px;background:#fffdf4;border:1px solid #e2d0ac;border-radius:6px;padding:4px 6px;min-height:28px;overflow:hidden;";
-    const swatch = document.createElement("span");
-    swatch.className="arrowSwatch";
-    swatch.style.cssText="width:18px;height:18px;border-radius:999px;border:1.5px solid #6b4a2f;flex-shrink:0;display:inline-block;";
-    const emoji = document.createElement("span");
-    emoji.className="arrowEmoji"; emoji.style.cssText="font-size:14px;display:none;flex-shrink:0;";
-    const txt = document.createElement("span");
-    txt.className="arrowLabel"; txt.style.cssText="font-size:10px;font-weight:700;color:#4a3520;flex:1;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
-    txt.textContent="—";
-    center.appendChild(swatch); center.appendChild(emoji); center.appendChild(txt);
-    const right = document.createElement("button");
-    right.type="button"; right.textContent=""; right.className="arrowBtnRight";
-    right.style.cssText="width:28px;height:28px;border-radius:6px;border:1.5px solid #b8882a;background:#ffe9a8;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;";
-    function cycle(dir){
-      const cur = game.skinParts[key];
-      let idx = opts.findIndex(o=>o.id===cur);
-      if(idx<0) idx=0;
-      idx = (idx + dir + opts.length) % opts.length;
-      game.skinParts[key] = opts[idx].id;
-      refreshPreview();
-      try{ if(typeof sfx==="function") sfx("open"); }catch{}
-      try{ center.animate && center.animate([{transform:"scale(1)"},{transform:"scale(1.04)"},{transform:"scale(1)"}],{duration:180});}catch{}
+  // grade de personalização: todas as opções visíveis, prévia integrada
+  document.querySelector(".charPreviewStage")?.style.setProperty("display", "none");
+  let creator = null;
+  try {
+    const host = document.getElementById("modularPick");
+    creator = mountCreator(host, {
+      game,
+      sfx: (n) => { try { sfx(n); } catch {} },
+      onChange: () => refreshPreview(),
+    });
+    window.rebuildModularPick = () => creator?.refresh?.();
+    const panel = document.querySelector(".creatorPanel");
+    for (const sel of [".genderChoiceRow", ".petChoiceRow"]) {
+      const el = document.querySelector(sel);
+      if (el && panel) panel.appendChild(el);
     }
-    left.onclick=()=>cycle(-1);
-    right.onclick=()=>cycle(1);
-    row.appendChild(lab); row.appendChild(left); row.appendChild(center); row.appendChild(right);
-    container.appendChild(row);
+    const left = document.querySelector(".creatorLeft");
+    if (left) left.style.display = "none";
+    // ícones dos botões de gênero/animal criados no HTML
+    hydrateIcons(document);
+  } catch (err) {
+    console.warn("criador não montou:", err);
   }
-  // helper para criar rows já filtradas — definido como função léxica (ES module) + exposto em window para compat
-  function rebuildModularPick(){
-    container.innerHTML = "";
-    // Pele — quadradinhos mini só cor (pedido: só quadradinhos)
-    (function(){
-      const row=document.createElement("div");
-      row.className="arrowRow skinGridRow";
-      row.dataset.key="skinTone";
-      row.style.cssText="display:flex;align-items:center;gap:6px;background:#fff7d6;border:1.5px solid #d5bd94;border-radius:8px;padding:6px 8px;";
-      const lab=document.createElement("div");
-      lab.style.cssText="font-weight:800;font-size:10px;color:#4a3520;min-width:72px;max-width:72px;";
-      lab.textContent="Pele";
-      row.appendChild(lab);
-      const grid=document.createElement("div");
-      grid.style.cssText="display:flex;flex-wrap:wrap;gap:4px;flex:1;";
-      for(const opt of SKIN_TONE_OPTIONS){
-        const sq=document.createElement("button");
-        sq.type="button";
-        sq.title=opt.name;
-        sq.dataset.id=opt.id;
-        const sel = game.skinParts.skinTone===opt.id;
-        sq.style.cssText=`width:22px;height:22px;border-radius:4px;border:${sel?"2.5px solid #b8882a":"1.5px solid #8a6a4a"};background:${opt.skin};cursor:pointer;box-shadow:${sel?"0 0 0 2px #ffe9a8":"none"};`;
-        sq.onclick=()=>{ game.skinParts.skinTone=opt.id; localStorage.setItem("vale_skin_parts", JSON.stringify(game.skinParts)); rebuildModularPick(); refreshPreview(); };
-        grid.appendChild(sq);
-      }
-      row.appendChild(grid);
-      container.appendChild(row);
-    })();
-    createArrowRow("Corpo", filteredByGender(BODY_OPTIONS, game.skinParts.gender), "body");
-    createArrowRow("Cabelo", filteredByGender(HAIR_STYLE_OPTIONS, game.skinParts.gender), "hairStyle");
-    createArrowRow("Cor cabelo", HAIR_COLOR_OPTIONS, "hairColor");
-    createArrowRow("Camisa", filteredByGender(SHIRT_OPTIONS, game.skinParts.gender), "shirt");
-    createArrowRow("Calça", filteredByGender(PANTS_OPTIONS, game.skinParts.gender), "pants");
-    createArrowRow("Olhos", EYE_COLOR_OPTIONS, "eyeColor");
-    createArrowRow("Chapéu", filteredByGender(HAT_OPTIONS, game.skinParts.gender), "hat");
-    createArrowRow("Colar", NECKLACE_OPTIONS, "necklace");
-    createArrowRow("Pulseira", BRACELET_OPTIONS, "bracelet");
-  }
-  // expõe para debug/console e mantém compat com window
-  try{ window.rebuildModularPick = rebuildModularPick; }catch{}
-  rebuildModularPick();
   refreshPreview();
 
   // tabs
@@ -427,7 +322,7 @@ async function play() {
   localStorage.setItem("vale_room", room);
   localStorage.setItem("vale_mode", mode);
 
-  startGame({ username, roomCode: room, token, skin: game.skin });
+  startGame({ username, roomCode: room, token, skin: game.skin, look: lookFromParts(game.skinParts) });
 }
 
 // ---------------- INÍCIO DO JOGO ----------------
@@ -447,9 +342,9 @@ function startGame(profile) {
   ui.initUI();
   watchIcons();
   decoratePanelHeaders();
-  hydrateIcons();
+  hydrateIcons(document);
   iconize(document.getElementById("gameScreen"));
-  setTimeout(() => { decoratePanelHeaders(); hydrateIcons(); }, 60);
+  setTimeout(() => { decoratePanelHeaders(); hydrateIcons(document); }, 60);
   setupInput();
   connect(profile);
   game.camera.x = game.x;
@@ -1285,7 +1180,7 @@ fetch("/api/version", { cache: "no-store" }).then(r=>r.json()).then(d=>{
 initCover();
 initLogin();
 try { drawLogo(); } catch (e) { console.warn("logo", e); }
-hydrateIcons();
+hydrateIcons(document);
 
 // chat retrátil
 document.getElementById("chatToggle")?.addEventListener("click", () => {

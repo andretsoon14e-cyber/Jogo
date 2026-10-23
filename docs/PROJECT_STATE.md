@@ -1,57 +1,43 @@
-# Estado do Projeto — Vale Aconchegante (arena/629415fb-jogo)
+# Estado do Projeto — Vale Aconchegante
 
-Atualizado: 2026-10-22 — PR aberto, HEAD 1d1c55e
+Atualizado: **2026-10-23** • branch `arena/99b3550e-jogo` • servidor em `node server/server.js` (porta 3000)
 
-## Decisões Confirmadas (Prompt Mestre Atualização Oficial)
-- HUD/hotbar: ícones ocuparem containers 70-80px, causa é desenho útil < arquivo, não ícone .exe.
-- Retratos: pixel art detalhada 64x64 ref, exibição ~112px, maior que sprite mapa, sem realismo.
-- Bases: agente propõe melhor organização, hipótese 9 bases (1 bebê + 2x4 estágios), auditar 15 existentes.
-- Roupas: proposta obrigatória nomes/cores/estilos antes da produção, 5 masc+5 fem por categoria (meta 40, existente 21 layers), sem inventar 19 faltantes antes de auditoria.
-- Documentação persistente em `docs/ART_STYLE_GUIDE.md` + `docs/PROJECT_STATE.md`, não só memória interna.
-- Regra execução: não reiniciar, não descartar, auditorias primeiro, classificar CONCLUÍDA/PARCIAL/BLOQUEADA/NÃO INICIADA com evidência.
+> Documento anterior (2026-10-22) descrevia bases PNG e hotbar com `transform: scale`. Nada disso existe mais. O que está abaixo foi conferido no código e em execução.
 
-## Classificação Atual das Tarefas
+## Classificação das tarefas
 
-| # | Tarefa | Status | Evidência / Pendência |
-|---|--------|--------|------------------------|
-| 1 | HUD e hotbar — ícones proporcionais | **CONCLUÍDA** | Fix validado pelo usuário 22/10: slot 80 → icon 78 → img 78 + scale 1.55 (~66px visível) toca 2 extremidades (foice diagonais, item pequeno cima/baixo), sem esticar/borrar, mobile 62→60+scale, madeira/pergaminho mantido. Arquivos: client/css/style.css:442-443 + client/js/ui.js:192/196. |
-| 2 | Retratos diálogo pixel art | **CONCLUÍDA — SPEC DEFINIDA** | Spec 2026-10-22: 64x64 ref adequada mas 112 canvas superior (112/16=7x inteiro vs 1.75x fracionado), enquadramento busto sem corte, detalhes 1.75x, paleta NPC_SPECS compartilhada, render `pixelated/crisp-edges` sem borrão, validado em código `ui-binding.js:177` + `ui.js:560`. |
-| 3 | Bases corporais — matriz 9 bases | **PARCIAL — MATRIZ PROPOSTA** | Matriz 2026-10-22: 15 auditados (1024-1776px, escala 0.72-1.00), 9 reaproveitáveis, 4 refazer/recortar/duplicado, faltam 2 elder_B para 17 com gênero (9 sem gênero). Proposta 17 bases + folha contato `docs/imagens/bases_contato_2026-10-22.png`, verificação alinhamento layers ok, aguarda aprovação. |
-| 4 | Roupas — proposta antes produção | **PARCIAL — PROPOSTA ENVIADA** | Inventário auditado: HAT 17(3 PNG), SHIRT 16(2), PANTS 16(5), HAIR 20(6), BODY 15, assets 21. Lacunas: sem PNG = procedural cor. Proposta 20 nomes/cores/estilos enviada em `docs/PROPOSTA_ROUPAS.md` aguardando sua revisão antes de produzir PNG finais — sem duplicação, filtros mantidos. |
-| 5 | Documentação persistente | **CONCLUÍDA** | `docs/ART_STYLE_GUIDE.md` e `docs/PROJECT_STATE.md` criados 2026-10-22 com preferências (comunicação informal, agente propõe, pixel art acolhedora, etc.). |
-| 6 | Regra execução / auditoria repo | **PARCIAL** | Spec atualizada, branch arena/629415fb-jogo preservada, sem descarte. Falha flaky 34568 1/42 e bug persistência sleepVotes documentados em `PROMPT_PARA_PROXIMA_IA.md` + `repro_persist` log, sem fix especulativo aplicado. |
+| # | Tarefa | Status | Evidência |
+|---|--------|--------|-----------|
+| 1 | Hotbar com ícones grandes e nítidos | **CONCLUÍDA** | `iconTag(id,64)` em `ui-binding.js`, `.slot` 76 / `.icon` 66 / `img` 64 em `style.css`, sem `transform`. Os PNGs de foice/picareta/machado foram removidos de `icons.js` — eram eles que deixavam 3 ícones borrados. Evidência visual: `.work/shots/game2.png`. |
+| 2 | Retratos de diálogo em pixel art própria | **CONCLUÍDA** | `client/js/art/portrait.js` desenha arte 56×56 (não é o sprite do mapa ampliado); exibição 112 (2×) no painel e 168 (3×) na prancha. Moldura + placa de nome em `ui-binding.js`. Evidência: `.work/shots/portraits.png` (20 NPCs) e `.work/shots/dialogue.png` (painel real com Larissa). |
+| 3 | Duas bases por idade | **CONCLUÍDA (aguardando seu ok visual)** | `BODY_OPTIONS` tem 12 corpos (2 por idade, todos `uni`), desenhados pelo rig. `client/proposta-idades.html` mostra as 12 com zoom e caminhada. Detalhes em `docs/BASES_MATRIZ.md`. |
+| 4 | Roupas — variedade por categoria | **CONCLUÍDA (números), PARCIAL (revisão)** | Camisa 16 (8F/7M/1U), Calça-saia 16 (7F/7M/2U), Chapéu 17 (6F/7M/4U), Cabelo 20 (11F/7M/2U). Meta de ~5 por gênero batida. Proposta em `docs/PROPOSTA_ROUPAS.md`. |
+| 5 | Criador em grade, sem auto-pulo | **CONCLUÍDA** | 10 abas, opções em grade (`minmax(74px,1fr)`), prévia ao lado, clique marca a opção e não avança sozinho. Coberto por teste (`test/client.smoke.test.js`). |
+| 6 | Retrato sem emoji e estação fora da arte | **PARCIAL** | `.portraitSeason` desativado; estação virou `.seasonChip` ao lado do nome. Botões de animal agora usam ícone próprio e "Casas & Família" perdeu o 🏠. **Ainda há emoji em painéis internos** (💰 em preços/recompensas, ✅ em missões, 🏠 em textos de interior) — 108 ocorrências em `ui.js`, 20 em `main.js`. HUD, hotbar, inventário e criador estão limpos. |
+| 7 | Versão cliente/servidor coerente | **CONCLUÍDA** | `index.html` usa o token `__APP_VERSION__`; `server.js` injeta a versão do `package.json` (agora 1.54.0) em `/` e no fallback. `fs` estava sem import e a leitura falhava em silêncio (servidor sempre dizia 1.16.0); corrigido. `curl /api/version` → `{"version":"1.54.0"}`; console do navegador sem o aviso "HTML em cache". |
+| 8 | Votos de descanso não vazam para o dia seguinte | **CONCLUÍDA (teste de regressão criado)** | `test/sleepvotes.test.js`: 3 jogadores, dois dias, sincronizado por eventos (sem `sleep` arbitrário). Passa 6/6 em 3 execuções seguidas. O bug descrito no handoff **não se reproduz neste HEAD** — `advanceWorld()` limpa `sleepVotes` e `leavePlayer()` remove o voto de quem sai. |
+| 9 | Documentação atualizada | **CONCLUÍDA** | Este arquivo + `docs/ART_STYLE_GUIDE.md` + `docs/BASES_MATRIZ.md` reescritos em 2026-10-23. |
+| 10 | Multiplexação de estado / flaky 1/42 | **NÃO INICIADA** | Falha histórica nunca reproduzida; sem alteração. |
 
-## Inventário Verificável
+## Testes (executados agora)
 
-**Bodies (15):**
-- `body_baby_generic.png`, `body_child_masc_A/B`, `body_child_fem_A/B`, `body_teen_masc_A/B`, `body_teen_fem_A/B`, `body_adult_masc_A/B`, `body_adult_fem_A/B`, `body_elder_masc_A`, `body_elder_fem_A`
-- Reaproveitáveis: todos 15. Ausentes confirmados: `body_elder_masc_B.png`, `body_elder_fem_B.png` (para 9 hipótese; se matriz for 9 bases com 2 variações cada, total teórico 9, mas contagem atual 15 indica variações já excedem hipótese — ver auditoria).
+```
+npm run test:client  -> 🎉 CLIENTE OK (todas as asserções)
+npm test             -> 🎉 TODOS OS TESTES PASSARAM (44/44)
+node test/sleepvotes.test.js -> 🎉 VOTOS DE DESCANSO OK (6/6)   [3x seguidas]
+```
 
-**Layers (21):**
-- `layer_hat_straw/wizard/cowboy/bandana...`, `layer_shirt_yellow/white...`, `layer_pants_black/cargo/skirt_denim/floral/beige...`, `layer_hair_mullet/afropuff...`
-- Listagem completa em `shared/constants.js:329-429` e `client/assets/layer_*.png`.
+Scripts: `npm run test:all` roda cliente + multiplayer + votos de descanso, nesta ordem.
 
-**HUD/Hotbar Auditoria:**
-- `client/css/style.css:442 .slot .icon 78x78` + `443 img 78x78 scale1.55` vs `client/js/ui.js:192/196 78x78` — validado visual 22/10 toca 2 extremidades.
+## O que NÃO foi testado
 
-**Retrato Auditoria:**
-- `client/js/art/ui-binding.js:258` escala ampliada para retrato grande, `client/js/ui.js:560 portraitSize=112` canvas, `image-rendering pixelated` ok, recorte rosto preservado.
+- Jogo com 4+ jogadores simultâneos em rede real (só local, 2–3 conexões).
+- Save/load após reinício do servidor com múltiplos quartos ativos.
+- Telas de celular reais (só viewport reduzido no Chromium).
+- Seasons/festivais de ponta a ponta (existem no código, sem teste automatizado).
 
-## Testes Executados
-- Multiplayer: `diagnostic_repro.mjs` 100 sequenciais + 50 paralelas → 100/100 + 50/50 PASS (não reproduziu flaky original, evidência em `/tmp/diag*.log`).
-- Persistência: `repro_persist_clean.mjs` reproduziu bug `sleepVotes={Alice}` persiste → `Beto alone day1→2` ❌ REPRODUZIDO, log 2026-10-22.
-- Nenhum fix aplicado a `server/server.js:316 sleepVotes` ou `gameActions.js:214 water` conforme regra não especulativo.
+## Pendências / decisões em aberto
 
-## Pendências com Aprovação Necessária
-- Proposta bases corporais (matriz + prévia visual) — aguardando confirmação hipótese 9 bases.
-- Proposta roupas (tabela nomes/cores/estilos por categoria) — aguardando revisão usuário antes de gerar assets finais.
-
-## Preferências Mantidas
-- Usuário informal, agente interpreta e propõe.
-- Identidade visual pixel art acolhedora original.
-- Retratos pixel art detalhada > sprite mapa.
-- Ícones HUD/hotbar, não ícone Windows.
-- Agente define bases respeitando estilo.
-- Roupas com proposta prévia.
-- Toda tarefa com critério de aceite e evidência.
-
+1. **"Arquivos/sistemas em C#"** — o projeto é 100% JavaScript (Node + Canvas + Socket.IO). Não existe nenhum `.cs` no repositório. Preciso saber se essa linha veio de outro contexto antes de mexer em qualquer coisa.
+2. **NPC premium (médico, bombeiro) fora do padrão 16×32** — o rig atual só desenha até 33px de altura. Fazer NPC maior exigiria outro pipeline de arte; não comecei.
+3. **Arte do exe do Windows** — intocada, como pedido.

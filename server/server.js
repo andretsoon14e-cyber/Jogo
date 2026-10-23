@@ -1,5 +1,6 @@
 import express from "express";
 import http from "node:http";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { Server } from "socket.io";
@@ -10,6 +11,7 @@ import {
   saveDirtyRooms, allRooms, normalizedCode, resetRoom, persistPlayer,
 } from "./rooms.js";
 import { handleAction, publicPlayer, publicWorld } from "./gameActions.js";
+import { sanitizeLook } from "../shared/looks.js";
 import { handleBankAction } from "./bank.js";
 import { handleSocialAction, socialSnapshot } from "./social.js";
 import { sendCareerState, dailyCareerEffects, coopSnapshot, chainSnapshot, jobSnapshot } from "./careers.js";
@@ -36,10 +38,10 @@ const noCache = (res) => {
   res.setHeader("Pragma", "no-cache");
   res.setHeader("Expires", "0");
 };
-app.use(express.static(path.join(__dirname, "../client"), { maxAge: 0, etag: false, lastModified: false, cacheControl: false, setHeaders: noCache }));
+app.use(express.static(path.join(__dirname, "../client"), { index: false, maxAge: 0, etag: false, lastModified: false, cacheControl: false, setHeaders: noCache }));
 app.use("/shared", express.static(path.join(__dirname, "../shared"), { maxAge: 0, etag: false, lastModified: false, cacheControl: false, setHeaders: noCache }));
 // versão exposta para o cliente conferir qual build está rodando (mesma no navegador e no .exe)
-let APP_VERSION = "1.16.0";
+let APP_VERSION = "0.0.0";
 try {
   const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, "../package.json"), "utf-8"));
   if (pkg.version) APP_VERSION = pkg.version;
@@ -112,10 +114,24 @@ app.get("/api/world/:code/player/:name", (req, res) => {
   res.json({ username: st.username, gold: st.gold, level: st.level, lastSeen: st.lastSeen });
 });
 
+// ---------------- PÁGINA INICIAL (versão injetada) ----------------
+// O index.html usa o token __APP_VERSION__; o número vem só do package.json.
+// Assim o aviso "HTML em cache" nunca aparece por divergência de versão.
+const INDEX_PATH = path.join(__dirname, "../client/index.html");
+function sendIndex(req, res) {
+  noCache(res);
+  try {
+    const html = fs.readFileSync(INDEX_PATH, "utf-8").split("__APP_VERSION__").join(APP_VERSION);
+    res.type("html").send(html);
+  } catch {
+    res.sendFile(INDEX_PATH);
+  }
+}
+
+app.get("/", sendIndex);
+
 // SPA fallback
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../client/index.html"));
-});
+app.get("*", sendIndex);
 
 // ---------------- TEMPO DO MUNDO ----------------
 setInterval(() => {
@@ -218,6 +234,7 @@ io.on("connection", (socket) => {
         username: name,
         tokenUser,
         skin: payload.skin,
+        look: sanitizeLook(payload.look),
         x: payload.x,
         y: payload.y,
       });

@@ -155,7 +155,7 @@ function restorePlayer(world, username) {
   };
 }
 
-export function joinPlayer(room, socketId, { username, account, tokenUser, skin, x, y }) {
+export function joinPlayer(room, socketId, { username, account, tokenUser, skin, look, x, y }) {
   const name = normalizeUsername(username) || `Visitante${Math.floor(Math.random() * 999)}`;
   // Se a conta autenticada existir, o nome da conta manda (evita personificação)
   const finalName = tokenUser || name;
@@ -179,6 +179,7 @@ export function joinPlayer(room, socketId, { username, account, tokenUser, skin,
   player.username = finalName;
   player.account = !!tokenUser;
   player.skin = skin || "s1";
+  player.look = look || null;
   player.x = Number.isFinite(player.x) ? player.x : Number.isFinite(x) ? x : 22;
   player.y = Number.isFinite(player.y) ? player.y : Number.isFinite(y) ? y : 21;
   player.dir = "down";

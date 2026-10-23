@@ -187,6 +187,25 @@ ok("Cliente enviou joinRoom", sent.some((s) => s.event === "joinRoom"));
 ok("Cliente recebeu o mundo", game.world.tiles.length >= 50);
 ok("Jogador local configurado", game.username === "VisitanteTeste");
 ok("Hotbar montada", game.hotbar.length > 0, `${game.hotbar.length} slots`);
+// ---------- criador de personagem (grade) ----------
+const creatorHost = window.document.getElementById("modularPick");
+ok("Criador montado em grade", !!creatorHost?.querySelector(".creatorOptions"));
+ok("Prévia do criador visível", !!creatorHost?.querySelector(".creatorPreviewCanvas"));
+const bodyTabs = [...window.document.querySelectorAll(".creatorTab")].map((b) => b.textContent.trim());
+ok("Abas do criador (10 categorias)", bodyTabs.length === 10, bodyTabs.join(","));
+const bodyOpts = creatorHost?.querySelectorAll(".creatorOpt") || [];
+ok("Corpo mostra 12 opções (2 por idade)", bodyOpts.length === 12, `${bodyOpts.length} opções`);
+ok("Nenhuma opção começa escondida", [...bodyOpts].every((b) => b.offsetParent !== null || b.style.display !== "none"));
+// escolher a segunda opção não pula a seleção
+if (bodyOpts[2]) {
+  const wanted = bodyOpts[2];
+  const wantedId = game.skinParts.body; // referência antes do clique
+  wanted.click();
+  const selected = [...creatorHost.querySelectorAll(".creatorOpt.selected")];
+  ok("Seleção manual fica marcada (sem auto-pulo)", selected.length === 1, `${selected.length} marcada(s)`);
+  ok("Corpo trocado no estado", game.skinParts.body !== wantedId || selected.length === 1, game.skinParts.body);
+}
+
 
 // frames
 flushFrames(4);

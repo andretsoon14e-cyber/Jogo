@@ -1,43 +1,65 @@
-# Matriz Bases Corporais — Auditoria 2026-10-22
+# Matriz de Bases e Roupas — 2026-10-23
 
-## Hipótese vs Realidade
-**Hipótese inicial:** 9 bases (1 bebê genérico + 2 variações × 4 estágios criança/teen/adulto/idoso = 9).
-**Realidade auditada:** 15 bodies com gênero separado. Cálculo correto com gênero: 1 bebê uni + 2 variações × 4 estágios × 2 gêneros = 17. Temos 15, faltam 2.
+> Este documento substitui a auditoria de 2026-10-22, que descrevia 15 arquivos PNG de base.
+> **Esses PNGs não são mais usados.** O personagem hoje é desenhado por código no rig (`client/js/art/rig.js`), em saída nativa **18×33** (rig 16×32 com 1px de contorno em cada lado). Não existe mais "base PNG" para importar: toda base é uma `BODY_OPTIONS` com proporções próprias.
 
-## Inventário Verificável (15 existentes)
+## 1. Corpos (12 opções = 2 por idade)
 
-| Estágio | Variação | Arquivo | Dimensão | Escala | Estilo | Uso | Compatibilidade | Status |
-|---|---|---|---|---|---|---|---|---|
-| bebê | genérico | body_baby_generic.png | 1024×1024 | 0.72 | Peach blob sem face, sem roupa, placeholder | Criação personagem bebê | Todas roupas (nenhuma) | ⚠️ Reaproveitável mas precisa detalhe facial |
-| criança | masc A | body_child_masc_A.png | 1024×1024 | 0.82 | Peach block sem face, placeholder | Seleção criança M | Cabelo/chapéu/camisa/calça | ❌ Placeholder — refazer |
-| criança | masc B | body_child_masc_B.png | 887×1774 | 0.82 | Menino túnica branca + cinto marrom, cabelo castanho, 4 direções? | Seleção criança M | Compatível layers | ✅ Reaproveitável |
-| criança | fem A | body_child_fem_A.png | 1408×768 | 0.81 | Cena interior (não isolada) menina cabelo castanho vestido branco, fundo sala — não é body isolado | — | Incompatível (fundo) | ❌ Não reaproveitável — recortar |
-| criança | fem B | body_child_fem_B.png | 720×1456 | 0.81 | Menina cabelo curto castanho túnica creme | Seleção criança F | Compatível | ✅ Reaproveitável |
-| adolescente | masc A | body_teen_masc_A.png | 1024×1024 | 0.90 | Menino túnica branca cinto marrom, cabelo castanho curto | Seleção teen M | Compatível | ✅ Reaproveitável |
-| adolescente | masc B | body_teen_masc_B.png | 1024×1536 | 0.90 | Mesmo que A mas pernas mais longas, fundo cinza | Seleção teen M | Compatível | ✅ Reaproveitável (ajustar proporção) |
-| adolescente | fem A | body_teen_fem_A.png | 1280×1280 | 0.89 | Menina cabelo médio castanho vestido creme, detalhada | Seleção teen F | Compatível | ✅ Reaproveitável |
-| adolescente | fem B | body_teen_fem_B.png | 1254×1254 | 0.89 | Menina rabo alto castanho vestido creme | Seleção teen F | Compatível | ✅ Reaproveitável |
-| adulto | masc A | body_adult_masc_A.png | 1254×1254 | 1.00 | Homem túnica creme cinto, barba castanha, cabelo curto | Seleção adulto M | Compatível | ✅ Reaproveitável |
-| adulto | masc B | body_adult_masc_B.png | 1254×1254 | 1.00 | Idêntico a A (duplicado) — mesma imagem? | Seleção adulto M | Compatível | ⚠️ Duplicado — criar variação real (ex: sem barba ou corpo atlético) |
-| adulto | fem A | body_adult_fem_A.png | 1408×768 | 0.98 | Adulto fem coque alto azul-escuro vestido azul claro, fundo branco | Seleção adulto F | Compatível | ✅ Reaproveitável |
-| adulto | fem B | body_adult_fem_B.png | 1776×2368 | 0.98 | Adulto fem cabelo longo castanho vestido creme? (duplicado teen?) | Seleção adulto F | Compatível | ⚠️ Duplicado teen — criar variação (ex: cabelo curto) |
-| idoso | masc A | body_elder_masc_A.png | 1254×1254 | 0.97 | Velhinho barba branca túnica creme, bengala? | Seleção idoso M | Compatível | ✅ Reaproveitável |
-| idoso | fem A | body_elder_fem_A.png | 1223×1286 | 0.95 | Velhinha cabelo branco coque vestido creme bengala | Seleção idoso F | Compatível | ✅ Reaproveitável |
+Fonte: `shared/constants.js` → `BODY_OPTIONS` (todas `gender: "uni"`).
 
-**Total reaproveitáveis sem alteração:** 9 (child_masc_B, child_fem_B, teen_masc_A/B, teen_fem_A/B, adult_masc_A, adult_fem_A, elder_masc/fem_A)
-**Precisam refazer/ajustar:** 4 (baby_generic sem face, child_masc_A placeholder, child_fem_A fundo, adult_masc_B/fem_B duplicados)
-**Ausentes confirmados:** 2 (body_elder_masc_B.png, body_elder_fem_B.png) para fechar 17 com gênero, ou 0 se aceitar 9 sem gênero — mas estilo atual exige gênero, então faltam 2.
+| Idade | Opções | Escala | Observação |
+|---|---|---|---|
+| Recém-nascido | `newborn_A`, `newborn_B` | 0.72 | só cabeça + manta (`bundle: true`), sem pernas; A = cobertor xadrez, B = touca de tricô |
+| Bebê | `baby_A`, `baby_B` | 0.80 | claramente menor que a criança; A encorpado (cabeça 9), B franzino (cabeça 8) |
+| Criança | `child_A`, `child_B` | 0.88 | cabeça grande, corpo curto; A robusta, B esguia |
+| Adolescente | `teen_A`, `teen_B` | 0.95 | mais esguio que adulto; A ombros largos, B tronco fino |
+| Adulto | `adult_A`, `adult_B` | 1.00 | A tronco cheio, B cintura marcada e pernas longas |
+| Idoso | `elder_A`, `elder_B` | 0.98 | A curvado (`stoop: 1`), B ereto e grisalho |
 
-## Proposta Coerente (sob responsabilidade do agente)
+**Como as duas opções diferem:** silhueta e postura, não gênero (todas as 12 são `uni`). Na prática, `metricsFor()` dá **+1px de corpo e −1px de perna** para a variante A, e o inverso para a B; a cabeça é 1px mais larga em `baby_A`/`adult_A`. `drawNewborn` tem desenho próprio (cabeça redonda + trouxa de pano), sem corpo nem braços.
 
-**Manter identidade:** chibi 16×24 base, escala 0.72-1.00, paleta pele quadradinhos (#ffe0bd→#5a3a28), 4 direções, 3-4 quadros walk, sem anatomia explícita.
+## 2. Categorias de personalização
 
-**Matriz proposta (17 bases, respeita gênero + 2 variações por estágio):**
-- bebê 1 (uni) — refazer com face simples, manter 0.72
-- criança 4 (M2/F2) — manter 3, refazer 1 (child_masc_A), recortar 1 (child_fem_A)
-- adolescente 4 — manter 4, ajustar proporção teen_masc_B
-- adulto 4 — manter 2, criar 2 variações distintas (adult_masc_B sem barba/atleta, adult_fem_B cabelo curto)
-- idoso 4 — manter 2, criar 2 variações (elder_masc_B sem barba com boina, elder_fem_B cabelo curto cacheado)
+| Categoria | Total | Masc | Fem | Uni | Fonte |
+|---|---|---|---|---|---|
+| Corpo | 12 | — | — | 12 | `BODY_OPTIONS` |
+| Cabelo | 20 | 7 | 11 | 2 | `HAIR_STYLE_OPTIONS` |
+| Camisa | 16 | 7 | 8 | 1 | `SHIRT_OPTIONS` |
+| Calça / saia | 16 | 7 | 7 | 2 | `PANTS_OPTIONS` |
+| Chapéu | 17 | 7 | 6 | 4 | `HAT_OPTIONS` |
+| Cor do cabelo | 6 | — | — | 6 | `HAIR_COLOR_OPTIONS` |
+| Tom de pele | 6 | — | — | 6 | `SKIN_TONE_OPTIONS` |
+| Cor dos olhos | 8 | — | — | 8 | `EYE_COLOR_OPTIONS` |
+| Colar | 7 | — | — | 7 | `NECKLACE_OPTIONS` |
+| Pulseira | 5 | — | — | 5 | `BRACELET_OPTIONS` |
+| Animal | 6 | — | — | 6 | `PET_OPTIONS` |
 
-**Próximos passos:** Folha de contato já gerada (`/tmp/contact_bodies.png`), verificação alinhamento cabelo/chapéu/camisa/calça ok (layers 21 testados em `characters.js:331-340` drawImage 0,0,W,H*scale), implementar bases aprovadas com 4 direções/quadros.
+Metas do pedido (~5 masc + ~5 fem em camisa/calça/chapéu/cabelo): **atingidas** em todas as quatro categorias.
 
+## 3. Calças e saias (estilo de desenho)
+
+`PANTS_OPTIONS` carrega `style` e `buildCustomSpec` propaga para `pantsStyle`:
+
+- `skirt` — saia (desenho em sino, sem divisão de perna)
+- `shorts` — bermuda (perna curta com `gap` de 1px entre as pernas)
+- `long` — calça comprida (padrão)
+
+O rig desenha duas pernas com `legW = (bodyW - 1) / 2` e **gap mínimo de 1px**, tanto no corpo quanto na calça, para não virar bloco único.
+
+## 4. Camadas e ordem de desenho
+
+`rig.js` desenha de trás para frente: cabelo traseiro → corpo → calça/saia → camisa → braços → cabeça → cabelo frontal → chapéu → acessórios. Cada camada tem contorno 1px próprio (`#2a1c12`), nunca herdado de outra peça.
+
+## 5. Retrato (arte separada)
+
+`client/js/art/portrait.js` — **arte própria 56×56**, não é o sprite do mapa ampliado.
+
+- `PORTRAIT_ART = 56`, `PORTRAIT_SIZE = 112` (2×), exibição 168 (3×) em telas grandes.
+- Elementos: cabeça (com `faceShape` por idade), cabelo, chapéu, olhos com íris, sobrancelhas, boca, pescoço, ombros e gola.
+- `top = 17`, olhos ~y34, boca ~y45, pescoço y41–48, ombros a partir de y45.
+- Moldura madeira/pergaminho + placa de nome (12,5% da altura) em `ui-binding.js`.
+
+## 6. Pendências
+
+- A diferença A/B é hoje só de silhueta (±1px) e do chapéu da manta no recém-nascido. Se o usuário quiser contraste maior, o caminho é variar cabelo/roupa inicial por variante, não redesenhar o rig inteiro.
+- Avaliar um terceiro corpo de idoso com acessório fixo (bengala) — hoje a bengala não existe no rig.

@@ -30,6 +30,7 @@ export function connect(profile) {
       username: profile.username,
       token: profile.token || null,
       skin: profile.skin,
+      look: profile.look || null,
       x: 22,
       y: 21,
     });
@@ -40,6 +41,7 @@ export function connect(profile) {
     game.selfId = data.selfId;
     game.isHost = data.isHost;
     game.self = data.self;
+    game.look = data.self.look || game.look || null;
     game.isAccount = !!data.self.account;
     game.world = data.world;
     game.regions = data.world.regions || {};

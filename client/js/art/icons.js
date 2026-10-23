@@ -184,7 +184,31 @@ const uiIcons = {
   arrow: (g) => { for (let i = 0; i < 5; i++) P(g, 4 + i, 8 - i, 2, 2, "#fff3d6"); for (let i = 0; i < 5; i++) P(g, 4 + i, 8 + i, 2, 2, "#fff3d6"); P(g, 3, 7, 2, 4, "#fff3d6"); },
   fish: itemIcons.peixe,
   paw: (g) => { disc(g, 8, 10, 3, "#c98a4a"); disc(g, 5, 6, 1.6, "#c98a4a"); disc(g, 8, 5, 1.6, "#c98a4a"); disc(g, 11, 6, 1.6, "#c98a4a"); },
+  pet_cat: (g) => {
+    disc(g, 8, 9, 4, "#e0a76a"); P(g, 4, 4, 2, 3, "#e0a76a"); P(g, 10, 4, 2, 3, "#e0a76a");
+    P(g, 5, 5, 1, 2, "#c98a4a"); P(g, 10, 5, 1, 2, "#c98a4a");
+    P(g, 6, 8, 1, 2, "#3a2a20"); P(g, 9, 8, 1, 2, "#3a2a20"); P(g, 7, 11, 2, 1, "#b5674f"); P(g, 7, 12, 1, 1, "#fff"); P(g, 8, 12, 1, 1, "#fff");
+    P(g, 3, 9, 2, 1, "#f3e0c4"); P(g, 11, 9, 2, 1, "#f3e0c4");
+  },
+  pet_dog: (g) => {
+    disc(g, 8, 9, 4, "#c98a4a"); P(g, 3, 6, 2, 6, "#8d5f34"); P(g, 11, 6, 2, 6, "#8d5f34");
+    P(g, 6, 8, 1, 2, "#3a2a20"); P(g, 9, 8, 1, 2, "#3a2a20"); disc(g, 8, 11, 1.7, "#efe0c8"); P(g, 7, 10, 2, 1, "#3a2a20"); P(g, 8, 12, 1, 1, "#b5674f");
+  },
+  pet_turtle: (g) => {
+    disc(g, 8, 10, 4, "#5f9e43"); disc(g, 8, 10, 2.5, "#7cb98a"); P(g, 3, 11, 2, 2, "#b7e07a"); P(g, 12, 6, 2, 2, "#b7e07a"); P(g, 9, 5, 2, 2, "#8bc95b"); P(g, 10, 6, 1, 1, "#3a2a20");
+  },
+  pet_parrot: (g) => {
+    disc(g, 8, 9, 3.5, "#5b9bd5"); P(g, 5, 5, 3, 3, "#5b9bd5"); P(g, 6, 6, 1, 1, "#3a2a20"); P(g, 10, 6, 2, 3, "#f2c34f"); P(g, 6, 11, 4, 2, "#3f79ad"); P(g, 12, 9, 2, 2, "#c9564a");
+  },
+  pet_fish: (g) => {
+    disc(g, 7, 9, 3.2, "#7fc7e8"); P(g, 3, 7, 3, 5, "#f08a7e"); P(g, 5, 8, 1, 1, "#ffffff"); P(g, 5, 8, 1, 1, "#3a2a20"); P(g, 9, 7, 1, 1, "#ffffff");
+  },
+  pet_horse: (g) => {
+    P(g, 5, 5, 5, 7, "#a06a3a"); P(g, 4, 4, 3, 3, "#a06a3a"); P(g, 9, 6, 2, 2, "#8a5434"); P(g, 10, 4, 1, 3, "#6b4226");
+    P(g, 6, 7, 1, 1, "#2b1d17"); P(g, 5, 11, 2, 4, "#8a5434"); P(g, 8, 11, 2, 4, "#8a5434"); P(g, 9, 2, 2, 3, "#6b4226");
+  },
   play: (g) => { for (let i = 0; i < 7; i++) { P(g, 5 + i, 4 + i, 2, 9 - i * 1.3, "#eaf6df"); } P(g, 4, 3, 2, 11, "#eaf6df"); P(g, 5, 4, 3, 10, "#f6ffee"); },
+  lock: (g) => { P(g, 4, 7, 8, 7, "#e8c15c"); P(g, 4, 7, 8, 1, "#ffe9a8"); P(g, 6, 3, 4, 4, "#c2c1b6"); P(g, 7, 4, 2, 3, "#8a8a80"); P(g, 7, 9, 2, 3, "#7a5a2f"); },
   sprout: (g) => { P(g, 7, 9, 2, 6, C.g3); P(g, 3, 6, 5, 3, C.g2); P(g, 8, 4, 5, 3, C.g2); P(g, 4, 5, 2, 2, C.g1); P(g, 9, 3, 2, 2, C.g1); P(g, 4, 13, 8, 2, C.w3); },
   paint: (g) => { P(g, 3, 3, 8, 8, "#c9564a"); P(g, 3, 3, 8, 2, "#e0746a"); P(g, 11, 9, 3, 3, "#8a5a33"); P(g, 5, 5, 2, 2, "#fff3d6"); },
   sparkle: (g) => { P(g, 7, 2, 2, 6, "#fff6d0"); P(g, 7, 9, 2, 5, "#fff6d0"); P(g, 2, 7, 6, 2, "#fff6d0"); P(g, 9, 7, 5, 2, "#fff6d0"); P(g, 7, 7, 2, 2, "#ffd166"); },
@@ -192,15 +216,8 @@ const uiIcons = {
 
 export const ICON_KEYS = { ...toolIcons, ...itemIcons, ...uiIcons };
 
-// PNG hand-drawn premium tools (gerados via IA, aprovado opção 2)
-const PNG_ICONS = {
-  foice: "assets/tool_foice_preview_icon.png",
-  picareta: "assets/tool_picareta_preview_icon.png",
-  machado: "assets/tool_machado_preview_icon.png",
-};
 const cache = new Map();
 export function iconURL(key) {
-  if (PNG_ICONS[key]) return PNG_ICONS[key];
   if (!key) return "";
   if (cache.has(key)) return cache.get(key);
   const fn = toolIcons[key] || itemIcons[key] || uiIcons[key];
@@ -224,6 +241,8 @@ export function iconImg(key, cls = "pxIcon", size = 24) {
 
 /** Emoji → chave de ícone (para reaproveitar textos existentes). */
 export const EMOJI_TO_ICON = {
+  "🐱": "pet_cat", "🐶": "pet_dog", "🐢": "pet_turtle", "🦜": "pet_parrot", "🐠": "pet_fish", "🐴": "pet_horse",
+  "🔐": "lock", "✨": "sparkle", "🌿": "sprout", "👩": "friends", "👨": "friends",
   "🌾": "trigo", "🎣": "peixe", "🏠": "casa", "💰": "coin", "🪵": "madeira", "🍳": "kitchen",
   "🔨": "hammer", "✅": "check", "🐔": "animal", "⛏": "picareta", "⛏️": "picareta", "💼": "job",
   "🏛": "community", "🏛️": "community", "🏦": "bank", "⛵": "travel", "✈": "travel", "✈️": "travel",

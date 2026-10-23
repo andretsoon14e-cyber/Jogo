@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Vale Aconchegante — proposta de corpos por idade</title>
+<style>
+  :root { --ink:#3a2a20; --paper:#f6ecd6; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#22301f; color:var(--ink); font-family:'Trebuchet MS',sans-serif; }
+  header { padding:16px 24px 6px; color:#f3e7cd; }
+  header h1 { margin:0 0 4px; font-size:21px; }
+  header p { margin:0; font-size:12.5px; opacity:.85; max-width:980px; line-height:1.5; }
+  .controls { display:flex; gap:14px; flex-wrap:wrap; padding:8px 24px; font-size:12px; color:#f3e7cd; align-items:center; }
+  .controls label { display:flex; gap:6px; align-items:center; }
+  .controls button { background:#f3e7cd; color:#3a2a20; border:2px solid #8a6b3a; border-radius:6px; padding:4px 10px; font-weight:700; cursor:pointer; }
+  .sheet { display:grid; grid-template-columns:repeat(2, minmax(420px,1fr)); gap:14px; padding:10px 24px 30px; }
+  .card { background:var(--paper); border:3px solid #8a6b3a; border-radius:12px; box-shadow:0 6px 18px rgba(0,0,0,.35); padding:10px 12px 12px; position:relative; }
+  .card h2 { margin:0 0 2px; font-size:14px; }
+  .card .meta { font-size:10.5px; color:#7a6448; margin-bottom:8px; }
+  .variants { display:flex; gap:10px; }
+  .variant { flex:1; background:#fff8e7; border:2px solid #d5bd94; border-radius:10px; padding:6px; text-align:center; cursor:pointer; }
+  .variant.sel { border-color:#3f7f4a; box-shadow:0 0 0 3px rgba(63,127,74,.22); }
+  .variant h3 { margin:0 0 2px; font-size:11.5px; }
+  .variant small { display:block; font-size:9.5px; color:#8a7258; line-height:1.3; min-height:24px; }
+  .row { display:flex; justify-content:center; gap:4px; margin-top:4px; align-items:flex-end; }
+  .row .lab { font-size:8px; color:#8a7258; }
+  .shot { position:relative; background:#7cb45b; border-radius:6px; }
+  canvas { image-rendering: pixelated; image-rendering: crisp-edges; display:block; }
+  .note { margin:4px 24px 12px; padding:9px 14px; background:#fff8e7; border-left:5px solid #8a6b3a; border-radius:6px; font-size:12px; line-height:1.5; color:#4a3520; }
+  .badge { position:absolute; top:9px; right:11px; font-size:9px; font-weight:800; letter-spacing:.6px; background:#8a6b3a; color:#fff4dd; padding:2px 7px; border-radius:999px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Proposta de corpos — 2 opções por idade</h1>
+  <p>Sprites 16×32 nativos com contorno, quatro direções e caminhada de 4 quadros. Corpo base neutro (sem roupa embutida): camisa, calça, cabelo e chapéu são camadas independentes. Escolha A ou B por idade — ou peça novas sugestões.</p>
+</header>
+<div class="controls">
+  <label>Zoom <input id="zoom" type="range" min="3" max="7" step="1" value="5"><span id="zoomVal">5×</span></label>
+  <label><input id="walk" type="checkbox" checked> caminhada</label>
+  <button id="reset">Reiniciar escolhas</button>
+  <span id="picked"></span>
+</div>
+<div class="note">
+  <b>Direção de arte:</b> paleta quente (6 tons de pele, roupas de algodão e lã), contorno marrom-suave em vez de preto duro, sombra elíptica discreta colada nos pés. A cabeça cresce conforme a idade (bebê ≈ metade da altura, criança ≈ um terço, adulto ≈ um quarto) e nenhum corpo tem anatomia explícita.
+</div>
+<div class="sheet" id="sheet"></div>
+<script type="module">
+import { rigSprite, RIG_W, RIG_H, RIG_OUT_W, RIG_OUT_H, metricsFor } from "./js/art/rig.js";
+
+const AGES = [
+  { age:"newborn", label:"Recém-nascido", note:"cabeça e cobertor, sem pernas" },
+  { age:"baby", label:"Bebê", note:"cabeça grande, corpo curto" },
+  { age:"child", label:"Criança", note:"proporção infantil, ombros estreitos" },
+  { age:"teen", label:"Adolescente", note:"mais fino, membros longos" },
+  { age:"adult", label:"Adulto", note:"duas silhuetas: encorpada e esguia" },
+  { age:"elder", label:"Idoso", note:"postura e cabelo grisalho, sem exagero" },
+];
+const VARIANTS = {
+  newborn: ["newborn_A","newborn_B"], baby: ["baby_A","baby_B"], child: ["child_A","child_B"],
+  teen: ["teen_A","teen_B"], adult: ["adult_A","adult_B"], elder: ["elder_A","elder_B"],
+};
+const NAMES = {
+  newborn_A:"cobertor xadrez", newborn_B:"touca e manta",
+  baby_A:"encorpado", baby_B:"franzino",
+  child_A:"robusta", child_B:"esguia",
+  teen_A:"atlético", teen_B:"esguio",
+  adult_A:"encorpado", adult_B:"esguio",
+  elder_A:"curvado", elder_B:"ereto",
+};
+const LOOK = { shirt:"#7fa06a", shirtDark:"#5f7d4e", pants:"#43506b", hair:"#6b4226", hairDark:"#4a2c18", shirtDesign:"plaid", hat:{type:"none"}, skin:"#e0a877", skinShade:"#c98d5f" };
+const state = JSON.parse(localStorage.getItem("vale_age_choice") || "{}");
+const z0 = 5;
+let z = z0, t0 = performance.now();
+const items = [];
+
+const sheet = document.getElementById("sheet");
+for (const age of AGES) {
+  const card = document.createElement("section");
+  card.className = "card";
+  card.innerHTML = `<span class="badge">${age.age.toUpperCase()}</span><h2>${age.label}</h2><div class="meta">${age.note}</div><div class="variants"></div>`;
+  const wrap = card.querySelector(".variants");
+  for (const id of VARIANTS[age.age]) {
+    const box = document.createElement("div");
+    box.className = "variant" + ((state[age.age] || "A") === id.slice(-1) ? " sel" : "");
+    box.innerHTML = `<h3>Opção ${id.slice(-1)}</h3><small>${NAMES[id]}</small><div class="row"><span class="shot" data-big></span></div><div class="row" data-dirs></div>`;
+    const bigSlot = box.querySelector("[data-big]");
+    const dirsSlot = box.querySelector("[data-dirs]");
+    const mk = (w,h)=>{const c=document.createElement("canvas");c.width=w;c.height=h;return c;};
+    const big = mk(RIG_OUT_W*z0, RIG_OUT_H*z0);
+    bigSlot.appendChild(big);
+    const dirs = ["down","up","left","right"].map((d)=>{ const c=mk(RIG_OUT_W*3, RIG_OUT_H*3); c.style.opacity=.95; dirsSlot.appendChild(c); return {d,c}; });
+    const spec = { ...LOOK, bodyId:id };
+    const spr = {};
+    items.push({ big, dirs, spec, spr });
+    box.onclick = () => {
+      state[age.age] = id.slice(-1);
+      localStorage.setItem("vale_age_choice", JSON.stringify(state));
+      card.querySelectorAll(".variant").forEach(el=>el.classList.remove("sel"));
+      box.classList.add("sel");
+      updatePicked();
+    };
+    wrap.appendChild(box);
+  }
+  sheet.appendChild(card);
+}
+
+function sprite(spec, dir, frame) {
+  const key = JSON.stringify([spec, dir, frame]);
+  if (!sprite.cache[key]) sprite.cache[key] = rigSprite(spec, dir, frame);
+  return sprite.cache[key];
+}
+sprite.cache = {};
+
+function drawInto(canvas, spec, dir, frame, scale){
+  const g = canvas.getContext("2d");
+  g.imageSmoothingEnabled = false;
+  g.clearRect(0,0,canvas.width,canvas.height);
+  g.drawImage(sprite(spec, dir, frame), 0, 0, canvas.width, canvas.height);
+}
+
+function updatePicked(){
+  document.getElementById("picked").textContent = "Escolhido: " + AGES.map(a=>`${a.label} ${state[a.age]||"A"}`).join(" · ");
+}
+updatePicked();
+
+document.getElementById("zoom").oninput = (e)=>{ z=Number(e.target.value); document.getElementById("zoomVal").textContent=z+"×"; resize(); };
+document.getElementById("reset").onclick = ()=>{ localStorage.removeItem("vale_age_choice"); location.reload(); };
+function resize(){ for (const it of items){ it.big.width=RIG_OUT_W*z; it.big.height=RIG_OUT_H*z; } tick(performance.now()); }
+resize();
+
+function tick(now){
+  const frame = document.getElementById("walk").checked ? Math.floor((now - t0)/130)%4 : 0;
+  for (const it of items){
+    drawInto(it.big, it.spec, "down", frame, it.big.width);
+    for (const {d,c} of it.dirs) drawInto(c, it.spec, d, frame === 2 ? 0 : frame, c.width);
+  }
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+</script>
+</body>
+</html>

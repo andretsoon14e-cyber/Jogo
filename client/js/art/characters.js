@@ -4,6 +4,11 @@
 // ===========================================================
 import { SEASON_ART, PIX, C, shade, alpha, mix } from "./palette.js";
 import { mkCanvas, hash, cached, inkText } from "./pixel.js";
+import { rigSprite, RIG_SCALE, rigBodyId } from "./rig.js";
+
+export { CHAR_W, CHAR_H } from "./rig.js";
+/** Distância da linha dos pés abaixo do topo do tile (px de tela). */
+export const CHAR_FEET_OFFSET = 51;
 
 const W = 16, H = 24;
 // ---- Premium NPCs (imagem gerada) ----
@@ -780,9 +785,28 @@ export function seasonSpec(npcId, seasonIndex, baseSpec) {
   return { ...baseSpec, ...overrides };
 }
 
-/** Gera o atlas de um personagem */
+const TOOL_NAMES = ["enxada", "picareta", "machado", "regador", "vara", "foice", "semente"];
+
+/** Gera o atlas de um personagem (18x33 por quadro, com contorno). */
 export function characterFrames(spec) {
-  const key = "char:" + JSON.stringify(spec);
+  const key = "chars:" + JSON.stringify(spec);
+  return cached(key, () => {
+    const atlas = {};
+    for (const dir of ["down", "up", "left", "right"]) {
+      atlas[dir] = [];
+      for (let f = 0; f < 4; f++) atlas[dir].push(rigSprite(spec, dir, f));
+      for (const toolName of TOOL_NAMES) {
+        atlas[dir + "Action:" + toolName] = rigSprite(spec, dir, 1, toolName);
+      }
+      atlas[dir + "Action"] = rigSprite(spec, dir, 1, spec.tool || null);
+    }
+    return atlas;
+  });
+}
+
+/* Atlas antigo (procedural 16x24) mantido para retratos e interiores antigos. */
+function legacyCharacterFrames(spec) {
+  const key = "char-legacy:" + JSON.stringify(spec);
   return cached(key, () => {
     const atlas = {};
     for (const dir of ["down", "up", "left", "right"]) {
@@ -791,33 +815,12 @@ export function characterFrames(spec) {
         const c = mkCanvas(W * PIX, H * PIX);
         const g = c.getContext("2d");
         g.imageSmoothingEnabled = false;
-        const act = false;
-        drawBody(g, spec, dir, f, act);
+        drawBody(g, spec, dir, f, false);
         drawFace(g, spec, dir, false, false);
         drawHair(g, spec, dir);
         drawHat(g, spec, dir);
         atlas[dir].push(c);
       }
-      for (const toolName of ["enxada", "picareta", "machado", "regador", "vara", "foice", "semente"]) {
-        const ca = mkCanvas(W * PIX, H * PIX);
-        const ga = ca.getContext("2d");
-        ga.imageSmoothingEnabled = false;
-        drawBody(ga, { ...spec, tool: toolName }, dir, 0, true, 0);
-        drawFace(ga, spec, dir, false, true);
-        drawHair(ga, spec, dir);
-        drawHat(ga, spec, dir);
-        drawTool(ga, toolName, dir);
-        atlas[dir + "Action:" + toolName] = ca;
-      }
-      const caGeneric = mkCanvas(W * PIX, H * PIX);
-      const gaGeneric = caGeneric.getContext("2d");
-      gaGeneric.imageSmoothingEnabled = false;
-      drawBody(gaGeneric, spec, dir, 0, true);
-      drawFace(gaGeneric, spec, dir, false, true);
-      drawHair(gaGeneric, spec, dir);
-      drawHat(gaGeneric, spec, dir);
-      drawTool(gaGeneric, spec.tool, dir);
-      atlas[dir + "Action"] = caGeneric;
     }
     return atlas;
   });
@@ -866,42 +869,44 @@ export const NPC_SPECS = {
   fernanda: { shirt: "#8e44ad", shirtDark: "#6c3483", coatBack: "#6c3483", pants: "#4b4256", skin: C.skin0, skinShade: "#e0b892", hair: "#3a2b22", hairDark: "#241a14", hairStyle: "bun", hat: { type: "none" } },
 };
 
-/** Desenha um personagem no mundo */
+/**
+ * Desenha um personagem no mundo.
+ * x/y são o canto superior esquerdo; use feetAnchor() para apoiar os pés no chão.
+ */
 export function drawCharacter(ctx, atlas, dir, { x, y, moving, action, time = 0, alpha = 1 }) {
   const d = atlas ? (atlas[dir] ? dir : "down") : "down";
   const frames = atlas[d] || atlas.down;
-  // pernas com fluidez: 8fps, mãos estáticas (sem balanço de braço)
-  const f = moving ? (Math.floor(time * 9) % 4) : 0;
+  // caminhada a 8 quadros/s: pernas alternam e o corpo sobe 1px no passo
+  const f = moving ? (Math.floor(time * 8) % 4) : 0;
   const img = frames[f] || frames[0];
-  const bob = moving ? Math.sin(time * 10) * 0.5 : 0;
+  const step = moving && (f === 1 || f === 3);
+  const CW = 18 * RIG_SCALE, CH = 33 * RIG_SCALE;
   ctx.save();
   ctx.globalAlpha = alpha;
-  // sombra no chão - dá impressão que tá pisando, não flutuando
-  const cx = x + W*PIX/2, cy = y + H*PIX - 3;
-  const rx = W*PIX*0.28, ry = 3.2;
-  ctx.fillStyle = "rgba(20,18,12,0.28)";
-  ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI*2); ctx.fill();
-  ctx.drawImage(img, Math.round(x), Math.round(y + bob));
+  ctx.imageSmoothingEnabled = false;
+  // sombra discreta, colada no chão
+  const cx = x + CW / 2, cy = y + CH - 2;
+  ctx.fillStyle = "rgba(24,26,18,0.24)";
+  ctx.beginPath();
+  ctx.ellipse(cx, cy, CW * 0.26, Math.max(2, RIG_SCALE * 0.9), 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.drawImage(img, Math.round(x), Math.round(y + (step ? -1 : 0)), CW, CH);
   ctx.restore();
+}
+
+/** Converte a posição do tile no canto superior esquerdo do sprite. */
+export function feetAnchor(px, py) {
+  const CW = 18 * RIG_SCALE;
+  const CH = 33 * RIG_SCALE;
+  return { x: px - CW / 2, y: py + CHAR_FEET_OFFSET - CH };
 }
 
 /** Pose de ação com uma ferramenta específica (cacheada por spec+ferramenta). */
 export function actionFrames(spec, tool, dir) {
   const t = tool || "enxada";
-  return cached(`action:${JSON.stringify(spec)}:${t}:${dir}`, () => {
-    const c = mkCanvas(W * PIX, H * PIX);
-    const g = c.getContext("2d");
-    g.imageSmoothingEnabled = false;
-    drawBody(g, { ...spec, tool: t }, dir, 0, true, 0);
-    drawFace(g, spec, dir, false, true);
-    drawHair(g, spec, dir);
-    drawHat(g, spec, dir);
-    drawTool(g, t, dir);
-    return c;
-  });
+  return cached(`action2:${JSON.stringify(spec)}:${t}:${dir}`, () => rigSprite(spec, dir, 1, t));
 }
 
 export function toolFrame(spec, tool, dir) {
-  const key = `toolFrame:${JSON.stringify(spec)}:${tool}:${dir}`;
-  return cached(key, () => actionFrames(spec, tool, dir));
+  return actionFrames(spec, tool, dir);
 }

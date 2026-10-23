@@ -25,3 +25,6 @@ npm-debug.log*
 Thumbs.db
 .env
 .env.*
+
+# Pacotes de handoff (artefatos, não fazem parte do jogo)
+*.zip
