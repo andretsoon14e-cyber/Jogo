@@ -8,10 +8,11 @@ Pixel art acolhedora e original: paleta quente (verde-oliva, madeira, pergaminho
 
 ## Sprites de mapa
 
-- Saída nativa **18×33** (`rig.js`: rig 16×32 + 1px de contorno em cada lado), `RIG_SCALE = 3` → 54×99 ao desenhar.
+- Arte nativa **24×48** (`rig.js`), contorno de 1px → saída **26×49**; `RIG_SCALE = 2` → **52×98 px** na tela (escala inteira, sem borrão). A resolução subiu de 16×32 para 24×48 em 2026-10-23 justamente para o rosto caber sem amassar.
 - 6 idades, 2 silhuetas por idade (`newborn_A/B` … `elder_A/B`), 4 direções, 4 quadros de caminhada + pose de ferramenta.
 - Pés sempre na linha 31 do rig: nenhum quadro flutua; sombra elíptica discreta embaixo.
-- **Cabeça grande em todas as fases** (8px de altura; 9px no idoso, para caber barba sem esmagar o rosto), pescoço de 2px com pele no decote. Altura visível = `legH + torsoH + headH + 1`: bebê 16–17, criança 20–22, adolescente 25–26, adulto 29–30, idoso 28.
+- **Cabeça grande em todas as fases** (12px de altura; 13px no idoso, para caber barba sem esmagar o rosto) e pescoço de 1px. Altura visível (`legH + torsoH + headH - 2`): bebê 24–25, criança 27–30, adolescente 34–36, adulto 40–42, idoso 39–40.
+- Rosto: olhos **3×3** com 1px de brilho, separados por 3px, sobrancelhas de 3px na cor do cabelo, nariz de 1px e boca de 2px. Nada de olho colado no outro (era o defeito da versão 16×32).
 - Corpo em 2–3 tons: luz no lado esquerdo, sombra no direito, contorno `#2a1c12` por fora.
 - Pernas com `legW = (bodyW - 2) / 2` e **gap mínimo de 1px**; calça com cinto + fivela, swing por quadro (f1 frente, f3 trás), barra e sapato/bota de 2px com bico.
 - Mangas de `m.arm` px com punho; a **mão de pele** é desenhada depois da manga (`drawHands`), senão o braço vira um toco.

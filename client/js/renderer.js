@@ -607,7 +607,7 @@ function drawPlayerSprite(ctx, p, sx, sy, isSelf, time, action) {
     ctx.beginPath(); ctx.ellipse(px, footY - 2, CHAR_W * 0.26, 3, 0, 0, 6.3); ctx.fill();
     // leve tremor no impacto
     const shake = (k > 0.45 && k < 0.6) ? (Math.sin(k * 80) * 1.2) : 0;
-    ctx.drawImage(img, Math.round(px - CHAR_W / 2 + shake), Math.round(footY - 99 + lift), CHAR_W, CHAR_H);
+    ctx.drawImage(img, Math.round(px - CHAR_W / 2 + shake), Math.round(footY - CHAR_H + lift), CHAR_W, CHAR_H);
     // partículas extras por ferramenta
     if (tool === "enxada" && k > 0.5 && k < 0.65) {
       ctx.fillStyle = "#8b7355";

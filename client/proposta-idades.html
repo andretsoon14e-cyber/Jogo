@@ -33,7 +33,7 @@
 <body>
 <header>
   <h1>Proposta de corpos — 2 opções por idade</h1>
-  <p>Sprites 16×32 nativos com contorno, quatro direções e caminhada de 4 quadros. Corpo base neutro (sem roupa embutida): camisa, calça, cabelo e chapéu são camadas independentes. Escolha A ou B por idade — ou peça novas sugestões.</p>
+  <p>Sprites 24×48 nativos com contorno, quatro direções e caminhada de 4 quadros (52×98 px na tela). Corpo base neutro (sem roupa embutida): camisa, calça, cabelo e chapéu são camadas independentes. Escolha A ou B por idade — ou peça novas sugestões.</p>
 </header>
 <div class="controls">
   <label>Zoom <input id="zoom" type="range" min="3" max="7" step="1" value="5"><span id="zoomVal">5×</span></label>
@@ -42,7 +42,7 @@
   <span id="picked"></span>
 </div>
 <div class="note">
-  <b>Direção de arte:</b> paleta quente (6 tons de pele, roupas de algodão e lã), contorno marrom-suave em vez de preto duro, sombra elíptica discreta colada nos pés. A cabeça cresce conforme a idade (bebê ≈ metade da altura, criança ≈ um terço, adulto ≈ um quarto) e nenhum corpo tem anatomia explícita.
+  <b>Direção de arte:</b> paleta quente (6 tons de pele, roupas de algodão e lã), contorno marrom-suave em vez de preto duro, sombra elíptica discreta colada nos pés. A cabeça cresce conforme a idade (bebê ≈ metade da altura, criança ≈ um terço, adulto ≈ um quarto) e os olhos têm 3×3 com 1 px de brilho e nenhum corpo tem anatomia explícita.
 </div>
 <div class="sheet" id="sheet"></div>
 <script type="module">
@@ -73,8 +73,8 @@ const LOOK = { shirt:"#7fa06a", shirtDark:"#5f7d4e", pants:"#43506b", hair:"#6b4
 const LOOKS = {
   newborn_A: { blanket:"#f2e4cb", hair:"#8a5a34" },
   newborn_B: { blanket:"#d7e6dc", hair:"#6b4226" },
-  baby_A: { shirt:"#f4ead6", shirtDark:"#d9c9a4", shirtDesign:"sweater", pants:"#c9ab7c", pantsStyle:"shorts", hairStyle:"short" },
-  baby_B: { shirt:"#cfe0ef", shirtDark:"#a9c3da", shirtDesign:"striped", pants:"#bfae92", pantsStyle:"shorts", hairStyle:"messy", hair:"#a9713f" },
+  baby_A: { shirt:"#f4ead6", shirtDark:"#d9c9a4", shirtDesign:"sweater", pants:"#c9ab7c", pantsStyle:"shorts", hairStyle:"buzz" },
+  baby_B: { shirt:"#cfe0ef", shirtDark:"#a9c3da", shirtDesign:"striped", pants:"#bfae92", pantsStyle:"shorts", hairStyle:"buzz", hair:"#a9713f" },
   child_A: { shirt:"#4a6fa8", shirtDesign:"overalls", undershirt:"#f6efdc", pants:"#3f5c8a", pantsStyle:"shorts", hairStyle:"messy", shoe:"#e9e2d2", shoeDark:"#cdc4b0", shoeLight:"#fbf7ee" },
   child_B: { shirt:"#7ba3cf", shirtDesign:"overalls", undershirt:"#f2e8d2", pants:"#5f7fa8", pantsStyle:"shorts", hairStyle:"buzz", hair:"#8a5a34" },
   teen_A: { shirt:"#bf3b32", shirtDark:"#8f2722", shirtDesign:"hoodie", pants:"#3a4152", hairStyle:"messy", shoe:"#f2efe6", shoeDark:"#cfc9bb", shoeLight:"#ffffff" },

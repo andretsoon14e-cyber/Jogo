@@ -293,8 +293,9 @@ ok("Clique no mundo não quebra", true);
 const rig = await import("../client/js/art/rig.js");
 function altura(id) {
   const m = rig.metricsFor(id);
-  const top = 33 - m.legH - m.torsoH - m.headH;
-  return 31 - top;
+  // grade de arte: RIG_H linhas, pés na última linha; o topo é o que sobra
+  const top = rig.RIG_H + 1 - m.legH - m.torsoH - m.headH;
+  return (rig.RIG_H - 1) - top;
 }
 const h = {
   newborn: altura("newborn_A"), baby: altura("baby_A"), child: altura("child_A"),
@@ -305,10 +306,10 @@ ok("Bebê é claramente menor que a criança", h.baby + 2 <= h.child, `${h.baby}
 ok("Criança é menor que adolescente", h.child < h.teen, `${h.child} < ${h.teen}`);
 ok("Adolescente é menor que adulto", h.teen < h.adult, `${h.teen} < ${h.adult}`);
 ok("Adultos têm alturas diferentes entre si", h.adult !== h.adultB, `${h.adult} vs ${h.adultB}`);
-ok("Nenhum adulto passa do topo do sprite (altura <= 31)", h.adult <= 31 && h.adultB <= 31, `${h.adult}/${h.adultB}`);
-ok("Pé sempre na linha 31 em todas as idades", ["newborn_A","baby_B","child_B","teen_B","adult_A","elder_A"].every((id) => {
+ok("Nenhum adulto passa do topo do sprite (altura <= RIG_H - 1)", h.adult <= rig.RIG_H - 1 && h.adultB <= rig.RIG_H - 1, `${h.adult}/${h.adultB}`);
+ok("Pé sempre na última linha em todas as idades", ["newborn_A","baby_B","child_B","teen_B","adult_A","elder_A"].every((id) => {
   const m = rig.metricsFor(id);
-  return 33 - m.legH - m.torsoH - m.headH >= 0;
+  return rig.RIG_H + 1 - m.legH - m.torsoH - m.headH >= 0;
 }));
 
 ok("Nenhuma exceção não tratada", errors.length === 0, errors.map((e) => e.message).join("; "));

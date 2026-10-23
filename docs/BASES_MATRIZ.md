@@ -1,7 +1,7 @@
 # Matriz de Bases e Roupas — 2026-10-23
 
 > Este documento substitui a auditoria de 2026-10-22, que descrevia 15 arquivos PNG de base.
-> **Esses PNGs não são mais usados.** O personagem hoje é desenhado por código no rig (`client/js/art/rig.js`), em saída nativa **18×33** (rig 16×32 com 1px de contorno em cada lado). Não existe mais "base PNG" para importar: toda base é uma `BODY_OPTIONS` com proporções próprias.
+> **Esses PNGs não são mais usados.** O personagem hoje é desenhado por código no rig (`client/js/art/rig.js`), em saída nativa **26×49** (arte 24×48 com 1px de contorno em cada lado). Não existe mais "base PNG" para importar: toda base é uma `BODY_OPTIONS` com proporções próprias.
 
 ## 1. Corpos (12 opções = 2 por idade)
 
