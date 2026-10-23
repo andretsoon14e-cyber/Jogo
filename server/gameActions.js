@@ -120,12 +120,32 @@ function nearForest(world, player) {
 function nearStone(world, player) {
   const tiles = tilesOf(world, player);
   const tx = Math.floor(player.x), ty = Math.floor(player.y);
+  const cave = String(player.region || "").startsWith("caverna");
   for (let dy = -2; dy <= 2; dy++) {
     for (let dx = -2; dx <= 2; dx++) {
-      if (tiles[ty + dy]?.[tx + dx] === TILE.STONE) return true;
+      const t = tiles[ty + dy]?.[tx + dx];
+      if (t === TILE.STONE) return true;
+      // dentro da caverna, parede e veio de cristal são a rocha disponível
+      if (cave && (t === TILE.CAVE_WALL || t === TILE.CAVE_CRYSTAL)) return true;
     }
   }
   return false;
+}
+
+/** O veio clicado está ao alcance da picareta? */
+function veinsClose(player, x, y) {
+  return Math.hypot(x + 0.5 - player.x, y + 0.5 - player.y) <= 3.2;
+}
+
+/** True se há um veio de cristal ao alcance (só na caverna). */
+function nearCrystal(tiles, player) {
+  const tx = Math.floor(player.x), ty = Math.floor(player.y);
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      if (tiles[ty + dy]?.[tx + dx] === TILE.CAVE_CRYSTAL) return { x: tx + dx, y: ty + dy };
+    }
+  }
+  return null;
 }
 
 function cooldown(ctx, key, ms) {
@@ -182,7 +202,7 @@ export function handleAction(ctx, type, data = {}) {
       world.plots[`${x},${y}`] = { crop: null, stage: 0, watered: false, plantedDay: null, owner: player.username };
       addXp(ctx, "farming", 2);
       afterChange(ctx);
-      ctx.broadcast("tileUpdate", { x, y, tile: TILE.TILLED });
+      ctx.broadcast("tileUpdate", { x, y, tile: TILE.TILLED, region: player.region || "vale" });
       ctx.broadcast("plotUpdate", { key: `${x},${y}`, plot: world.plots[`${x},${y}`] });
       break;
     }
@@ -221,7 +241,7 @@ export function handleAction(ctx, type, data = {}) {
       plot.watered = true;
       if (tiles[y]?.[x] === TILE.TILLED) {
         tiles[y][x] = TILE.TILLED_WATERED;
-        ctx.broadcast("tileUpdate", { x, y, tile: TILE.TILLED_WATERED });
+        ctx.broadcast("tileUpdate", { x, y, tile: TILE.TILLED_WATERED, region: player.region || "vale" });
       }
       addXp(ctx, "farming", 1);
       afterChange(ctx);
@@ -249,7 +269,7 @@ export function handleAction(ctx, type, data = {}) {
       tiles[y][x] = TILE.TILLED;
       world.plots[key] = { crop: null, stage: 0, watered: false, plantedDay: null, owner: player.username };
       afterChange(ctx);
-      ctx.broadcast("tileUpdate", { x, y, tile: TILE.TILLED });
+      ctx.broadcast("tileUpdate", { x, y, tile: TILE.TILLED, region: player.region || "vale" });
       ctx.broadcast("plotUpdate", { key, plot: world.plots[key] });
       ctx.broadcast("effect", { x, y, type: "harvest" });
       ctx.notify(`Você colheu ${qty}x ${cropDef.name}!`, "success");
@@ -264,7 +284,7 @@ export function handleAction(ctx, type, data = {}) {
       }
       if (Number.isInteger(x) && Number.isInteger(y) && tiles[y]?.[x] === TILE.DARK_GRASS && Math.random() < 0.5) {
         tiles[y][x] = TILE.GRASS;
-        ctx.broadcast("tileUpdate", { x, y, tile: TILE.GRASS });
+        ctx.broadcast("tileUpdate", { x, y, tile: TILE.GRASS, region: player.region || "vale" });
       }
       const qty = 2 + Math.floor(Math.random() * 2);
       addItem(player, "madeira", qty);
@@ -281,19 +301,45 @@ export function handleAction(ctx, type, data = {}) {
       if (!cooldown(ctx, "mine", 900)) return;
       if (!nearStone(world, player)) return ctx.notify("Fique perto das rochas da mina.", "error");
       const { x, y } = data;
+      const inCave = String(player.region || "").startsWith("caverna");
+      const floor = inCave ? Number(player.region.replace("caverna", "")) || 1 : 0;
+
+      // ---- veio de cristal: clicou nele e está perto ----
+      const vein = inCave ? nearCrystal(tiles, player) : null;
+      const targetVein = inCave && Number.isInteger(x) && Number.isInteger(y) &&
+        tiles[y]?.[x] === TILE.CAVE_CRYSTAL && veinsClose(player, x, y);
+
+      if (targetVein || (vein && !Number.isInteger(x))) {
+        const vx = targetVein ? x : vein.x;
+        const vy = targetVein ? y : vein.y;
+        tiles[vy][vx] = TILE.CAVE_FLOOR;
+        ctx.broadcast("tileUpdate", { x: vx, y: vy, tile: TILE.CAVE_FLOOR, region: player.region || "vale" });
+        addItem(player, "cristal", 1);
+        world.cave ||= { deepest: 0, crystals: 0 };
+        world.cave.crystals = (world.cave.crystals || 0) + 1;
+        addXp(ctx, "mining", 18);
+        afterChange(ctx);
+        ctx.room.dirty = true;
+        ctx.broadcast("effect", { x: player.x, y: player.y, type: "mine" });
+        ctx.broadcast("notifyAll", { msg: `${player.username} extraiu um cristal no andar ${floor}.`, type: "success" });
+        break;
+      }
+
       if (Number.isInteger(x) && Number.isInteger(y) && tiles[y]?.[x] === TILE.STONE && Math.random() < 0.35) {
         tiles[y][x] = TILE.GRASS;
-        ctx.broadcast("tileUpdate", { x, y, tile: TILE.GRASS });
+        ctx.broadcast("tileUpdate", { x, y, tile: TILE.GRASS, region: player.region || "vale" });
       }
       const qty = 2 + Math.floor(Math.random() * 2);
       addItem(player, "pedra", qty);
       player.stats.stone += qty;
       recordCoop(room, "stone", qty, ctx.io);
-      if (Math.random() < 0.18) addItem(player, "minerio", 1);
-      addXp(ctx, "mining", 7);
+      // andares mais fundos rendem mais minério
+      if (Math.random() < 0.18 + floor * 0.12) addItem(player, "minerio", 1);
+      if (inCave && Math.random() < 0.10 + floor * 0.07) addItem(player, "carvao", 1);
+      addXp(ctx, "mining", 7 + floor * 2);
       afterChange(ctx);
       ctx.broadcast("effect", { x: player.x, y: player.y, type: "mine" });
-      ctx.notify(`🪨 +${qty} pedra`, "success");
+      ctx.notify(`+${qty} pedra`, "success");
       break;
     }
 

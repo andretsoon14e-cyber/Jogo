@@ -158,6 +158,8 @@ export function renderInterior(ctx, { W, H, time, season, game, characterFrames,
   const k = Math.min((W - 120) / roomW, (H - 150) / roomH, 2.4);
   const ox = (W - roomW * k) / 2;
   const oy = (H - roomH * k) / 2;
+  // o clique precisa usar esta mesma escala (translate + scale)
+  game.viewInterior = { ox, oy, scale: TS * k };
 
   // fundo externo (madeira escura + vinheta)
   const bgg = ctx.createLinearGradient(0, 0, W, H);

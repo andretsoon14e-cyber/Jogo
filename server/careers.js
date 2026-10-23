@@ -1,5 +1,6 @@
 import {
   JOBS, RECIPES, recipeById, canCook, totalDaysElapsed, weekdayIndex, isWorkday,
+  CAVE_FLOORS, isCaveRegion,
   isVacationDay, isOnShiftNow, jobShiftHours, QUEST_CHAINS, COOP_MISSIONS, TRANSPORT,
   REGION_DEFS, REGION_NPCS, fmtHour,
 } from "../shared/careers.js";
@@ -376,6 +377,99 @@ function publicPlayerSafe(p) {
   };
 }
 
+/**
+ * Entrada, descida e saída da caverna.
+ * Regras:
+ *  - do vale para o 1º andar: precisa estar perto da Mina do Vale;
+ *  - para descer um andar: precisa estar na escada e ter cristais suficientes;
+ *  - para subir/voltar: precisa estar na escada de saída do andar.
+ * Devolve true se tratou a viagem.
+ */
+function travelCave(ctx, to, from) {
+  const { player, room } = ctx;
+  const world = room.world;
+  const toCave = isCaveRegion(to);
+  const fromCave = isCaveRegion(from);
+  if (!toCave && !fromCave) return false;
+
+  const floorTo = toCave ? REGION_DEFS[to].cave.floor : 0;
+  const floorFrom = fromCave ? REGION_DEFS[from].cave.floor : 0;
+  const nearPoint = (p, r = 2.6) => Math.hypot(p.x + 0.5 - player.x, p.y + 0.5 - player.y) <= r;
+  const fromDef = fromCave ? REGION_DEFS[from] : null;
+
+  if (toCave && !fromCave) {
+    // ---- entrar na caverna pelo vale ----
+    if (floorTo !== 1) {
+      ctx.notify("Só dá para entrar na caverna pelo primeiro andar.", "error");
+      return true;
+    }
+    if (!nearBuilding(player, "mina", 7)) {
+      ctx.notify("Vá até a entrada da Mina do Vale, no norte da vila.", "error");
+      return true;
+    }
+  } else if (toCave && fromCave && floorTo === floorFrom + 1) {
+    // ---- descer um andar: precisa estar na escada e ter os cristais ----
+    if (!fromDef.cave.stairs) {
+      ctx.notify("Não há mais escadas para descer daqui.", "error");
+      return true;
+    }
+    if (!nearPoint(fromDef.cave.stairs)) {
+      ctx.notify("Chegue perto da escada para descer.", "error");
+      return true;
+    }
+    const req = CAVE_FLOORS.find((f) => f.id === to)?.needCrystals || 0;
+    const owned = player.inventory.cristal || 0;
+    if (owned < req) {
+      ctx.notify(`Esse andar pede ${req} cristais. Você tem ${owned}.`, "error");
+      return true;
+    }
+  } else if (toCave && fromCave && floorTo === floorFrom - 1) {
+    // ---- subir um andar: precisa estar na escada de saída ----
+    if (!nearPoint(fromDef.cave.exit)) {
+      ctx.notify("Volte até a escada de saída para subir.", "error");
+      return true;
+    }
+  } else if (!toCave && fromCave) {
+    // ---- sair da caverna: precisa estar na escada de subida ----
+    if (!nearPoint(fromDef.cave.exit)) {
+      ctx.notify("Volte até a escada de saída para subir.", "error");
+      return true;
+    }
+  } else {
+    ctx.notify("Você só pode subir ou descer um andar por vez.", "error");
+    return true;
+  }
+
+  if (toCave) {
+    world.cave ||= { deepest: 0, crystals: 0 };
+    world.cave.deepest = Math.max(world.cave.deepest || 0, floorTo);
+  }
+
+  player.region = to;
+  player.indoors = null;
+  const spawn = toCave
+    ? REGION_DEFS[to].cave.spawn
+    : { x: 55.5, y: 10 }; // saída em frente à mina do vale
+  player.x = spawn.x + 0.5;
+  player.y = spawn.y + 0.5;
+  player.dir = "down";
+  player.moveAt = Date.now();
+  player.tpUntil = Date.now() + 1500;
+  ctx.emitSelf("traveled", {
+    region: to,
+    x: player.x,
+    y: player.y,
+    regionDef: REGION_DEFS[to],
+    tiles: to === "vale" ? world.tiles : world.regions[to]?.tiles,
+  });
+  ctx.broadcast("playerRegionChanged", { id: player.id, region: to, x: player.x, y: player.y });
+  room.dirty = true;
+  persistPlayer(world, player);
+  const where = toCave ? `${REGION_DEFS[to].name} (andar ${REGION_DEFS[to].cave.floor})` : "Vale";
+  ctx.emitSelf("notify", { msg: `Você chegou em ${where}.`, type: "success" });
+  return true;
+}
+
 function travel(ctx, data) {
   const { player, room } = ctx;
   const world = room.world;
@@ -383,6 +477,9 @@ function travel(ctx, data) {
   if (!REGION_DEFS[to]) return ctx.notify("Destino inválido.", "error");
   if (player.region === to) return ctx.notify("Você já está aí.", "error");
   const from = player.region || "vale";
+  if (isCaveRegion(to) || isCaveRegion(from)) {
+    if (travelCave(ctx, to, from)) return;
+  }
 
   // Descobrir qual transporte liga origem e destino
   let transport = null;

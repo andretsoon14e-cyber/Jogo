@@ -20,6 +20,7 @@ import {
   lampSprite, lampGlow, benchSprite, signSprite, mailboxSprite, barrelSprite,
   crateSprite, potSprite, wellSprite, fountainSprite, statueSprite, flagSprite,
   logPileSprite, haySprite, scarecrowSprite, pierSprite, palmSprite,
+  stalagmiteSprite, pebbleSprite, bonesSprite,
 } from "./art/props.js";
 import { critterSprites, catSprites, birdSprites, butterflySprites, fishSprite } from "./art/critters.js";
 import { drawAmbient, drawWindParticles } from "./art/ambient.js";
@@ -64,6 +65,28 @@ function groundFor(region, season) {
   return entry.canvas;
 }
 
+/** Props da caverna: estalagmites, pedras soltas e ossadas. */
+function propsForCave(region, tiles, list) {
+  const H = tiles.length, W = tiles[0]?.length || 0;
+  for (let y = 1; y < H - 1; y++) {
+    for (let x = 1; x < W - 1; x++) {
+      if (tiles[y][x] !== TILE.CAVE_FLOOR) continue;
+      const h = hash(x, y, 441);
+      // só encosta em parede ou no meio de salões grandes
+      const wallNear =
+        tiles[y - 1]?.[x] === TILE.CAVE_WALL || tiles[y + 1]?.[x] === TILE.CAVE_WALL ||
+        tiles[y]?.[x - 1] === TILE.CAVE_WALL || tiles[y]?.[x + 1] === TILE.CAVE_WALL;
+      if (wallNear && h > 0.80) {
+        list.push({ kind: "stalagmite", x: x + 0.5, y: y + 0.9, seed: x * 17 + y * 31 });
+      } else if (!wallNear && h > 0.965) {
+        list.push({ kind: "pebble", x: x + 0.4 + h * 0.2, y: y + 0.8, seed: x + y * 7 });
+      } else if (h > 0.995) {
+        list.push({ kind: "bones", x: x + 0.5, y: y + 0.85, seed: x * 3 + y });
+      }
+    }
+  }
+}
+
 // ------------------------------------------------------------------
 //  Props determinísticos (visual, sem colisão)
 // ------------------------------------------------------------------
@@ -72,6 +95,12 @@ function propsFor(region, season, tiles) {
   const key = `${region}:${season}:${tiles.length}x${tiles[0]?.length}`;
   if (propCache.has(key)) return propCache.get(key);
   const list = [];
+  // caverna tem props próprios (estalagmites, ossos) — nada de grama lá dentro
+  if (String(region).startsWith("caverna")) {
+    propsForCave(region, tiles, list);
+    propCache.set(key, list);
+    return list;
+  }
   const H = tiles.length, W = tiles[0].length;
   const nearBuilding = (x, y, pad = 0) => currentBuildings().some(
     (b) => x >= b.x - pad && x < b.x + b.w + pad && y >= b.y - pad && y < b.y + b.h + pad
@@ -240,6 +269,9 @@ function propSprite(p, season) {
     case "palm": return palmSprite(season, p.seed);
     case "bush": return bushSprite(season, p.seed);
     case "rock": return rockSprite(p.seed);
+    case "stalagmite": return stalagmiteSprite(p.seed);
+    case "pebble": return pebbleSprite(p.seed);
+    case "bones": return bonesSprite(p.seed);
     case "flower": return flowerSprite(season, p.variant);
     case "tuft": return grassTuftSprite(season, p.variant);
     case "fence": return fenceSprite(season, 0b1111);
@@ -623,6 +655,47 @@ export function render(canvas, ctx) {
   renderOverworld(canvas, ctx, W, H, season, time);
 }
 
+/**
+ * Escuridão da caverna com um halo de lanterna em volta do jogador.
+ * Quanto mais fundo o andar, menor o halo.
+ */
+function applyCaveLight(ctx, W, H, { px, py, time, depth = 1 }) {
+  ctx.save();
+  ctx.globalCompositeOperation = "source-over";
+  const dark = Math.min(0.86, 0.66 + depth * 0.06);
+  const rInner = Math.max(90, 190 - depth * 30);
+  const rOuter = rInner + 230;
+  const flicker = 1 + Math.sin(time * 3.1) * 0.02 + Math.sin(time * 7.7) * 0.012;
+  const grad = ctx.createRadialGradient(px, py, rInner * 0.35, px, py, rOuter * flicker);
+  grad.addColorStop(0, `rgba(10,8,6,0)`);
+  grad.addColorStop(0.55, `rgba(10,8,6,${(dark * 0.35).toFixed(3)})`);
+  grad.addColorStop(1, `rgba(8,6,5,${dark.toFixed(3)})`);
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, H);
+  // leve tom azulado nas bordas, como se a luz viesse de cima
+  ctx.fillStyle = `rgba(120,160,210,${(0.03 + 0.01 * depth).toFixed(3)})`;
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  return { lamp: 0.55, cave: true };
+}
+
+/** Fora do mapa na caverna: rocha maciça com veios, sem mar. */
+function drawCaveBorder(ctx, { sx, sy, MAP_W, MAP_H, W, H, time }) {
+  const x0 = sx(0), y0 = sy(0), x1 = sx(MAP_W), y1 = sy(MAP_H);
+  ctx.fillStyle = "#1d1815";
+  if (x0 > 0) ctx.fillRect(0, 0, x0, H);
+  if (x1 < W) ctx.fillRect(x1, 0, W - x1, H);
+  if (y0 > 0) ctx.fillRect(Math.max(0, x0), 0, Math.max(0, Math.min(W, x1) - Math.max(0, x0)), y0);
+  if (y1 < H) ctx.fillRect(Math.max(0, x0), y1, Math.max(0, Math.min(W, x1) - Math.max(0, x0)), H - y1);
+  // sombra interna: a parede parece mais alta perto da borda do mapa
+  const grad = 26;
+  ctx.fillStyle = "rgba(0,0,0,.45)";
+  if (x0 > -grad) ctx.fillRect(Math.max(0, x0), y0, grad, y1 - y0);
+  if (x1 < W + grad) ctx.fillRect(x1 - grad, y0, grad, y1 - y0);
+  ctx.fillStyle = "rgba(0,0,0,.35)";
+  ctx.fillRect(x0, Math.max(0, y0), x1 - x0, grad);
+}
+
 function renderOverworld(canvas, ctx, W, H, season, time) {
   const t = game.world.time;
   const weather = game.world.weather;
@@ -631,8 +704,13 @@ function renderOverworld(canvas, ctx, W, H, season, time) {
   const th = SEASON_ART[season] || SEASON_ART[0];
 
   // fundo (fora do mapa) — cor chapada coerente com o mundo
-  ctx.fillStyle = mix(th.grass[3], "#1d3a4a", 0.55);
-  ctx.fillRect(0, 0, W, H);
+  if (String(region).startsWith("caverna")) {
+    ctx.fillStyle = "#191512";
+    ctx.fillRect(0, 0, W, H);
+  } else {
+    ctx.fillStyle = mix(th.grass[3], "#1d3a4a", 0.55);
+    ctx.fillRect(0, 0, W, H);
+  }
 
   if (!tiles || !tiles.length) {
     ctx.fillStyle = "#2b3a2a";
@@ -644,6 +722,8 @@ function renderOverworld(canvas, ctx, W, H, season, time) {
 
   const camX = game.camera.x, camY = game.camera.y;
   const halfW = W / 2, halfH = H / 2;
+  // mesma transformação para desenhar e para converter cliques/hover
+  game.view = { ox: halfW - camX * TS, oy: halfH - camY * TS, scale: TS };
   const sx = (x) => (x - camX) * TS + halfW;
   const sy = (y) => (y - camY) * TS + halfH;
   const { w: MAP_W, h: MAP_H } = currentRegionDef().size || { w: 70, h: 50 };
@@ -653,18 +733,32 @@ function renderOverworld(canvas, ctx, W, H, season, time) {
   const endY = Math.min(MAP_H, Math.ceil(camY + halfH / TS) + 3);
 
   // ---------------- CHÃO (cache) ----------------
+  // O chão é pré-renderizado a GROUND_T px por tile; a tela desenha a TS px
+  // por tile. Recortar em pixels do canvas e escalar no destino é o que
+  // mantém o chão alinhado com personagens, construções e colisão.
+  const GROUND_T = 32;
   const ground = groundFor(region, season);
   if (ground) {
-    const sxp = Math.max(0, startX * TS), syp = Math.max(0, startY * TS);
-    const sw = Math.min(ground.width - sxp, (endX - startX + 1) * TS);
-    const sh = Math.min(ground.height - syp, (endY - startY + 1) * TS);
-    if (sw > 0 && sh > 0) {
-      ctx.drawImage(ground, sxp, syp, sw, sh, sx(sxp / TS), sy(syp / TS), sw, sh);
+    const gx = Math.max(0, startX) * GROUND_T;
+    const gy = Math.max(0, startY) * GROUND_T;
+    const gw = Math.min(ground.width - gx, (endX - startX + 1) * GROUND_T);
+    const gh = Math.min(ground.height - gy, (endY - startY + 1) * GROUND_T);
+    if (gw > 0 && gh > 0) {
+      ctx.drawImage(
+        ground, gx, gy, gw, gh,
+        sx(gx / GROUND_T), sy(gy / GROUND_T),
+        (gw / GROUND_T) * TS, (gh / GROUND_T) * TS,
+      );
     }
   }
 
-  // ---------------- BORDA DO MAPA (mar) ----------------
-  drawMapBorder(ctx, { sx, sy, MAP_W, MAP_H, W, H, season, time });
+  // ---------------- BORDA DO MAPA ----------------
+  if (String(region).startsWith("caverna")) {
+    // caverna não tem mar: o que fica fora do mapa é rocha maciça
+    drawCaveBorder(ctx, { sx, sy, MAP_W, MAP_H, W, H, time });
+  } else {
+    drawMapBorder(ctx, { sx, sy, MAP_W, MAP_H, W, H, season, time });
+  }
 
   // ---------------- ÁGUA ANIMADA ----------------
   for (let y = startY; y < endY; y++) {
@@ -979,13 +1073,19 @@ function renderOverworld(canvas, ctx, W, H, season, time) {
   }
 
   // ---------------- VIDA AMBIENTAL ----------------
-  drawAmbient(ctx, {
-    regionKey: region, season, minutes: t, weather, sx, sy, player: game, buildings: currentBuildings(),
-    time, dt: 1 / 60, viewW: W, viewH: H,
-  });
+  // dentro da caverna não há pássaros nem borboletas: só vaga-lumes e poeira
+  if (!String(region).startsWith("caverna")) {
+    drawAmbient(ctx, {
+      regionKey: region, season, minutes: t, weather, sx, sy, player: game, buildings: currentBuildings(),
+      time, dt: 1 / 60, viewW: W, viewH: H,
+    });
+  }
 
   // ---------------- LUZ / CLIMA ----------------
-  const L = applyDaylight(ctx, W, H, t, weather, false);
+  const isCave = String(region).startsWith("caverna");
+  const L = isCave
+    ? applyCaveLight(ctx, W, H, { sx: (x) => sx(x), sy: (y) => sy(y), px: sx(game.x), py: sy(game.y), time, depth: Number(region.replace("caverna", "")) || 1 })
+    : applyDaylight(ctx, W, H, t, weather, false);
   if (L.lamp > 0.05) {
     // janelas iluminadas dos prédios
     for (const b of currentBuildings()) {
@@ -1029,7 +1129,7 @@ function renderOverworld(canvas, ctx, W, H, season, time) {
   }
 
   drawWeather(ctx, W, H, t, weather, time);
-  if (quality.level > 0) drawWindParticles(ctx, { season, minutes: t, weather, W, H, time, dt: 1 / 60 });
+  if (quality.level > 0 && !String(region).startsWith("caverna")) drawWindParticles(ctx, { season, minutes: t, weather, W, H, time, dt: 1 / 60 });
 
   // ---------------- FESTIVAL ----------------
   if (game.world.festival && region === "vale") drawFestival(ctx, sx, sy, time);

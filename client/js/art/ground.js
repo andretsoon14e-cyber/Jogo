@@ -298,6 +298,159 @@ function pathMask(tiles, x, y, maxW, maxH) {
  * @param {number} season
  * @param {Set<string>} blocked tiles "x,y" ocupados por construções
  */
+
+// ------------------------------------------------------------------
+//  Caverna: piso de pedra, parede de rocha, escadas e veios
+// ------------------------------------------------------------------
+function caveFloorTile(g, x, y, tiles, tx, ty) {
+  const h = hash(x, y, 771);
+  g.fillStyle = h > 0.66 ? "#463c34" : h > 0.33 ? "#433930" : "#41372f";
+  g.fillRect(x, y, T, T);
+  // pedras irregulares
+  for (let i = 0; i < 5; i++) {
+    const px = x + Math.floor(hash(x + i, y, 772) * (T - 8));
+    const py = y + Math.floor(hash(y + i, x, 773) * (T - 8));
+    g.fillStyle = alpha("#5c5148", 0.5);
+    g.fillRect(px, py, 5, 3);
+    g.fillStyle = alpha("#2b241f", 0.4);
+    g.fillRect(px, py + 3, 5, 1);
+  }
+  // rachaduras
+  if (h > 0.82) {
+    g.fillStyle = alpha("#241d18", 0.55);
+    g.fillRect(x + 6, y + 8, 1, 12);
+    g.fillRect(x + 7, y + 19, 5, 1);
+  }
+  // musgo perto de paredes (mancha esverdeada)
+  const nearWall = (dx, dy) => {
+    const t = tiles[ty + dy]?.[tx + dx];
+    return t === 11 || t === 14;
+  };
+  if (nearWall(0, -1) || nearWall(-1, 0) || nearWall(0, 1) || nearWall(1, 0)) {
+    g.fillStyle = alpha("#3f5730", 0.22);
+    g.fillRect(x + 2, y + (nearWall(0, -1) ? 0 : T - 5), T - 4, 5);
+  }
+}
+
+function caveWallTile(g, x, y) {
+  const h = hash(x, y, 881);
+  g.fillStyle = h > 0.5 ? "#2e2823" : "#2a2420";
+  g.fillRect(x, y, T, T);
+  // blocos empilhados
+  for (let r = 0; r < 4; r++) {
+    const bh = 8, by = y + r * bh, off = r % 2 ? 8 : 0;
+    for (let c = -1; c < 5; c++) {
+      const bx = x + off + c * 16;
+      const tone = hash(bx, by, 882);
+      g.fillStyle = tone > 0.66 ? "#3a322c" : tone > 0.33 ? "#342d27" : "#2f2823";
+      g.fillRect(bx + 1, by + 1, 14, bh - 2);
+      g.fillStyle = alpha("#181310", 0.55);
+      g.fillRect(bx + 1, by + bh - 1, 14, 1);
+      g.fillStyle = alpha("#544940", 0.35);
+      g.fillRect(bx + 1, by + 1, 14, 1);
+    }
+  }
+}
+
+export function caveCrystalTile(g, x, y) {
+  caveWallTile(g, x, y);
+  const cx = x + 16, base = y + 26;
+  // sombra na base
+  g.fillStyle = "rgba(0,0,0,.38)";
+  g.fillRect(cx - 11, base - 1, 22, 4);
+  // aglomerado de cristais: lascas de tamanhos diferentes
+  const shards = [[-7, 12, 6, "#3f7ea6"], [7, 10, 5, "#3f7ea6"], [0, 18, 10, "#5aa0c8"]];
+  for (const [dx, h, w, col] of shards) {
+    const sx0 = cx + dx;
+    for (let i = 0; i < h; i++) {
+      const k = i / Math.max(1, h - 1);
+      // ponta em cima, base larga embaixo
+      const half = Math.max(1, Math.round(k * (w / 2)));
+      const yy = base - h + i;
+      g.fillStyle = col;
+      g.fillRect(sx0 - half, yy, half * 2, 1);
+      // faceta iluminada (esquerda) e sombra (direita)
+      g.fillStyle = "#9fdcf5";
+      g.fillRect(sx0 - half, yy, Math.max(1, half), 1);
+      g.fillStyle = "#2f5f80";
+      g.fillRect(sx0 + Math.max(0, half - 1), yy, 1, 1);
+    }
+    // ponta brilhante
+    g.fillStyle = "#e8fbff";
+    g.fillRect(sx0, base - h, 1, 2);
+  }
+  // brilho difuso sobre o veio
+  g.fillStyle = "rgba(190,235,255,.18)";
+  g.fillRect(cx - 10, base - 21, 20, 3);
+}
+
+export function caveStairsTile(g, x, y, up) {
+  caveFloorTile(g, x, y, [], -1, -1);
+
+  // sombra em volta da boca
+  g.fillStyle = "rgba(0,0,0,.26)";
+  g.fillRect(x + 2, y + 1, T - 4, T - 2);
+
+  // boca da escada, chanfrada nos cantos
+  const bx = x + 4, by = y + 3, bw = T - 8, bh = T - 6;
+  g.fillStyle = "#100c0a";
+  g.fillRect(bx + 2, by, bw - 4, bh);
+  g.fillRect(bx, by + 2, bw, bh - 4);
+
+  // degraus: descer escurece para o fundo; subir clareia
+  const n = 5;
+  for (let i = 0; i < n; i++) {
+    const k = i / (n - 1);
+    const inset = 2 + i;
+    const sy2 = by + 1 + Math.round((i * (bh - 4)) / n);
+    const hgt = Math.max(3, Math.round((bh - 4) / n) - 1);
+    const base = up
+      ? mix("#2b231c", "#a08a6b", 0.2 + k * 0.65)
+      : mix("#7c6a55", "#1a1511", 0.15 + k * 0.8);
+    g.fillStyle = base;
+    g.fillRect(bx + inset, sy2, bw - inset * 2, hgt);
+    g.fillStyle = alpha(up ? "#f2dfb6" : "#a5906f", up ? 0.5 : 0.3);
+    g.fillRect(bx + inset, sy2, bw - inset * 2, 1);
+    g.fillStyle = "rgba(0,0,0,.42)";
+    g.fillRect(bx + inset, sy2 + hgt - 1, bw - inset * 2, 1);
+  }
+
+  // paredes laterais: luz de um lado, sombra do outro
+  g.fillStyle = alpha("#c9b48f", 0.16);
+  g.fillRect(bx + 1, by + 2, 2, bh - 4);
+  g.fillStyle = "rgba(0,0,0,.5)";
+  g.fillRect(bx + bw - 3, by + 2, 2, bh - 4);
+
+  // pedras soltas na borda (dão leitura de pedra, sem virar moldura)
+  const stones = [
+    [0, 0, 7, 4], [T - 8, 0, 8, 4], [0, T - 5, 8, 4], [T - 9, T - 5, 9, 4],
+    [2, T / 2 - 2, 4, 6], [T - 5, T / 2 - 3, 4, 7],
+  ];
+  for (const [ox, oy, sw, sh] of stones) {
+    g.fillStyle = mix("#5b5148", "#8b7d6a", 0.3);
+    g.fillRect(x + ox, y + oy, sw, sh);
+    g.fillStyle = alpha("#bfae92", 0.3);
+    g.fillRect(x + ox, y + oy, sw, 1);
+  }
+
+  // seta pequena sobre os degraus: amarela sobe, azul desce
+  const ax = Math.round(x + T / 2 - 2), ay = y + T - 14;
+  g.fillStyle = "rgba(8,6,5,.72)";
+  g.fillRect(ax - 3, ay - 2, 11, 12);
+  g.fillStyle = up ? "#ffe9a8" : "#9fe0ff";
+  if (up) {
+    g.fillRect(ax + 2, ay, 1, 1);
+    g.fillRect(ax + 1, ay + 1, 3, 1);
+    g.fillRect(ax, ay + 2, 5, 1);
+    g.fillRect(ax + 2, ay + 3, 1, 5);
+  } else {
+    g.fillRect(ax + 2, ay, 1, 5);
+    g.fillRect(ax, ay + 5, 5, 1);
+    g.fillRect(ax + 1, ay + 6, 3, 1);
+    g.fillRect(ax + 2, ay + 7, 1, 1);
+  }
+}
+
 export function buildGround(regionKey, tiles, season, blocked = new Set(), opts = {}) {
   const th = SEASON_ART[season] || SEASON_ART[0];
   const H = tiles.length, W = tiles[0]?.length || 0;
@@ -310,7 +463,12 @@ export function buildGround(regionKey, tiles, season, blocked = new Set(), opts 
     for (let x = 0; x < W; x++) {
       const t = tiles[y][x];
       const px = x * T, py = y * T;
-      if (t === 3) pathTile(g, px, py, th, pathMask(tiles, x, y, W, H));
+      if (t === 10) caveFloorTile(g, px, py, tiles, x, y);
+      else if (t === 11) caveWallTile(g, px, py);
+      else if (t === 12) caveStairsTile(g, px, py, false);
+      else if (t === 13) caveStairsTile(g, px, py, true);
+      else if (t === 14) caveCrystalTile(g, px, py);
+      else if (t === 3) pathTile(g, px, py, th, pathMask(tiles, x, y, W, H));
       else if (t === 6) plazaTile(g, px, py);
       else if (t === 4) sandTile(g, px, py, th);
       else if (t === 5) woodTile(g, px, py);
@@ -424,6 +582,9 @@ export function buildGround(regionKey, tiles, season, blocked = new Set(), opts 
   for (let y = 0; y < H; y++) {
     for (let x = 0; x < W; x++) {
       const t = tiles[y][x];
+      // caverna tem decoração própria (desenhada em caveFloorTile) — nada de
+      // flores e tufos de grama no meio da pedra
+      if (t >= 10) continue;
       if (t === 2 || t === 3 || t === 5 || t === 6 || t === 9 || t === 1 || t === 7) continue;
       if (blocked.has(`${x},${y}`)) continue;
       const px = x * T, py = y * T;

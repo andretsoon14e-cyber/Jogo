@@ -47,6 +47,16 @@ Números e diferenças entre variantes em `docs/BASES_MATRIZ.md`.
 - Calça/saia carrega `style`: `skirt`, `shorts` ou `long` — muda o desenho, não só a cor.
 - Ordem de desenho: cabelo de trás → corpo → calça → camisa → braços → cabeça → cabelo da frente → chapéu → acessórios.
 
+## Caverna
+
+- **Piso** `#463c34` / `#433930` / `#41372f` com pedriscos e musgo em alpha baixo; **parede** em blocos de rocha mais escuros, sem grama, flores, vento ou mar.
+- Fora do mapa: rocha maciça `#1d1815` com gradiente de sombra de 26px nas bordas (`drawCaveBorder`).
+- Escuridão com halo de lanterna: `dark = min(0.86, 0.66 + 0.06·andar)`, raio interno `max(90, 190 − 30·andar)`, flicker suave de 3,1 Hz.
+- **Escadas** (12/13): boca chanfrada escura, 5 degraus com topo iluminado e sombra embaixo; descer escurece para o fundo, subir clareia. Pedras soltas nos cantos em vez de moldura. Seta no piso: amarela ↑ para subir, azul ↓ para descer.
+- **Veios de cristal** (14): aglomerado de 3 lascas em pirâmide (ponta em cima, base larga), faceta iluminada à esquerda, sombra à direita, ponta branca e brilho difuso. Nada de retângulo/janela.
+- Props: estalagmite (pedra + musgo escuro `#31402a`), pedrinhas, ossadas — só sobre piso, nunca sobre parede.
+- Sem retratos novos: a caverna não tem NPCs (os três andares são de exploração/mineração).
+
 ## Regras de ouro
 
 1. Nada de ampliar sprite pequeno para tela grande: cada arte tem sua resolução nativa.

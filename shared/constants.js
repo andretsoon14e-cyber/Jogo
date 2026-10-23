@@ -20,6 +20,12 @@ export const TILE = {
   TILLED_WATERED: 7,
   DARK_GRASS: 8,
   BRIDGE: 9,
+  // caverna: piso de pedra caminhável e parede de rocha (bloqueia)
+  CAVE_FLOOR: 10,
+  CAVE_WALL: 11,
+  CAVE_STAIRS_DOWN: 12,
+  CAVE_STAIRS_UP: 13,
+  CAVE_CRYSTAL: 14,
 };
 
 export const SEASONS = ["Primavera", "Verão", "Outono", "Inverno"];
@@ -52,6 +58,7 @@ export const ITEM_INFO = {
   queijo: { name: "Queijo", icon: "🧀", sellPrice: 70 },
   concha: { name: "Concha", icon: "🐚", sellPrice: 35 },
   carvao: { name: "Carvão", icon: "🪨", sellPrice: 12 },
+  cristal: { name: "Cristal da Caverna", icon: "💎", sellPrice: 220 },
 };
 
 export const TOOLS = {

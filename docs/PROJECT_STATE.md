@@ -1,6 +1,6 @@
 # Estado do Projeto — Vale Aconchegante
 
-Atualizado: **2026-10-23 (2)** • branch `arena/99b3550e-jogo` • servidor em `node server/server.js` (porta 3000)
+Atualizado: **2026-10-23 (3)** • branch `arena/99b3550e-jogo` • servidor em `node server/server.js` (porta 3000)
 
 > Documento anterior (2026-10-22) descrevia bases PNG e hotbar com `transform: scale`. Nada disso existe mais. O que está abaixo foi conferido no código e em execução.
 
@@ -21,18 +21,25 @@ Atualizado: **2026-10-23 (2)** • branch `arena/99b3550e-jogo` • servidor em 
 | 11 | Servidor valida movimento (anti-teleporte) | **CONCLUÍDA** | `server.js` limita a 9 tiles/s + 1,2 de folga; excedente é aparado e a posição do servidor prevalece no `checkDistance` das ações. Viagem/entrar em casa marcam `tpUntil`. Teste `test/movement.test.js` (5/5) e casos de uso no multiplayer ajustados para caminhar de verdade. |
 | 12 | Trabalhar em qualquer área, com troca livre | **CONCLUÍDA** | 7 áreas em `shared/careers.js` (caixa, padeiro, pescador, ferreiro, operário, entregador, agricultor). `applyJob` agora troca de área sem exigir demissão e guarda `jobHistory`. Teste `test/jobs.test.js` (82/82) valida salário, turno, escala, férias, local existente e tarefas com itens reais. |
 | 13 | Emoji fora dos pontos importantes | **CONCLUÍDA (HUD/painéis de sistema)** | Preço/recompensa/status agora usam ícones desenhados (moeda, estrela, check). Abas da loja, emprego, agenda e dormir limpos. Sobra emoji em textos narrativos de NPC/missão — proposital por enquanto. |
+| 14 | Caverna: 3 andares ligados ao vale | **CONCLUÍDA (andares 1 e 2 jogados de ponta a ponta)** | Vale → Mina → `caverna1` → 3 cristais → `caverna2` → volta → vale, com cliques reais no navegador. `test/cave.test.js` 34/34. Andar 3 existe e é gerado/testado por unidade, mas não foi percorrido no cliente. |
+| 15 | Cristal só sai de veio e some do mapa | **CONCLUÍDA** | Clique no veio com picareta → tile vira piso, +1 cristal, XP 18, aviso para a sala; o `tileUpdate` agora leva `region` e atualiza o mapa da região certa no cliente (antes caía sempre no vale). Confirmado com 2 navegadores: quem não minerou viu o veio sumir. |
+| 16 | Escadas entram/saem de verdade | **CONCLUÍDA** | Corrigido `travelCave()`: descer e subir caíam no mesmo teste de "andar anterior" e sempre respondiam "Para subir, use a escada do andar". Agora entrar, descer, subir e sair têm regras separadas (proximidade + cristais). Teste determinístico cobre os 4 caminhos. |
+| 17 | Clique e colisão coerentes com o desenho | **CONCLUÍDA** | `screenToWorld`/`worldToScreen` usavam 32px fixo enquanto o mundo é desenhado com `TS = 75.2`; cliques/hover caíam longe do alvo. O renderer agora publica `game.view` (overworld) e `game.viewInterior` (casa/loja) e a conversão usa a mesma transformação. Hitbox do jogador recentrada (0,40 × 0,40 em volta dos pés) — corredores de 1 tile da caverna e passagens do vale ficaram transitáveis sem atravessar prédios. |
+| 18 | Sincronização de jogadores entre regiões | **CONCLUÍDA** | `playerMoved` leva `region` e o cliente ignora pacote de outra região; `playerRegionChanged` aplica x/y. Antes, quem entrava na caverna continuava aparecendo na posição do vale para os outros. Aviso duplicado "Chegou em..." removido. |
 
 ## Testes (executados agora)
 
 ```
 npm run test:client  -> 🎉 CLIENTE OK
 node test/jobs.test.js -> 🎉 TRABALHOS OK (82/82)
+node test/cave.test.js -> 🎉 CAVERNA OK (34/34)
 npm test             -> 🎉 TODOS OS TESTES PASSARAM (44/44)
 node test/sleepvotes.test.js -> 🎉 VOTOS DE DESCANSO OK (6/6)
 node test/movement.test.js   -> 🎉 MOVIMENTO OK (5/5)
+node test/coop.test.js       -> 🎉 CO-OP OK (9/9)
 ```
 
-Scripts: `npm run test:all` roda todos nessa ordem; `npm run test:net` só os de rede.
+Scripts: `npm run test:all` roda todos nessa ordem (cliente, trabalhos, caverna, rede, votos, movimento, co-op); `npm run test:cave` só a caverna; `npm run test:net` só os de rede.
 
 ## O que NÃO foi testado
 
@@ -40,6 +47,9 @@ Scripts: `npm run test:all` roda todos nessa ordem; `npm run test:net` só os de
 - Save/load após reinício do servidor com múltiplos quartos ativos.
 - Telas de celular reais (só viewport reduzido no Chromium).
 - Seasons/festivais de ponta a ponta (existem no código, sem teste automatizado).
+- Andar 3 da caverna no cliente (o servidor e o gerador estão cobertos; falta jogar o caminho `caverna2 → caverna3`, que pede 8 cristais).
+- Pesca no lago subterrâneo do andar 2, dormir dentro da caverna e ver o ciclo de dia/noite lá dentro.
+- Partículas de mineração e brilho dos cristais em telas de celular.
 
 ## Pendências / decisões em aberto
 

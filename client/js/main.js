@@ -31,6 +31,8 @@ let wasMoving = false;
 let lastHousePrompt = 0;
 
 window.game = game;
+// atalhos de depuração/teste (não afetam o jogo)
+window.commands = commands;
 
 // ---------------- CONFIGURAÇÕES SALVAS ----------------
 try {
@@ -688,6 +690,15 @@ function handleWorldClick() {
     return;
   }
 
+  // caverna: escadas
+  const hereTile = tileAt(tx, ty);
+  if (hereTile === TILE.CAVE_STAIRS_DOWN || hereTile === TILE.CAVE_STAIRS_UP) {
+    const d = Math.hypot(tx + 0.5 - game.x, ty + 0.5 - game.y);
+    if (d > 2.6) return ui.notify("Chegue perto da escada.", "error");
+    caveStairsStep(hereTile === TILE.CAVE_STAIRS_DOWN ? 1 : -1);
+    return;
+  }
+
   // NPCs e prédios da região atual
   for (const npc of currentNpcs()) {
     const p = npcPos(npc);
@@ -746,7 +757,9 @@ function handleWorldClick() {
     game.actionTool = "machado";
     sfx("chop");
   } else if (slot.id === "picareta") {
-    if (!isNearStone()) return ui.notify("Use a picareta nas rochas da mina (nordeste, cinza).", "error");
+    const vein = tileAt(tx, ty) === TILE.CAVE_CRYSTAL;
+    if (!vein && !isNearStone()) return ui.notify("Use a picareta nas rochas da mina (nordeste, cinza).", "error");
+    if (vein && dist > 3.2) return ui.notify("Chegue mais perto do veio de cristal.", "error");
     commands.interact("mine", { x: tx, y: ty });
     game.actionUntil = performance.now() + 420;
     game.actionTool = "picareta";
@@ -766,6 +779,23 @@ function handleWorldClick() {
     ui.notify("Esse item não pode ser usado aqui. Selecione uma ferramenta/semente.");
   }
 }
+
+/** Sobe ou desce um andar da caverna (ou volta para o vale, no andar 1). */
+function caveStairsStep(dir) {
+  const region = currentRegion();
+  if (!region.startsWith("caverna")) return;
+  const floor = Number(region.replace("caverna", "")) || 1;
+  if (dir > 0) {
+    if (floor >= 3) return ui.notify("Não há mais fundo: esta é a última galeria.", "info");
+    commands.interact("travel", { to: `caverna${floor + 1}` });
+  } else if (floor <= 1) {
+    commands.interact("travel", { to: "vale" });
+  } else {
+    commands.interact("travel", { to: `caverna${floor - 1}` });
+  }
+  sfx("open");
+}
+window.caveStairsStep = caveStairsStep;
 
 function tryToggleInterior(){
   if(game.indoors){
@@ -1039,6 +1069,13 @@ function update(dt, ts) {
   }
   game.moving = moved;
 
+  // mantém a cópia do próprio jogador na lista sincronizada (minimapa, painéis)
+  const meEntry = game.players.get(game.selfId);
+  if (meEntry) {
+    meEntry.x = game.x; meEntry.y = game.y;
+    meEntry.dir = game.dir; meEntry.region = game.region;
+  }
+
   if (moved || wasMoving) {
     const now = performance.now();
     if (now - game.lastMoveEmit > 100) {
@@ -1091,12 +1128,17 @@ function isCollidingClient(x, y) {
     }
     return false;
   }
-  const r = 0.28;
+  // hitbox centrada no sprite (a posição é o centro do personagem, não o canto do tile):
+  // 0.40 x 0.40 cabe em corredores de 1 tile, essenciais nas galerias da caverna.
+  const r = 0.2;
+  const hy0 = 0.04, hy1 = 0.44;
   const { w: MAP_W, h: MAP_H } = currentRegionDef().size || { w:70, h:50 };
-  for (const [ox, oy] of [[r, r], [1 - r, r], [r, 0.9], [1 - r, 0.9]]) {
+  const inCave = currentRegion().startsWith("caverna");
+  for (const [ox, oy] of [[-r, hy0], [r, hy0], [-r, hy1], [r, hy1]]) {
     const cx = Math.floor(x + ox), cy = Math.floor(y + oy);
     if (cx < 0 || cy < 0 || cx >= MAP_W || cy >= MAP_H) return true;
     const t = tileAt(cx, cy);
+    if (inCave && (t === TILE.CAVE_WALL || t === TILE.CAVE_CRYSTAL)) return true;
     if (t === TILE.WATER) {
       if (cy === 26 && cx >= 58 && cx <= 61 && (game.world.communityProgress.ponte || 0) >= 1000) continue;
       return true;
@@ -1104,13 +1146,13 @@ function isCollidingClient(x, y) {
   }
   for (const b of currentBuildings()) {
     if(b.id==="doca"||b.id==="aerodromo"||b.id==="pier"||b.id==="pier_ilha"||b.id==="aeroporto") continue;
-    if (x + 0.75 > b.x && x + 0.25 < b.x + b.w && y + 0.85 > b.y && y + 0.2 < b.y + b.h) return true;
+    if (x + r > b.x && x - r < b.x + b.w && y + hy1 > b.y && y + hy0 < b.y + b.h) return true;
   }
   for (const [key, b] of Object.entries(game.world.buildings || {})) {
     const def = BUILD_OPTIONS[b.buildingId];
     if (!def) continue;
     if (b.buildingId === "estufa") continue; // estufa é caminhável por dentro
-    if (x + 0.75 > b.x && x + 0.25 < b.x + def.w && y + 0.85 > b.y && y + 0.2 < b.y + def.h) return true;
+    if (x + r > b.x && x - r < b.x + def.w && y + hy1 > b.y && y + hy0 < b.y + def.h) return true;
   }
   return false;
 }

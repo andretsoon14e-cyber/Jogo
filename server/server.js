@@ -299,7 +299,7 @@ io.on("connection", (socket) => {
     player.y = ny;
     player.moveAt = now;
     player.dir = ["up", "down", "left", "right"].includes(data.dir) ? data.dir : player.dir;
-    socket.to(room.roomCode).emit("playerMoved", { id: socket.id, x: nx, y: ny, dir: player.dir });
+    socket.to(room.roomCode).emit("playerMoved", { id: socket.id, x: nx, y: ny, dir: player.dir, region: player.region || "vale" });
     room.dirty = true;
   });
 

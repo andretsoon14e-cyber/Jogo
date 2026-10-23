@@ -619,3 +619,56 @@ export function palmSprite(season = 0, seed = 0) {
     return up(c);
   });
 }
+
+// ----------------------------- CAVERNA -----------------------------
+/** Estalagmite: pedra que sobe do chão, em duas variantes. */
+export function stalagmiteSprite(seed = 0) {
+  return cached(`stalag:${seed % 3}`, () => {
+    const v = seed % 3;
+    const w = v === 0 ? 9 : v === 1 ? 7 : 11;
+    const h = v === 0 ? 18 : v === 1 ? 13 : 22;
+    const { c, g } = A(w, h);
+    const cx = w >> 1;
+    for (let y = 0; y < h; y++) {
+      const t = y / (h - 1);
+      const half = Math.max(1, Math.round((t * t) * (w / 2 - 0.5)) + (t > 0.9 ? 1 : 0));
+      px(g, cx - half, y, half * 2 + (t > 0.9 ? 1 : 0), 1, "#4a4038");
+      if (half > 1) px(g, cx - half, y, 1, 1, "#5c5148");
+      if (half > 2) px(g, cx + half - 1, y, 1, 1, "#2e2823");
+    }
+    // ponta clara e brilho
+    px(g, cx, 0, 1, 3, "#7a6c5f");
+    px(g, cx - 1, 0, 2, 1, "#8d7e6f");
+    // musgo na base
+    px(g, 1, h - 2, w - 2, 1, "#31402a");
+    px(g, 2, h - 1, w - 4, 1, "#253322");
+    return up(c);
+  });
+}
+
+/** Pedrinha solta no chão da caverna. */
+export function pebbleSprite(seed = 0) {
+  return cached(`pebble:${seed % 4}`, () => {
+    const { c, g } = A(7, 5);
+    px(g, 1, 2, 5, 2, "#4a4038");
+    px(g, 2, 1, 3, 1, "#5c5148");
+    px(g, 1, 4, 5, 1, "#2b241f");
+    if (seed % 2) px(g, 4, 2, 1, 1, "#6f6255");
+    return up(c);
+  });
+}
+
+/** Ossada antiga: lembrete de que algo viveu aqui. */
+export function bonesSprite(seed = 0) {
+  return cached(`bones:${seed % 2}`, () => {
+    const { c, g } = A(11, 7);
+    px(g, 1, 3, 7, 1, "#d8d2c0");
+    px(g, 1, 3, 1, 3, "#d8d2c0");
+    px(g, 7, 3, 1, 3, "#d8d2c0");
+    px(g, 2, 2, 1, 1, "#efe9d8");
+    px(g, 3, 5, 5, 1, "#bdb6a4");
+    px(g, 8, 1, 2, 2, "#d8d2c0");
+    px(g, 9, 0, 1, 1, "#efe9d8");
+    return up(c);
+  });
+}

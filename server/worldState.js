@@ -105,6 +105,7 @@ function fillGrid(w, h, tile) {
 export function createRegionMap(regionId) {
   const def = REGION_DEFS[regionId];
   if (!def) return null;
+  if (regionId.startsWith("caverna")) return createCaveMap(Number(regionId.replace("caverna", "")) || 1);
   const { w, h } = def.size;
   const rand = mulberry32(regionId.split("").reduce((a, c) => a + c.charCodeAt(0), 7919));
 
@@ -177,9 +178,162 @@ export function createRegionMap(regionId) {
   return fillGrid(w, h, TILE.GRASS);
 }
 
+/**
+ * Gera um andar da caverna.
+ * Piso caminhável, paredes de rocha e corredores orgânicos conectando
+ * a entrada, a escada e uma câmara central. `floor` 1..3 muda o tamanho
+ * das salas e a quantidade de veios de cristal.
+ */
+export function createCaveMap(floor = 1) {
+  const def = REGION_DEFS[`caverna${floor}`];
+  const { w, h } = def.size;
+  const rand = mulberry32(1337 + floor * 97);
+  const tiles = fillGrid(w, h, TILE.CAVE_WALL);
+
+  const carve = (cx, cy, rx, ry) => {
+    for (let y = Math.max(1, cy - ry); y <= Math.min(h - 2, cy + ry); y++) {
+      for (let x = Math.max(1, cx - rx); x <= Math.min(w - 2, cx + rx); x++) {
+        const dx = (x - cx) / rx, dy = (y - cy) / ry;
+        if (dx * dx + dy * dy <= 1 + (rand() - 0.5) * 0.35) tiles[y][x] = TILE.CAVE_FLOOR;
+      }
+    }
+  };
+  const tunnel = (x0, y0, x1, y1, width = 1) => {
+    const steps = Math.max(Math.abs(x1 - x0), Math.abs(y1 - y0));
+    for (let i = 0; i <= steps; i++) {
+      const t = i / Math.max(1, steps);
+      const x = Math.round(x0 + (x1 - x0) * t);
+      const y = Math.round(y0 + (y1 - y0) * t);
+      for (let oy = -width; oy <= width; oy++) {
+        for (let ox = -width; ox <= width; ox++) {
+          const nx = x + ox, ny = y + oy;
+          if (nx > 0 && ny > 1 && nx < w - 1 && ny < h - 1) tiles[ny][nx] = TILE.CAVE_FLOOR;
+        }
+      }
+    }
+  };
+
+  const entry = def.cave.spawn;
+  carve(entry.x + 4, entry.y - 2, 5, 3);
+  carve(Math.floor(w / 2), Math.floor(h / 2), floor === 3 ? 7 : 6, floor === 3 ? 5 : 4);
+  if (def.cave.stairs) carve(def.cave.stairs.x - 2, def.cave.stairs.y + 2, 4, 3);
+  if (floor >= 2) carve(Math.floor(w * 0.75), Math.floor(h * 0.3), 4, 3);
+  // liga tudo
+  tunnel(entry.x + 2, entry.y - 2, Math.floor(w / 2) - 3, Math.floor(h / 2), 1);
+  if (def.cave.stairs) tunnel(Math.floor(w / 2) + 3, Math.floor(h / 2), def.cave.stairs.x - 2, def.cave.stairs.y + 1, 1);
+  if (floor >= 2) tunnel(Math.floor(w * 0.75) - 2, Math.floor(h * 0.3), Math.floor(w / 2) + 2, Math.floor(h / 2) - 2, 1);
+  // lago subterrâneo no andar 2+
+  if (floor >= 2) {
+    const lx = Math.floor(w * 0.62), ly = Math.floor(h * 0.74);
+    carve(lx, ly, 3, 2);
+    for (let y = ly - 2; y <= ly + 2; y++) {
+      for (let x = lx - 3; x <= lx + 3; x++) {
+        if (tiles[y]?.[x] === TILE.CAVE_FLOOR && Math.abs(x - lx) + Math.abs(y - ly) < 4) tiles[y][x] = TILE.WATER;
+      }
+    }
+  }
+  // veios de cristal nas paredes (dá pra minerar de perto)
+  const veins = 6 + floor * 3;
+  for (let i = 0; i < veins; i++) {
+    for (let tries = 0; tries < 40; tries++) {
+      const x = 1 + Math.floor(rand() * (w - 2));
+      const y = 2 + Math.floor(rand() * (h - 3));
+      if (tiles[y][x] !== TILE.CAVE_WALL) continue;
+      const touchesFloor =
+        tiles[y + 1]?.[x] === TILE.CAVE_FLOOR || tiles[y - 1]?.[x] === TILE.CAVE_FLOOR ||
+        tiles[y]?.[x + 1] === TILE.CAVE_FLOOR || tiles[y]?.[x - 1] === TILE.CAVE_FLOOR;
+      if (!touchesFloor) continue;
+      tiles[y][x] = TILE.CAVE_CRYSTAL;
+      break;
+    }
+  }
+  // escadas
+  const ex = def.cave.exit;
+  tiles[ex.y][ex.x] = TILE.CAVE_STAIRS_UP;
+  if (def.cave.stairs) {
+    const st = def.cave.stairs;
+    tiles[st.y][st.x] = TILE.CAVE_STAIRS_DOWN;
+  }
+  // garante que a saída/escada estejam cercadas de piso
+  for (const p of [ex, def.cave.stairs].filter(Boolean)) {
+    for (let oy = -1; oy <= 1; oy++) {
+      for (let ox = -1; ox <= 1; ox++) {
+        const nx = p.x + ox, ny = p.y + oy;
+        if (tiles[ny]?.[nx] === TILE.CAVE_WALL) tiles[ny][nx] = TILE.CAVE_FLOOR;
+      }
+    }
+  }
+  tiles[ex.y][ex.x] = TILE.CAVE_STAIRS_UP;
+  if (def.cave.stairs) tiles[def.cave.stairs.y][def.cave.stairs.x] = TILE.CAVE_STAIRS_DOWN;
+  // a entrada tem que estar livre (o gerador pode ter deixado parede nela)
+  const sp = def.cave.spawn;
+  for (let oy = 0; oy <= 1; oy++) {
+    for (let ox = 0; ox <= 1; ox++) {
+      const nx = sp.x + ox, ny = sp.y + oy;
+      if (tiles[ny]?.[nx] === TILE.CAVE_WALL || tiles[ny]?.[nx] === TILE.CAVE_CRYSTAL) {
+        tiles[ny][nx] = TILE.CAVE_FLOOR;
+      }
+    }
+  }
+  // e as escadas também
+  for (const p of [ex, def.cave.stairs].filter(Boolean)) {
+    if (tiles[p.y]?.[p.x] === TILE.CAVE_WALL) tiles[p.y][p.x] = TILE.CAVE_FLOOR;
+  }
+  tiles[ex.y][ex.x] = TILE.CAVE_STAIRS_UP;
+  if (def.cave.stairs) tiles[def.cave.stairs.y][def.cave.stairs.x] = TILE.CAVE_STAIRS_DOWN;
+
+  ensureCaveConnected(tiles, [sp, ex, def.cave.stairs].filter(Boolean));
+  return tiles;
+}
+
+/**
+ * Garante que os pontos importantes do andar (entrada, saída, escada)
+ * estejam ligados por piso. Se não estiverem, cava um túnel reto entre
+ * eles — melhor um corredor simples do que um andar impossível.
+ */
+function ensureCaveConnected(tiles, points) {
+  if (!points.length) return;
+  const walkable = (t) => t !== undefined && t !== TILE.CAVE_WALL && t !== TILE.CAVE_CRYSTAL && t !== TILE.WATER;
+  const reach = (from, to) => {
+    const H = tiles.length, W = tiles[0].length;
+    const seen = new Set();
+    const q = [[from.x, from.y]];
+    while (q.length) {
+      const [x, y] = q.shift();
+      const key = `${x},${y}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (x === to.x && y === to.y) return true;
+      if (x < 0 || y < 0 || x >= W || y >= H) continue;
+      if (!walkable(tiles[y][x])) continue;
+      q.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+    }
+    return false;
+  };
+  const carveLine = (a, b) => {
+    const steps = Math.max(Math.abs(b.x - a.x), Math.abs(b.y - a.y), 1);
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const x = Math.round(a.x + (b.x - a.x) * t);
+      const y = Math.round(a.y + (b.y - a.y) * t);
+      for (let oy = 0; oy <= 1; oy++) {
+        for (let ox = 0; ox <= 1; ox++) {
+          const nx = x + ox, ny = y + oy;
+          if (nx > 0 && ny > 1 && nx < tiles[0].length - 1 && ny < tiles.length - 1 && tiles[ny][nx] === TILE.CAVE_WALL) {
+            tiles[ny][nx] = TILE.CAVE_FLOOR;
+          }
+        }
+      }
+    }
+  };
+  for (let i = 1; i < points.length; i++) {
+    if (!reach(points[0], points[i])) carveLine(points[0], points[i]);
+  }
+}
+
 export function ensureRegions(world) {
   world.regions ||= {};
-  for (const id of ["vila", "ilha", "cidade"]) {
+  for (const id of ["vila", "ilha", "cidade", "caverna1", "caverna2", "caverna3"]) {
     if (!world.regions[id]?.tiles?.length) {
       world.regions[id] = { tiles: createRegionMap(id) };
     }
@@ -204,7 +358,11 @@ export function createWorldState(roomCode) {
       vila: { tiles: createRegionMap("vila") },
       ilha: { tiles: createRegionMap("ilha") },
       cidade: { tiles: createRegionMap("cidade") },
+      caverna1: { tiles: createRegionMap("caverna1") },
+      caverna2: { tiles: createRegionMap("caverna2") },
+      caverna3: { tiles: createRegionMap("caverna3") },
     },
+    cave: { deepest: 0, crystals: 0 },
     coop: { week: 0, progress: {}, completed: [] },
     festival: null,
     createdAt: Date.now(),

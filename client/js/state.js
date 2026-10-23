@@ -143,17 +143,26 @@ export function isColliding(x, y) {
   return false;
 }
 
+/**
+ * Transformação usada para desenhar o mundo neste frame.
+ * O renderer atualiza isso; o clique e o hover usam a mesma conta.
+ */
+game.view = { ox: 0, oy: 0, scale: 32 };
+game.viewInterior = null;
+
 export function screenToWorld(sx, sy, canvas) {
+  const v = game.view || { ox: 0, oy: 0, scale: 32 };
   return {
-    x: (sx - canvas.width / 2) / 32 + game.camera.x,
-    y: (sy - canvas.height / 2) / 32 + game.camera.y,
+    x: (sx - v.ox) / v.scale,
+    y: (sy - v.oy) / v.scale,
   };
 }
 
 export function worldToScreen(wx, wy, canvas) {
+  const v = game.view || { ox: 0, oy: 0, scale: 32 };
   return {
-    x: (wx - game.camera.x) * 32 + canvas.width / 2,
-    y: (wy - game.camera.y) * 32 + canvas.height / 2,
+    x: wx * v.scale + v.ox,
+    y: wy * v.scale + v.oy,
   };
 }
 
@@ -199,8 +208,12 @@ export function isNearForest() {
 
 export function isNearStone() {
   const tx = Math.floor(game.x), ty = Math.floor(game.y);
+  const cave = String(game.region || "").startsWith("caverna");
   for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) {
-    if (tileAt(tx + dx, ty + dy) === TILE.STONE) return true;
+    const t = tileAt(tx + dx, ty + dy);
+    if (t === TILE.STONE) return true;
+    // na caverna a rocha é a parede e o veio de cristal
+    if (cave && (t === TILE.CAVE_WALL || t === TILE.CAVE_CRYSTAL)) return true;
   }
   return false;
 }
@@ -344,7 +357,9 @@ function isCollidingIndoor(x, y) {
 }
 
 export function screenToWorldInterior(sx, sy, canvas) {
-  // interiors têm câmera fixa centrada
+  const v = game.viewInterior;
+  if (v) return { x: (sx - v.ox) / v.scale, y: (sy - v.oy) / v.scale };
+  // fallback: câmera fixa centrada
   const cx = INTERIOR_W / 2, cy = INTERIOR_H / 2;
   return {
     x: (sx - canvas.width / 2) / 32 + cx,

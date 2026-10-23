@@ -28,3 +28,6 @@ Thumbs.db
 
 # Pacotes de handoff (artefatos, não fazem parte do jogo)
 *.zip
+
+# Rascunhos de teste e screenshots de trabalho (não fazem parte do jogo)
+.work/

@@ -86,9 +86,11 @@ export function connect(profile) {
     ui.updateHUD();
   });
 
-  socket.on("playerMoved", ({ id, x, y, dir }) => {
+  socket.on("playerMoved", ({ id, x, y, dir, region }) => {
     const p = game.players.get(id);
     if (!p) return;
+    // pacote de outra região não pode reposicionar o jogador aqui
+    if (region && (p.region || "vale") !== region) return;
     p.x = x; p.y = y; p.dir = dir;
     if (p.renderX === undefined) { p.renderX = x; p.renderY = y; }
   });
@@ -117,8 +119,11 @@ export function connect(profile) {
     try{ if(window.onNewDaySleep) window.onNewDaySleep(d); }catch{}
   });
 
-  socket.on("tileUpdate", ({ x, y, tile }) => {
-    if (game.world.tiles[y]) game.world.tiles[y][x] = tile;
+  socket.on("tileUpdate", ({ x, y, tile, region }) => {
+    // cada região tem seu próprio mapa: o update não pode cair no vale por engano
+    const r = region || "vale";
+    const tiles = r === "vale" ? game.world.tiles : game.regions?.[r]?.tiles;
+    if (tiles?.[y]) tiles[y][x] = tile;
   });
 
   socket.on("tilesReload", ({ tiles }) => { game.world.tiles = tiles; ui.notify("🌉 A paisagem mudou!", "success"); });
@@ -237,7 +242,7 @@ export function connect(profile) {
       if (region === "vale") game.world.tiles = tiles;
       else { game.regions ||= {}; game.regions[region] = { ...(game.regions[region]||{}), tiles }; }
     }
-    ui.updateHUD(); ui.updatePlayerList(); ui.notify(`Chegou em ${regionDef.name}!`, "success"); sfx("levelup");
+    ui.updateHUD(); ui.updatePlayerList(); sfx("levelup");
     if(ui.panelIs("mapPanel")) ui.renderMap();
     ui.renderAgenda&&ui.renderAgenda();
   });
@@ -253,8 +258,14 @@ export function connect(profile) {
     if (ui.panelIs("mapPanel")) ui.renderMap();
   });
 
-  socket.on("playerRegionChanged", ({id, region})=>{
-    const p=game.players.get(id); if(p) p.region=region;
+  socket.on("playerRegionChanged", ({ id, region, x, y })=>{
+    const p = game.players.get(id);
+    if (p) {
+      p.region = region;
+      // o jogador pode estar parado na região nova: a posição vem no evento
+      if (Number.isFinite(x)) { p.x = x; p.renderX = x; }
+      if (Number.isFinite(y)) { p.y = y; p.renderY = y; }
+    }
     ui.updatePlayerList();
   });
   socket.on("joinError", ({ error }) => {

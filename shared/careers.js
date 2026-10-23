@@ -360,7 +360,47 @@ export const REGION_DEFS = {
       { id: "aeroporto", name: "Aeroporto Regional", x: 17, y: 20, w: 8, h: 4, color: "#aed6f1", roof: "#21618c", icon: "✈️" },
     ],
   },
+  // ---------- Caverna do Vale (3 andares) ----------
+  caverna1: {
+    id: "caverna1", name: "Caverna — Galeria do Musgo", icon: "⛰️",
+    size: { w: 34, h: 22 },
+    desc: "Primeiro andar da caverna: túneis largos, musgo nas paredes e veios de minério.",
+    portal: "mina",
+    npcs: [],
+    buildings: [],
+    cave: { floor: 1, spawn: { x: 6, y: 18 }, exit: { x: 4, y: 18 }, stairs: { x: 29, y: 4 } },
+  },
+  caverna2: {
+    id: "caverna2", name: "Caverna — Veio Profundo", icon: "⛰️",
+    size: { w: 34, h: 22 },
+    desc: "Segundo andar: galerias estreitas, cristais nas paredes e lagos subterrâneos.",
+    portal: "mina",
+    npcs: [],
+    buildings: [],
+    cave: { floor: 2, spawn: { x: 5, y: 18 }, exit: { x: 3, y: 18 }, stairs: { x: 29, y: 17 } },
+  },
+  caverna3: {
+    id: "caverna3", name: "Caverna — Coração de Cristal", icon: "⛰️",
+    size: { w: 34, h: 22 },
+    desc: "Terceiro andar: a câmara dos cristais. Poucos chegam até aqui.",
+    portal: "mina",
+    npcs: [],
+    buildings: [],
+    cave: { floor: 3, spawn: { x: 5, y: 18 }, exit: { x: 3, y: 18 }, stairs: null },
+  },
 };
+
+/** Andares da caverna em ordem, com o que cada um exige para descer. */
+export const CAVE_FLOORS = [
+  { id: "caverna1", floor: 1, needCrystals: 0, name: "Galeria do Musgo", desc: "Aberta a qualquer hora." },
+  { id: "caverna2", floor: 2, needCrystals: 3, name: "Veio Profundo", desc: "Precisa de 3 cristais para descer." },
+  { id: "caverna3", floor: 3, needCrystals: 8, name: "Coração de Cristal", desc: "Precisa de 8 cristais para descer." },
+];
+
+/** Qualquer região da caverna? */
+export function isCaveRegion(id) {
+  return String(id || "").startsWith("caverna");
+}
 
 // Novos NPCs regionais (os do vale continuam em constants.js)
 export const REGION_NPCS = [
