@@ -194,7 +194,10 @@ ok("Prévia do criador visível", !!creatorHost?.querySelector(".creatorPreviewC
 const bodyTabs = [...window.document.querySelectorAll(".creatorTab")].map((b) => b.textContent.trim());
 ok("Abas do criador (10 categorias)", bodyTabs.length === 10, bodyTabs.join(","));
 const bodyOpts = creatorHost?.querySelectorAll(".creatorOpt") || [];
-ok("Corpo mostra 12 opções (2 por idade)", bodyOpts.length === 12, `${bodyOpts.length} opções`);
+ok("Corpo mostra 24 opções (4 por idade)", bodyOpts.length === 24, `${bodyOpts.length} opções`);
+const bodyIds = [...bodyOpts].map((b) => b.dataset.value || b.dataset.id || "").filter(Boolean);
+const byAge = bodyIds.reduce((acc, id) => { const age = id.split("_")[0]; acc[age] = (acc[age] || 0) + 1; return acc; }, {});
+ok("Cada idade tem exatamente 4 corpos", ["newborn","baby","child","teen","adult","elder"].every((a) => byAge[a] === 4), JSON.stringify(byAge));
 ok("Nenhuma opção começa escondida", [...bodyOpts].every((b) => b.offsetParent !== null || b.style.display !== "none"));
 // escolher a segunda opção não pula a seleção
 if (bodyOpts[2]) {

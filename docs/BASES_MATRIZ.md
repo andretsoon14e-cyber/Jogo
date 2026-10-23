@@ -3,26 +3,26 @@
 > Este documento substitui a auditoria de 2026-10-22, que descrevia 15 arquivos PNG de base.
 > **Esses PNGs não são mais usados.** O personagem hoje é desenhado por código no rig (`client/js/art/rig.js`), em saída nativa **26×49** (arte 24×48 com 1px de contorno em cada lado). Não existe mais "base PNG" para importar: toda base é uma `BODY_OPTIONS` com proporções próprias.
 
-## 1. Corpos (12 opções = 2 por idade)
+## 1. Corpos (24 opções = 4 por idade)
 
 Fonte: `shared/constants.js` → `BODY_OPTIONS` (todas `gender: "uni"`).
 
 | Idade | Opções | Escala | Observação |
 |---|---|---|---|
-| Recém-nascido | `newborn_A`, `newborn_B` | 0.72 | só cabeça + manta (`bundle: true`), sem pernas; A = cobertor xadrez, B = touca de tricô |
-| Bebê | `baby_A`, `baby_B` | 0.80 | claramente menor que a criança; A encorpado (cabeça 9), B franzino (cabeça 8) |
-| Criança | `child_A`, `child_B` | 0.88 | cabeça grande, corpo curto; A robusta, B esguia |
-| Adolescente | `teen_A`, `teen_B` | 0.95 | mais esguio que adulto; A ombros largos, B tronco fino |
-| Adulto | `adult_A`, `adult_B` | 1.00 | A tronco cheio, B cintura marcada e pernas longas |
-| Idoso | `elder_A`, `elder_B` | 0.98 | A curvado (`stoop: 1`), B ereto e grisalho |
+| Recém-nascido | `newborn_A..D` | 0.72 | só cabeça + manta (`bundle: true`), sem pernas; mantas creme, verde + touca, pêssego xadrez e azul |
+| Bebê | `baby_A..D` | 0.80 | claramente menor que a criança; A encorpado, B franzino, C bochechudo, D pequenino |
+| Criança | `child_A..D` | 0.88 | cabeça grande, corpo curto; A robusta, B esguia, C alta, D pequena |
+| Adolescente | `teen_A..D` | 0.95 | A atlético, B esguio, C alto (tronco 15), D pequeno |
+| Adulto | `adult_A..D` | 1.00 | A encorpado (42px), B esguio (41), C alto (43), D robusto (40) |
+| Idoso | `elder_A..D` | 0.98 | A/B curvados, C careca de barba longa, D com coque e saia |
 
-**Como as duas opções diferem:** silhueta e postura, não gênero (todas as 12 são `uni`). Na prática, `metricsFor()` dá **+1px de corpo e −1px de perna** para a variante A, e o inverso para a B; a cabeça é 1px mais larga em `baby_A`/`adult_A`. `drawNewborn` tem desenho próprio (cabeça redonda + trouxa de pano), sem corpo nem braços.
+**Como as quatro opções diferem:** silhueta e postura, não gênero (todas as 24 são `uni`). `metricsFor()` expõe `legH/torsoH/headH/shoulderW/waistW/hipW/armW`: A tende a tronco cheio, B a cintura marcada, C a pernas/tronco longos, D a ombros e quadril largos com `armW: 3`. Todas mantêm `headTop >= 4` para o cabelo caber. `drawNewborn` tem desenho próprio (cabeça redonda + trouxa de pano), sem corpo nem braços.
 
 ## 2. Categorias de personalização
 
 | Categoria | Total | Masc | Fem | Uni | Fonte |
 |---|---|---|---|---|---|
-| Corpo | 12 | — | — | 12 | `BODY_OPTIONS` |
+| Corpo | 24 | — | — | 24 | `BODY_OPTIONS` |
 | Cabelo | 20 | 7 | 11 | 2 | `HAIR_STYLE_OPTIONS` |
 | Camisa | 16 | 7 | 8 | 1 | `SHIRT_OPTIONS` |
 | Calça / saia | 16 | 7 | 7 | 2 | `PANTS_OPTIONS` |

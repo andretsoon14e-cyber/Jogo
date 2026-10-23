@@ -9,27 +9,30 @@ Pixel art acolhedora e original: paleta quente (verde-oliva, madeira, pergaminho
 ## Sprites de mapa
 
 - Arte nativa **24×48** (`rig.js`), contorno de 1px → saída **26×49**; `RIG_SCALE = 2` → **52×98 px** na tela (escala inteira, sem borrão). A resolução subiu de 16×32 para 24×48 em 2026-10-23 justamente para o rosto caber sem amassar.
-- 6 idades, 2 silhuetas por idade (`newborn_A/B` … `elder_A/B`), 4 direções, 4 quadros de caminhada + pose de ferramenta.
-- Pés sempre na linha 31 do rig: nenhum quadro flutua; sombra elíptica discreta embaixo.
-- **Cabeça grande em todas as fases** (12px de altura; 13px no idoso, para caber barba sem esmagar o rosto) e pescoço de 1px. Altura visível (`legH + torsoH + headH - 2`): bebê 24–25, criança 27–30, adolescente 34–36, adulto 40–42, idoso 39–40.
-- Rosto: olhos **3×3** com 1px de brilho, separados por 3px, sobrancelhas de 3px na cor do cabelo, nariz de 1px e boca de 2px. Nada de olho colado no outro (era o defeito da versão 16×32).
-- Corpo em 2–3 tons: luz no lado esquerdo, sombra no direito, contorno `#2a1c12` por fora.
-- Pernas com `legW = (bodyW - 1) / 2` e **vinco escuro de 1px** entre elas (nunca pele aparecendo no meio); calça com cinto + fivela, joelho marcado, barra e sapato/bota de 2px com bico.
-- Mangas de `m.arm` px com punho; a **mão de pele** é desenhada depois da manga (`drawHands`), alinhada à barra da manga, senão o braço vira um toco.
-- Olhos **3×3** com folga de 2–3px entre eles (gap derivado de `headW/5`), brilho de 1px no miolo; sobrancelhas de 3px; nariz de 1px; boca de 2px. Cabelo com franja de 1px nos cantos e topo arredondado — se o topo ficar reto, vira capacete.
-- Recém-nascido é desenhado por função própria (`drawNewborn`): cabeça apoiada em **manta clara com pregas**, mãozinhas aparecendo, sem pernas nem braços. Variante B usa touca de tricô.
+- **4 silhuetas por idade** (`newborn_A..D` … `elder_A..D`, 24 corpos no total), todas em `VARIANT_SHAPE`/`BODY_VARIANTS` e disponíveis no criador (`BODY_OPTIONS`).
+- 4 direções, 4 quadros de caminhada + pose de ferramenta. Pés sempre na última linha (índice 47) do rig: nenhum quadro flutua; sombra elíptica discreta embaixo.
+- A altura total é `legH + torsoH + headH`; com `headTop = 47 - (legH + torsoH + headH)` é preciso sobrar **≥ 4 linhas acima da cabeça** para o cabelo (topo da calota + mecha). Adultos: 40–43px visíveis, com variação real entre A (encorpado), B (esguio), C (alto) e D (robusto).
+- **Cabeça oval em 3 degraus** (3/2/1 px de recuo no topo e no queixo) e pescoço de 1px. A cabeça continua grande em todas as fases (11–14px de altura), o que dá a leitura "cozy" sem virar chibi.
+- Rosto: olhos de **3×3** (ou 2×2 quando `headH < 13`), com **cílio escuro, íris colorida, pupila de 1px e 1px de brilho**; separação de 2–3px (`headW >= 14 ? 3 : 2`). Sobrancelha de 2–3px na cor do cabelo, 1px acima do olho; nariz de 1px em `shade(skin, -0.13)`; boca de 2px com canto escuro e lábio inferior claro. Nunca olho colado no outro.
+- Silhueta do tronco desenhada por **uma única peça** (`silRow`): trapézio ombro → cintura → quadril com o braço fundido (sem fresta escura entre braço e peito). Manga comprida até o punho na altura do quadril e **mão de pele** desenhada depois (`drawHands`), 2px, alinhada à barra da manga.
+- Pernas: duas colunas que afinam no tornozelo, **vão de 1–2px em `OUTLINE`** entre elas (não é vinco de sombra), joelho, barra e bota de 2–3px com bico.
+- Camisa em 2–3 tons (luz à esquerda, sombra à direita, barra mais escura), gola (V / redonda / botão), carcela, botões, bolso, punho canelado e 13 estampas: `solid`, `plaid`, `striped`, `floral`, `bow`, `sweater`, `hoodie`, `overalls`, `jumpsuit`, `western`, `denim`, `hearts`, `ruffled`, `cardigan`. Calça em `long`, `shorts` e `skirt`; avental opcional (`apron`).
+- Cabelo: 23 estilos em `HAIR_STYLES`, todos com **calota em degraus + franja + mecha lateral que emoldura o rosto** (a mecha afina na ponta). A coroa é limitada ao espaço acima da cabeça (`min(cfg.crown, hy)`), então nenhum estilo estoura o canvas.
+- Recém-nascido é desenhado por função própria (`drawNewborn`): cabeça apoiada em **manta clara com pregas**, mãozinhas aparecendo, sem pernas nem braços. Cada variante A–D usa uma paleta de manta (creme, verde, pêssego, azul).
 - Idoso tem `stoop: 1` (costas curvadas), cabelo/barba grisalhos e **bengala** (`spec.cane`, cor opcional); os NPCs idosos da vila já usam.
 
 ### Roupa-símbolo por idade (prancha `client/proposta-idades.html`)
 
-| Idade | Opção A | Opção B |
-|-------|---------|---------|
-| Recém-nascido | manta creme | manta verde + touca |
-| Bebê | macacãozinho creme + shorts | listrado azul |
-| Criança | macacão jeans (`overalls`) | macacão jeans claro |
-| Adolescente | moletom vermelho (`hoodie`) + tênis branco | moletom oliva |
-| Adulto | camisa xadrez verde + jeans + bota | xadrez azul, build mais esguio |
-| Idoso | cardigã marrom (`cardigan`) + bengala | cardigã azul + bengala |
+| Idade | A | B | C | D |
+|-------|---|---|---|---|
+| Recém-nascido | manta creme | manta verde + touca | manta pêssego | manta azul |
+| Bebê | macacãozinho creme + shorts | listrado azul | vestidinho rosa | macacão mostarda |
+| Criança | macacão jeans (`overalls`) | macacão jeans claro | vestido floral (`skirt`) | camiseta + short |
+| Adolescente | moletom vermelho (`hoodie`) | moletom oliva | jaqueta jeans | vestido lilás (`ruffled`) |
+| Adulto | xadrez verde | xadrez azul, esguio | camisa western | avental de cozinha |
+| Idoso | cardigã marrom + bengala | cardigã azul + bengala | xadrez cinza, careca | cardigã rosa + saia |
+
+A prancha tem ainda as **peças avulsas** (24 cabelos, 8 chapéus, 14 camisas, 3 calças) sempre no mesmo corpo neutro, e uma seção de **vestidos montados** para conferir caimento.
 
 ## Retratos de diálogo
 

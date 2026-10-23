@@ -149,6 +149,7 @@ export function mountCreator(host, { game, onChange, sfx = () => {} }) {
       const b = document.createElement("button");
       b.type = "button";
       b.className = "creatorOpt" + (opt.id === current ? " selected" : "");
+      b.dataset.value = opt.id;
       b.title = opt.name + (opt.desc ? ` — ${opt.desc}` : "");
 
       if (section.kind === "swatch") {

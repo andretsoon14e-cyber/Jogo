@@ -109,12 +109,15 @@ for (let d = 0; d < 3; d++) {
 const beforeHarvest = await waitFor(A.socket, "coopUpdate", () => true, 900);
 const beforeVal = beforeHarvest?.find((m) => m.id === "colheita")?.progress ?? harvestBefore;
 
+// Os dois avisos saem na mesma colheita e a ordem não é garantida:
+// escutar o inventário ANTES de emitir evita perder o evento (corrida do teste).
+const invWait = waitFor(A.socket, "inventoryUpdate", (i) => (i?.nabo || 0) > 0, 2500);
 const coopUpd = waitFor(A.socket, "coopUpdate", (list) => (list?.find((m) => m.id === "colheita")?.progress || 0) > beforeVal, 4000);
 A.socket.emit("interact", { type: "harvest", data: { x: 23, y: 16 } });
 const after = await coopUpd;
 ok("Colher avança o mutirão cooperativo da sala", !!after, after ? `progresso ${after.find((m) => m.id === "colheita").progress}` : "sem coopUpdate");
 
-const inv = await waitFor(A.socket, "inventoryUpdate", (i) => (i?.nabo || 0) > 0, 2500);
+const inv = await invWait;
 ok("Quem colheu recebe o item", !!inv, inv ? `nabo=${inv.nabo}` : "sem item");
 
 A.socket.disconnect();
