@@ -444,6 +444,12 @@ export const HAIR_STYLE_OPTIONS = [
   { id: "undercut", name: "Undercut", gender: "masc", asset: "layer_hair_undercut.png" },
   { id: "long_wavy_masc", name: "Longo ondulado", gender: "masc" },
   { id: "braid_long", name: "Trança longa", gender: "fem" },
+  { id: "bob_chic", name: "Bob chic", gender: "fem" },
+  { id: "pony_side", name: "Rabo lateral", gender: "fem" },
+  { id: "twin_tails", name: "Duas marias", gender: "fem" },
+  { id: "braid_side", name: "Trança no ombro", gender: "fem" },
+  { id: "curly_short", name: "Cacheado curto", gender: "uni" },
+  { id: "wavy_long", name: "Ondulado longo", gender: "fem" },
 ];
 export const BODY_OPTIONS = [
   { id: "newborn_A", name: "Recém-nascido — cobertor", age: "newborn", gender: "uni", scale: 0.72 },

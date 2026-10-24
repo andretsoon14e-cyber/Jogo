@@ -45,6 +45,20 @@ export function shade(hex, k) {
   return `#${[f(r), f(g), f(b)].map((v) => v.toString(16).padStart(2, "0")).join("")}`;
 }
 
+/** Mistura duas cores hex em proporção t (0..1). */
+export function mixc(a, b, t) {
+  const pr = (hex) => {
+    const h = hex.replace("#", "");
+    const n = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+    return [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16));
+  };
+  const [ar, ag, ab] = pr(a);
+  const [br, bg, bb] = pr(b);
+  const f = (v) => Math.max(0, Math.min(255, Math.round(v)));
+  return `#${[f(ar + (br - ar) * t), f(ag + (bg - ag) * t), f(ab + (bb - ab) * t)]
+    .map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
 function px(g, x, y, w, h, col) {
   if (!col || w <= 0 || h <= 0) return;
   g.fillStyle = col;
@@ -286,19 +300,23 @@ function drawNewborn(g, m, dir, skin, opts) {
  * Olho 3×2 no estilo da referência: esclera branca em cima e, na linha de
  * baixo, íris colorida e pupila escura.
  */
-function drawEyePx(g, x, y, w, h, iris, eyeColor) {
+function drawEyePx(g, x, y, w, h, iris, eyeColor, flip) {
+  // Modelo dos bonecos da referência: pálpebra escura em cima, esclera com
+  // íris colorida e pupila embaixo. Sem a pálpebra o olho vira "óculos".
   const white = "#fbf6ea";
+  const lash = shade(eyeColor, -0.62);
   if (w >= 3) {
-    px(g, x, y, w, 1, white);
-    px(g, x, y + 1, 1, 1, iris);
-    px(g, x + 1, y + 1, 1, 1, eyeColor);
-    px(g, x + 2, y + 1, 1, 1, shade(white, -0.1));
-    if (h > 2) px(g, x, y + 2, w, 1, white);
+    px(g, x, y, w, 1, lash);
+    const cols = flip
+      ? [shade(white, -0.1), eyeColor, shade(iris, 0.06)]
+      : [shade(iris, 0.06), eyeColor, shade(white, -0.1)];
+    px(g, x, y + 1, 1, 1, cols[0]);
+    px(g, x + 1, y + 1, 1, 1, cols[1]);
+    px(g, x + 2, y + 1, 1, 1, cols[2]);
   } else {
-    px(g, x, y, w, 1, white);
-    px(g, x + 1, y, 1, 1, iris);
-    px(g, x, y + 1, 1, 1, eyeColor);
-    px(g, x + 1, y + 1, 1, 1, white);
+    px(g, x, y, w, 1, lash);
+    px(g, x, y + 1, 1, 1, flip ? eyeColor : shade(iris, 0.06));
+    px(g, x + 1, y + 1, 1, 1, flip ? shade(iris, 0.06) : eyeColor);
   }
 }
 
@@ -388,13 +406,13 @@ export function drawBaseBody(g, m, dir, frame, skin, skinShade, opts = {}) {
   }
 
   // ---- rosto ----
-  const eyeH = hh >= 13 ? 3 : 2;
+  const eyeH = 2;
   const eyeW = hw >= 12 ? 3 : 2;
   const eyeGap = hw >= 14 ? 3 : 2;
   const eyeY = hy + Math.max(3, Math.round(hh * 0.36));
   const eye = opts.eye || "#3b2b21";
   const iris = shade(opts.eyeLight || shade(eye, 0.34), -0.18);
-  const brow = shade(opts.hair || "#4a3020", -0.04);
+  const brow = mixc(opts.hair || "#4a3020", skin, 0.35);
   const mouth = shade(skin, -0.52);
   const eyeL = CX - Math.floor((eyeW * 2 + eyeGap) / 2);
   const eyeR = eyeL + eyeW + eyeGap;
@@ -402,24 +420,25 @@ export function drawBaseBody(g, m, dir, frame, skin, skinShade, opts = {}) {
     if (side) {
       // perfil: um olho, virado para o lado
       const ex = dir === "right" ? hx + hw - eyeW - 1 : hx + 1;
-      drawEyePx(g, ex, eyeY, eyeW, eyeH, iris, eye);
+      drawEyePx(g, ex, eyeY, eyeW, eyeH, iris, eye, dir === "left");
       px(g, dir === "right" ? hx + hw - 1 : hx, eyeY - 1, 1, eyeH + 1, sd);
       px(g, ex, eyeY - 2, eyeW + 1, 1, brow);
       px(g, dir === "right" ? hx + hw - eyeW - 2 : hx + 2, eyeY + eyeH + 2, 2, 1, mouth);
     } else {
-      drawEyePx(g, eyeL, eyeY, eyeW, eyeH, iris, eye);
-      drawEyePx(g, eyeR, eyeY, eyeW, eyeH, iris, eye);
+      drawEyePx(g, eyeL, eyeY, eyeW, eyeH, iris, eye, false);
+      drawEyePx(g, eyeR, eyeY, eyeW, eyeH, iris, eye, true);
       // sobrancelhas de 2px, 1px acima da pálpebra
       px(g, eyeL, eyeY - 2, Math.max(2, eyeW), 1, brow);
       px(g, eyeR, eyeY - 2, Math.max(2, eyeW), 1, brow);
-      // nariz de 1px
-      px(g, CX - 1, eyeY + eyeH + 1, 1, 1, shade(skin, -0.13));
-      // boca de 2px, discreta
+      // boca: 2px com cantinhos erguidos (sorriso discreto)
       const mY = eyeY + eyeH + 2;
       px(g, CX - 1, mY, 2, 1, mouth);
-      // bochechas suaves
-      px(g, eyeL - 1, eyeY + eyeH, 1, 1, "rgba(228,128,112,.2)");
-      px(g, eyeR + eyeW, eyeY + eyeH, 1, 1, "rgba(228,128,112,.2)");
+      // bochechas com cor sólida (alma no rosto)
+      if (hw >= 12) {
+        const blush = mixc(skin, "#e2766a", 0.3);
+        px(g, eyeL - 1, eyeY + eyeH, 1, 1, blush);
+        px(g, eyeR + eyeW, eyeY + eyeH, 1, 1, blush);
+      }
     }
   } else {
     px(g, hx + 1, hy + hh - 4, hw - 2, 4, sd);
@@ -926,16 +945,29 @@ export function drawHands(g, m, dir, frame, skin, skinShade) {
     px(g, CX - 1, handY + 1, 1, 1, sd);
     return;
   }
-  // mão esquerda (com polegar e canto arredondado)
-  px(g, axL, handY, armW, 2, skin);
-  px(g, axL, handY + 1, 1, 1, sd);
-  px(g, axL + armW - 1, handY, 1, 1, shade(skin, 0.08));
-  px(g, axL + armW - 1, handY + 1, 1, 1, sd);
-  px(g, axL, handY + 2, armW - 1, 1, sd);
-  // mão direita
-  px(g, axR, handY, armW, 2, shade(skin, -0.06));
-  px(g, axR, handY + 1, armW, 1, sd);
-  px(g, axR, handY + 2, armW - 1, 1, sd);
+  // mão esquerda: luvinha com polegar voltado ao corpo e ponta afinada
+  px(g, axL, handY, armW, 1, skin);
+  px(g, axL + armW, handY, 1, 1, shade(skin, 0.06));   // polegar
+  px(g, axL, handY + 1, armW, 1, skin);
+  px(g, axL, handY + 1, 1, 1, sd);                     // borda externa
+  if (armW >= 3) {
+    px(g, axL + 1, handY + 2, 1, 1, skin);             // dedo
+    px(g, axL + 2, handY + 2, 1, 1, sd);               // fresta entre dedos
+  } else {
+    px(g, axL, handY + 2, 1, 1, sd);
+  }
+  // mão direita (um tom mais sombra, luz vem da esquerda)
+  const sk2 = shade(skin, -0.06);
+  px(g, axR, handY, armW, 1, sk2);
+  px(g, axR - 1, handY, 1, 1, shade(skin, 0.02));      // polegar
+  px(g, axR, handY + 1, armW, 1, sk2);
+  px(g, axR + armW - 1, handY + 1, 1, 1, sd);
+  if (armW >= 3) {
+    px(g, axR + 1, handY + 2, 1, 1, sd);
+    px(g, axR, handY + 2, 1, 1, sk2);
+  } else {
+    px(g, axR + armW - 1, handY + 2, 1, 1, sd);
+  }
 }
 
 // ------------------------------------------------------------------
@@ -950,13 +982,13 @@ const HAIR_STYLES = {
   spiky:       { crown: 3, fringe: "spiky", sides: 0, back: 0, spikes: true },
   undercut:    { crown: 2, fringe: "side", sides: 0, back: 0, shaved: true },
   mullet:      { crown: 2, fringe: "jagged", sides: 1, back: 5 },
-  long:        { crown: 2, fringe: "parted", sides: 3, back: 9 },
-  long_masc:   { crown: 2, fringe: "jagged", sides: 2, back: 6 },
-  long_wavy_masc: { crown: 2, fringe: "parted", sides: 3, back: 8, wavy: true },
-  bob:         { crown: 2, fringe: "full", sides: 2, back: 6, bob: true },
+  long:        { crown: 2, fringe: "parted", sides: 3, back: 9, locks: 5 },
+  long_masc:   { crown: 2, fringe: "jagged", sides: 2, back: 6, locks: 4 },
+  long_wavy_masc: { crown: 2, fringe: "parted", sides: 3, back: 8, wavy: true, locks: 4 },
+  bob:         { crown: 2, fringe: "full", sides: 2, back: 6, bob: true, locks: 3 },
   bangs:       { crown: 2, fringe: "full", sides: 1, back: 0 },
   side_sweep:  { crown: 2, fringe: "sweep", sides: 1, back: 0 },
-  wavy:        { crown: 2, fringe: "parted", sides: 3, back: 6, wavy: true },
+  wavy:        { crown: 2, fringe: "parted", sides: 3, back: 6, wavy: true, locks: 5 },
   curly:       { crown: 3, fringe: "curly", sides: 2, back: 3, bumpy: true },
   afro_puff:   { crown: 4, fringe: "curly", sides: 3, back: 2, bumpy: true },
   bun:         { crown: 2, fringe: "parted", sides: 0, back: 0, bun: 2 },
@@ -964,7 +996,13 @@ const HAIR_STYLES = {
   ponytail:    { crown: 2, fringe: "parted", sides: 0, back: 0, tail: true },
   twin:        { crown: 2, fringe: "full", sides: 0, back: 0, twins: true },
   braided:     { crown: 2, fringe: "parted", sides: 2, back: 5, braid: true },
-  braid_long:  { crown: 2, fringe: "parted", sides: 1, back: 9, braid: true },
+  braid_long:  { crown: 2, fringe: "parted", sides: 1, back: 9, braid: true, locks: 3 },
+  bob_chic:    { crown: 2, fringe: "full", sides: 3, back: 5, bob: true, locks: 4 },
+  pony_side:   { crown: 2, fringe: "side", sides: 1, back: 2, ponySide: 7 },
+  twin_tails:  { crown: 2, fringe: "full", sides: 1, back: 2, twinsOver: 7 },
+  braid_side:  { crown: 2, fringe: "parted", sides: 2, back: 4, braidOver: 8 },
+  curly_short: { crown: 3, fringe: "curly", sides: 1, back: 0, bumpy: true },
+  wavy_long:   { crown: 2, fringe: "parted", sides: 3, back: 9, wavy: true, locks: 6 },
 };
 
 export function drawHairRig(g, m, dir, style, hair, hairDark, opts = {}) {
@@ -1001,54 +1039,43 @@ export function drawHairRig(g, m, dir, style, hair, hairDark, opts = {}) {
   const crown = Math.max(1, Math.min(cfg.crown, Math.max(1, hy)));
   const capBottom = hy + 1;
   const top = capBottom - (crown + 1);
-  for (let y = top; y <= capBottom; y++) {
+  for (let y = cfg.bumpy ? top + 1 : top; y <= capBottom; y++) {
     const fromTop = y - top;
-    const inset = Math.min(Math.ceil(hw / 2) - 2, Math.max(0, crown - fromTop + 1));
+    let inset = Math.min(Math.ceil(hw / 2) - 2, Math.max(0, crown - fromTop + 1));
+    if (fromTop === 0) inset = Math.min(inset, 2);
+    if (y === capBottom && crown >= 2) inset = Math.max(1, inset);
     put(hx + inset, y, hw - inset * 2);
   }
   // brilho no alto a esquerda e sombra a direita
   const capW = hw - Math.min(Math.ceil(hw / 2) - 2, crown + 1) * 2;
   const capX = hx + Math.min(Math.ceil(hw / 2) - 2, crown + 1);
   px(g, capX + 1, top, Math.max(1, Math.min(3, capW - 2)), 1, light);
+  px(g, capX + 2, top + 1, Math.max(1, Math.min(2, capW - 3)), 1, light);
   px(g, hx + hw - 3, top + 2, 1, 1, midtone);
   px(g, hx + hw - 2, capBottom - 1, 1, 1, midtone);
 
   // ---- franja / testeira ----
   const fy = hy + 2;
   if (!up) {
-    switch (cfg.fringe) {
-      case "full":
-        put(hx + 1, fy, hw - 2);
-        put(hx + 1, fy + 1, 3);
-        put(hx + hw - 3, fy + 1, 2);
-        break;
-      case "jagged":
-        put(hx + 1, fy, hw - 2);
-        for (let x = 1; x < hw - 2; x += 4) put(hx + x, fy + 1, 2);
-        break;
-      case "parted":
-        put(hx + 1, fy, Math.max(2, Math.floor(hw / 2) - 2));
-        put(hx + Math.ceil(hw / 2) + 1, fy, Math.max(2, Math.floor(hw / 2) - 2));
-        put(hx + 2, fy + 1, 2);
-        put(hx + hw - 4, fy + 1, 2);
-        break;
-      case "side":
-        put(hx + 1, fy, hw - 3);
-        put(hx + 1, fy + 1, 3);
-        break;
-      case "sweep":
-        put(hx + 2, fy, hw - 3);
-        put(hx + 2, fy + 1, 4);
-        break;
-      case "spiky":
-        put(hx + 1, fy, hw - 2);
-        for (let x = 1; x < hw - 2; x += 3) put(hx + x, fy + 1, 2);
-        break;
-      case "curly":
-        for (let x = 1; x < hw - 2; x++) put(hx + x, fy, 1);
-        for (let x = 1; x < hw - 3; x += 2) put(hx + x, fy + 1, 2);
-        break;
-      default: break;
+    // franja em zigue-zague: cada coluna desce uma profundidade própria,
+    // como os fios recortados da referência (nada de régua reta).
+    const DEPTH = {
+      full:   [2, 2, 3, 2, 3, 2, 2],
+      jagged: [1, 2, 1, 3, 1, 2, 1],
+      parted: [2, 2, 1, 0, 0, 1, 2, 2],
+      side:   [3, 3, 2, 2, 1, 1],
+      sweep:  [1, 1, 2, 2, 3, 3],
+      spiky:  [1, 3, 1, 3, 1, 3],
+      curly:  [2, 3, 2, 3, 2, 3],
+    };
+    const arr = DEPTH[cfg.fringe];
+    if (arr) {
+      const span = hw - 2;
+      for (let k = 0; k < span; k++) {
+        const d = arr[Math.floor((k * arr.length) / span)];
+        for (let y = 0; y < d; y++) put(hx + 1 + k, fy + y, 1);
+      }
+      if (cfg.fringe === "parted") put(hx + Math.floor(hw / 2) - 1, fy, 1);
     }
     // contorno da franja: 1px escuro na base, só sobre a testa.
     // Na altura da sobrancelha o contorno cede lugar a ela (senão vira "óculos").
@@ -1077,10 +1104,41 @@ export function drawHairRig(g, m, dir, style, hair, hairDark, opts = {}) {
         px(g, hx - 1, hy + i, 1, 1, tone);
         px(g, hx + hw, hy + i, 1, 1, i > len - 2 ? dark : midtone);
       }
+      // ponta escalonada: o fio da esquerda é um ponto mais comprido
+      px(g, hx - 1, hy + len + 1, 1, 1, dark);
+      px(g, hx + hw, hy + len, 1, 1, dark);
       px(g, hx - 1, hy + 1, 1, Math.max(1, len - 2), light);
     } else if (!up) {
       px(g, hx, hy + 3, 1, 2, midtone);
       px(g, hx + hw - 1, hy + 3, 1, 2, dark);
+    }
+    // volume atrás: cai por trás do ombro, com onda e abertura na ponta
+    if (!up && cfg.back >= 4) {
+      const bl = cfg.back;
+      for (let i = 0; i < bl; i++) {
+        const y = hy + 2 + i;
+        const wo = cfg.wavy ? i % 2 : 0;
+        const flare = i > bl - 3 ? 1 : 0;
+        const xl = hx - 2 - wo - flare;
+        const xr = hx + hw + 1 + wo + flare;
+        px(g, xl, y, 2, 1, i > bl - 2 ? dark : midtone);
+        px(g, xr - 1, y, 2, 1, i > bl - 2 ? dark : hair);
+      }
+      px(g, hx - 2 - (cfg.wavy ? 1 : 0), hy + 2 + bl, 1, 1, dark);
+      px(g, hx + hw + 1, hy + 1 + bl, 1, 1, dark);
+      px(g, hx - 2, hy + 3, 1, Math.max(2, bl - 4), light);
+    }
+    // mechas da frente, por cima do ombro/peito
+    if (!up && cfg.locks) {
+      const ly0 = hy + hh - 2;
+      for (let i = 0; i < cfg.locks; i++) {
+        const y = ly0 + i;
+        const wo = cfg.wavy ? i % 2 : 0;
+        px(g, hx - wo, y, 2, 1, i > cfg.locks - 2 ? dark : hair);
+        px(g, hx + hw - 1 + wo, y, 2, 1, i > cfg.locks - 2 ? dark : midtone);
+      }
+      px(g, hx, ly0 + cfg.locks, 1, 1, dark);
+      px(g, hx + hw - 1, ly0 + cfg.locks - 1, 1, 1, dark);
     }
   } else {
     const bx = backSide === "left" ? hx - 1 : hx + hw;
@@ -1134,6 +1192,37 @@ export function drawHairRig(g, m, dir, style, hair, hairDark, opts = {}) {
       px(g, x, hy + 2 + i, 1, 1, i % 2 === 0 ? hair : midtone);
     }
     px(g, hx + hw, hy + 2 + (cfg.back || 5), 1, 1, dark);
+  }
+  if (cfg.ponySide && !side && !up) {
+    const tx = hx + hw - 1;
+    px(g, tx, hy + hh - 3, 1, 1, "#c9553f");
+    for (let i = 0; i < cfg.ponySide; i++) {
+      const y = hy + hh - 2 + i;
+      px(g, tx + (i % 2), y, 2, 1, i > cfg.ponySide - 2 ? dark : hair);
+    }
+    px(g, tx, hy + hh - 2 + cfg.ponySide, 1, 1, dark);
+  }
+  if (cfg.twinsOver && !side && !up) {
+    for (const [tx, tone] of [[hx - 1, hair], [hx + hw, midtone]]) {
+      px(g, tx, hy + hh - 3, 1, 1, "#c9553f");
+      for (let i = 0; i < cfg.twinsOver; i++) {
+        const y = hy + hh - 2 + i;
+        const wo = i % 2;
+        px(g, tx + (tx < CX ? -wo : wo), y, 2, 1, i > cfg.twinsOver - 2 ? dark : tone);
+      }
+      px(g, tx, hy + hh - 2 + cfg.twinsOver, 1, 1, dark);
+    }
+  }
+  if (cfg.braidOver && !side && !up) {
+    const tx = hx + hw - 2;
+    px(g, tx, hy + hh - 3, 2, 1, "#c9553f");
+    for (let i = 0; i < cfg.braidOver; i++) {
+      const y = hy + hh - 2 + i;
+      const x = tx + (i % 2);
+      px(g, x, y, 2, 1, i % 2 ? midtone : hair);
+      px(g, x, y, 1, 1, i % 2 ? hair : light);
+    }
+    px(g, tx + 1, hy + hh - 2 + cfg.braidOver, 1, 2, dark);
   }
   if (cfg.shaved) {
     px(g, hx, hy + 3, 1, 2, shade(hair, -0.35));
