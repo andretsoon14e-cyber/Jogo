@@ -541,6 +541,14 @@ export function drawPants(g, m, dir, frame, pants, skin, style = "long", opts = 
   px(g, CX - Math.floor(m.hipW / 2) + 2, waistY, 1, 2, shade(pants, -0.5));
   px(g, CX + Math.floor(m.hipW / 2) - 3, waistY, 1, 2, shade(pants, -0.5));
 
+  // ---- bolsos traseiros (a costas também aparece no jogo) ----
+  if (dir === "up" && style !== "skirt") {
+    for (const bx of [x0 + 1, x0 + legW + gap + 1]) {
+      px(g, bx, hipY + 2, 2, 2, shade(pants, -0.3));
+      px(g, bx, hipY + 2, 2, 1, shade(pants, 0.1));
+    }
+  }
+
   // ---- pernas ----
   const lenPx = legLen - 1;
   const kneeY = hipY + Math.round(lenPx * 0.52);
@@ -624,14 +632,16 @@ export function drawShirt(g, m, dir, frame, shirt, shirtDark, design = "solid", 
     if (i === h - 1) px(g, r.ox + 1, y0 + i, r.ow - 2, 1, shade(shirt, -0.2));
     if (i === h - 2) px(g, r.ox + 1, y0 + i, r.ow - 2, 1, shade(shirt, 0.06));
     if (r.armW) {
-      // braço esquerdo: lado de fora na luz, lado de dentro na sombra
-      px(g, r.tx - r.armW, y0 + i, r.armW, 1, i < 2 ? shade(shirt, -0.1) : shade(shirt, -0.04));
+      // manga é bloco de tom próprio (como na referência): sem isso o braço
+      // some no tronco quando o sprite é visto em 2x no mapa
+      px(g, r.tx - r.armW, y0 + i, r.armW, 1, i < 2 ? shade(shirt, -0.16) : shade(shirt, -0.12));
       px(g, r.tx - r.armW, y0 + i, 1, 1, i < 2 ? mid : light);
       // costura de junção com o tronco (é o que faz o braço aparecer)
-      px(g, r.tx - 1, y0 + i, 1, 1, shade(shirt, -0.32));
-      px(g, r.tx + r.tw, y0 + i, 1, 1, shade(shirt, -0.36));
-      // braço direito: lado de fora na sombra
-      px(g, r.tx + r.tw + 1, y0 + i, Math.max(0, r.armW - 1), 1, shade(shirt, -0.16));
+      px(g, r.tx - 1, y0 + i, 1, 1, shade(shirt, -0.38));
+      px(g, r.tx + r.tw, y0 + i, 1, 1, shade(shirt, -0.42));
+      // braço direito: bloco ainda mais escuro (luz vem da esquerda)
+      px(g, r.tx + r.tw + 1, y0 + i, Math.max(0, r.armW - 1), 1, i < 2 ? shade(shirt, -0.26) : shade(shirt, -0.22));
+      px(g, r.tx + r.tw + 1, y0 + i, 1, 1, shade(shirt, -0.3));
     }
   }
 
@@ -653,7 +663,14 @@ export function drawShirt(g, m, dir, frame, shirt, shirtDark, design = "solid", 
   // ---- gola ----
   const cw = Math.max(3, Math.round(m.shoulderW * 0.32));
   const collar = opts.collar || "v";
-  if (!side) {
+  const up = dir === "up";
+  if (up) {
+    // costas: pala de ombro a ombro + prega central (o avesso da carcela)
+    px(g, CX - Math.floor(m.shoulderW / 2) + 1, y0 + 3, m.shoulderW - 2, 1, shade(shirt, -0.3));
+    px(g, CX - Math.floor(m.shoulderW / 2) + 1, y0 + 4, m.shoulderW - 2, 1, shade(shirt, 0.08));
+    px(g, CX, y0 + 5, 1, Math.max(3, h - 7), shade(shirt, -0.18));
+  }
+  if (!side && !up) {
     const skinD = shade(opts.skin || "#e8b98c", -0.24);
     if (collar === "round") {
       // gola redonda: arco de 1px com sombra interna
@@ -1088,10 +1105,65 @@ export function drawHairRig(g, m, dir, style, hair, hairDark, opts = {}) {
       }
     }
   } else {
-    // nuca: cabelo cobre o crânio inteiro
-    put(hx + 1, hy, hw - 2);
-    px(g, hx + 2, hy + 1, 1, 2, light);
-    px(g, hx + hw - 3, hy + 1, 1, 2, dark);
+    // ---- costas: o penteado precisa ser reconhecível por trás ----
+    for (let y = top; y <= hy + hh - 3; y++) {
+      const fromTop = y - top;
+      let inset = Math.min(Math.ceil(hw / 2) - 1, Math.max(0, crown - fromTop + 1));
+      if (fromTop === 0) inset = Math.min(inset, 2);
+      put(hx + inset, y, hw - inset * 2);
+    }
+    px(g, hx + 2, hy + 1, 1, Math.max(2, hh - 5), light);
+    px(g, hx + hw - 3, hy + 1, 1, Math.max(2, hh - 5), dark);
+    // nuca em zigue-zague (fios, não régua reta), com variações por penteado
+    const nl = hy + hh - 3;
+    if (cfg.shaved) {
+      px(g, hx + 2, nl, hw - 4, 2, shade(hair, -0.55));   // nuca raspada
+    } else {
+      for (let x = hx + 1; x < hx + hw - 1; x++) if (x % 2 === 0) px(g, x, nl + 1, 1, 1, midtone);
+      if (cfg.fringe === "side") px(g, hx + 2, nl + 1, 2, 1, midtone);   // pixie
+      if (cfg.tufts) {                                                   // desgrenhado
+        px(g, hx + 3, nl + 2, 1, 1, midtone);
+        px(g, hx + hw - 4, nl + 2, 1, 1, midtone);
+      }
+    }
+    // volume lateral caindo por trás do ombro
+    if (cfg.back >= 4) {
+      const bl = cfg.back;
+      for (let i = 0; i < bl; i++) {
+        const y = hy + 2 + i;
+        const wo = cfg.wavy ? i % 2 : 0;
+        const flare = i > bl - 3 ? 1 : 0;
+        px(g, hx - 2 - wo - flare, y, 2, 1, i > bl - 2 ? dark : midtone);
+        px(g, hx + hw + wo + flare, y, 2, 1, i > bl - 2 ? dark : hair);
+      }
+    }
+    // rabo / trança no meio das costas, com elástico
+    if (cfg.tail || cfg.ponySide || cfg.braid || cfg.braidOver) {
+      const tl = Math.max(5, cfg.back || 6);
+      px(g, CX - 2, nl - 1, 4, 1, "#c9553f");
+      for (let i = 0; i < tl; i++) {
+        const y = nl + i;
+        const notch = (cfg.braid || cfg.braidOver) && i % 2 === 1;
+        px(g, CX - 1 + (notch ? 1 : 0), y, 2, 1, notch ? midtone : hair);
+        px(g, CX - 1, y, 1, 1, notch ? hair : light);
+      }
+      px(g, CX - 1, nl + tl, 1, 1, dark);
+    }
+    // marias-chiquinha vistas de trás
+    if (cfg.twins || cfg.twinsOver) {
+      for (const tx of [hx - 2, hx + hw]) {
+        px(g, tx, nl - 3, 2, 1, "#c9553f");
+        for (let i = 0; i < 6; i++) {
+          px(g, tx + (i % 2 ? (tx < CX ? -1 : 1) : 0), nl - 2 + i, 2, 1, i > 4 ? dark : hair);
+        }
+      }
+    }
+    if (cfg.bun) {
+      const bw = 2 + (cfg.bun > 2 ? 1 : 0);
+      const by = Math.max(0, top - bw + 1);
+      px(g, CX - Math.floor(bw / 2), by, bw, bw, hair);
+      px(g, CX - Math.floor(bw / 2), by, 1, 1, light);
+    }
   }
 
   // ---- mechas laterais (emolduram o rosto) ----
@@ -1255,29 +1327,52 @@ export function drawHatRig(g, m, dir, hat) {
       px(g, hx - 1, hy + 1, hw + 2, 1, dark);
       px(g, hx - 2, hy, 2, 1, light);
       px(g, hx + hw, hy, 2, 1, light);
+      // trançado da palha: tracinhos na copa + laço da fita
+      for (let x = hx + 2; x < hx + hw - 2; x += 3) px(g, x, hy - 3, 1, 1, shade(c, -0.12));
+      for (let x = hx; x < hx + hw + 2; x += 4) px(g, x, hy, 1, 1, light);
+      px(g, hx + hw - 3, hy - 2, 2, 1, light);
+      px(g, hx + hw - 3, hy - 1, 1, 1, shade(c2, -0.2));
       return;
     }
     case "cap": {
       px(g, hx, hy - 2, hw, 2, c);
       px(g, hx + 1, hy - 3, hw - 2, 1, c);
       px(g, hx + 2, hy - 3, 2, 1, light);
-      if (side) px(g, dir === "right" ? hx + hw : hx - 2, hy - 1, 2, 1, dark);
-      else px(g, hx + Math.floor(hw / 2), hy, hw, 1, dark);
+      px(g, CX, hy - 4, 1, 1, light);                 // botão do topo
+      px(g, hx + 2, hy - 2, 1, 2, shade(c, -0.14));  // gomo central
+      px(g, hx + hw - 3, hy - 2, 1, 2, shade(c, -0.14));
+      if (side) {
+        px(g, dir === "right" ? hx + hw : hx - 3, hy - 1, 3, 1, dark);
+        px(g, dir === "right" ? hx + hw : hx - 3, hy, 2, 1, shade(c, -0.42));
+      } else {
+        px(g, hx - 1, hy, hw + 2, 1, dark);           // aba de frente
+        px(g, hx - 1, hy, hw + 2, 1, shade(c, -0.4));
+        px(g, hx, hy - 1, hw, 1, shade(c, -0.2));
+      }
       return;
     }
     case "bandana": {
       px(g, hx, hy - 2, hw, 2, c);
       px(g, hx + 1, hy - 3, hw - 2, 1, c);
       px(g, hx + 2, hy - 2, 2, 1, light);
+      for (let x = hx + 1; x < hx + hw - 1; x += 3) px(g, x, hy - 1, 1, 1, "#fff3d6"); // poás
       px(g, hx + hw - 1, hy, 2, 1, c);
       px(g, hx + hw, hy + 1, 1, 2, c2);
+      px(g, hx + hw + 1, hy + 2, 1, 2, c);            // pontas do nó
+      px(g, hx + hw, hy, 1, 1, light);                // nó
       return;
     }
     case "flower": {
       px(g, hx, hy - 2, hw, 2, c);
       px(g, hx + 1, hy - 3, hw - 2, 1, c);
-      px(g, hx + hw - 3, hy - 4, 2, 2, c2);
-      px(g, hx + hw - 3, hy - 4, 1, 1, "#fff3d6");
+      // flor de 3x3: pétalas claras, miolo amarelo, folha verde
+      const fx = hx + hw - 4;
+      px(g, fx, hy - 5, 3, 1, c2);
+      px(g, fx, hy - 4, 1, 1, c2);
+      px(g, fx + 2, hy - 4, 1, 1, c2);
+      px(g, fx + 1, hy - 4, 1, 1, "#ffd166");
+      px(g, fx, hy - 3, 3, 1, c2);
+      px(g, fx - 1, hy - 4, 1, 1, "#6a9a4a");
       px(g, hx + 2, hy - 3, 1, 1, light);
       return;
     }
@@ -1285,15 +1380,23 @@ export function drawHatRig(g, m, dir, hat) {
       px(g, hx + 1, hy - 2, hw - 2, 2, c);
       px(g, hx + 3, hy - 3, Math.max(2, hw - 6), 1, c);
       px(g, hx + 2, hy - 3, 2, 1, "#ffffff");
+      px(g, hx + hw - 4, hy - 3, 2, 1, "#ffffff");
       px(g, hx + 1, hy, hw - 2, 1, "#2f4a6b");
+      px(g, CX - 1, hy - 1, 2, 1, "#c0505f");          // fita
+      px(g, CX - 2, hy - 1, 1, 1, "#e88a9a");
+      px(g, CX + 1, hy - 1, 1, 1, "#e88a9a");
       return;
     }
     case "goggles": {
       px(g, hx + 1, hy - 2, hw - 2, 2, c);
-      px(g, hx + 2, hy - 1, 2, 2, "#bfe6f2");
-      px(g, hx + hw - 4, hy - 1, 2, 2, "#bfe6f2");
-      px(g, hx + 2, hy - 1, 1, 1, "#ffffff");
-      px(g, hx + hw - 4, hy - 1, 1, 1, "#ffffff");
+      px(g, hx, hy - 1, 1, 2, shade(c, -0.3));         // tira lateral
+      px(g, hx + hw - 1, hy - 1, 1, 2, shade(c, -0.3));
+      for (const lx of [hx + 2, hx + hw - 4]) {
+        px(g, lx - 1, hy - 1, 4, 2, shade(c, -0.42));  // aro
+        px(g, lx, hy - 1, 2, 2, "#bfe6f2");            // lente
+        px(g, lx, hy - 1, 1, 1, "#ffffff");            // brilho
+        px(g, lx + 1, hy, 1, 1, "#8fc4d8");
+      }
       return;
     }
     case "wizard": {
@@ -1302,7 +1405,10 @@ export function drawHatRig(g, m, dir, hat) {
       px(g, hx + 1, hy - 4, hw - 2, 2, c);
       px(g, hx - 1, hy - 2, hw + 2, 2, c);
       px(g, hx - 2, hy, hw + 4, 1, dark);
-      px(g, hx + 3, hy - 3, 1, 1, "#ffe9a8");
+      px(g, hx - 1, hy - 2, hw + 2, 1, c2);            // faixa do cone
+      px(g, hx + 3, hy - 3, 1, 1, "#ffe9a8");          // estrela
+      px(g, hx + hw - 4, hy - 5, 1, 1, "#ffe9a8");
+      px(g, hx + 2, hy - 6, 1, 1, light);
       return;
     }
     default:
@@ -1405,13 +1511,20 @@ function drawParts(g, spec, dir, frame, tool) {
   drawHatRig(g, m, dir, spec.hat);
   if (spec.necklace && !m.bundle) {
     const L = limbs(m);
-    px(g, CX - 1, L.shoulder, 2, 1, spec.necklace);
+    const gem = spec.necklace;
+    const chain = shade(gem, -0.35);
+    px(g, CX - 2, L.shoulder, 5, 1, chain);            // corrente
+    px(g, CX - 1, L.shoulder + 1, 3, 1, chain);
+    px(g, CX - 1, L.shoulder + 2, 2, 2, gem);          // pingente 2x2
+    px(g, CX - 1, L.shoulder + 2, 1, 1, shade(gem, 0.3));
   }
   if (spec.cane) drawCane(g, m, dir, spec.cane === true ? "#8a6a42" : spec.cane);
   if (spec.bracelet && m.armW > 0 && !m.bundle) {
     const L = limbs(m);
     const sp2 = armSpans(m, Math.round(m.torsoH * 0.6));
-    px(g, sp2.axL, L.shoulder + Math.round((L.hip - L.shoulder) * 0.62), m.armW, 1, spec.bracelet);
+    const wy = L.shoulder + Math.round((L.hip - L.shoulder) * 0.62);
+    px(g, sp2.axL, wy, m.armW, 1, spec.bracelet);
+    px(g, sp2.axL + m.armW - 1, wy + 1, 1, 1, shade(spec.bracelet, 0.3));  // berloque
   }
   if (tool) drawToolRig(g, m, dir, tool);
   return m;
