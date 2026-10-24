@@ -72,3 +72,6 @@ Nota: os testes de rede (multiplayer, movimento e co-op) agora saem da casa ante
 ## Próximo foco combinado com o usuário
 
 Ordem: **multiplayer/co-op primeiro**, depois NPCs+vila junto com o loop da fazenda, depois a ilha com caverna e novas áreas por progressão. Mundo começa com **uma ilha só** (com caverna) e cresce.
+
+## Handoff
+- Prompt de handoff completo para quem pega o projeto do zero: `PROMPT_HANDOFF_COMPLETO_2026-10-24.md` (raiz do repo).
